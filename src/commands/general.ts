@@ -158,7 +158,7 @@ export class Changelog extends Command {
             this.params.useNum = +found;
         }
         const Embed = new Discord.EmbedBuilder();
-        const exceeded = 'Exceeded character limit. Please click [here](https://github.com/sbrstrkkdwmdr/sbrbot/blob/main/changelog.md) to view the changelog.';
+        const exceeded = 'Exceeded character limit. Please click [here](https://github.com/sbrstrkkdwmdr/ssob/blob/main/changelog.md) to view the changelog.';
         if (isNaN(this.params.useNum) || !this.params.useNum) this.params.useNum = 0;
         if (typeof found == 'string') {
             this.params.isList = true;
@@ -251,7 +251,7 @@ export class Changelog extends Command {
 
             Embed
                 .setTitle(`${verdata.name.trim()} Changelog`)
-                .setURL('https://github.com/sbrstrkkdwmdr/sbrbot/blob/dev/changelog.md')
+                .setURL('https://github.com/sbrstrkkdwmdr/ssob/blob/dev/changelog.md')
                 .setDescription(`commit [${commit.includes('commit/') ?
                     commitURL.split('commit/')[1].trim()?.slice(0, 7)?.trim() : 'null'}](${commitURL})
 Released ${verdata.releaseDate}
@@ -514,7 +514,7 @@ export class Help extends Command {
                     })
                 )
                 .setFooter({
-                    text: 'Website: https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands | Github: https://github.com/sbrstrkkdwmdr/sbrbot/tree/ts'
+                    text: 'Website: https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands | Github: https://github.com/sbrstrkkdwmdr/ssob/tree/ts'
                 });
             this.ctn.embeds = [clembed];
             this.params.commandCategory = 'default';
@@ -581,7 +581,7 @@ export class Help extends Command {
 - Gamemode can be specified by using -(mode) in commands that support it (eg. -taiko)
 `.replaceAll('MSGPREFIX', helper.vars.config.prefix))
                 .setFooter({
-                    text: 'Website: https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands | Github: https://github.com/sbrstrkkdwmdr/sbrbot/tree/ts'
+                    text: 'Website: https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands | Github: https://github.com/sbrstrkkdwmdr/ssob/tree/ts'
                 })];
             this.params.commandCategory = 'default';
         }
@@ -647,7 +647,7 @@ sqlite3: [${pkgjson.dependencies['sqlite3'].replace('^', '')}](https://github.co
             server: helper.vars.versions.serverURL,
             website: helper.vars.versions.website,
             creator: 'https://sbrstrkkdwmdr.github.io/',
-            source: `https://github.com/sbrstrkkdwmdr/sbrbot/`,
+            source: `https://github.com/sbrstrkkdwmdr/ssob/`,
             get tz() {
                 const starttime = new Date((fs.readFileSync(`${helper.vars.path.main}/debug/starttime.txt`)).toString());
 

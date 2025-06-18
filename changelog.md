@@ -6,6 +6,13 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.1.1] - 2025-06-12
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/09b752d0f1fee2e1bbc4872236c64b1e30ecf9a5)</br>
+
+### Fixed
+- changelog fetching from old repo name (sbrbot)
+
 ## [5.1.0] - 2025-06-12
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/226cbb61fa59efaaf93b58b027082f7a6fa57aed)</br>

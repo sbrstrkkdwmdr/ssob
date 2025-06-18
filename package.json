@@ -1,6 +1,6 @@
 {
-    "name": "sbrbot",
-    "version": "5.1.0",
+    "name": "ssob",
+    "version": "5.1.1",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
