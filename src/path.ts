@@ -18,8 +18,8 @@ export function getParentFolderPath(filePath: string) {
  * path before files are compiled (ie before they're put into ./dist)
  */
 
-// sbrbot/src/path ->
-// sbrbot/dist/src/path
+// ssob/src/path ->
+// ssob/dist/src/path
 export const precomp = getParentFolderPath(getParentFolderPath(main));
 //let path = x/y/
 //want x/z/
