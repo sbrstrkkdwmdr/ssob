@@ -219,7 +219,7 @@ export class BadgeWeightSeed extends OsuCommand {
     }
 }
 
-export class Leaderboard extends OsuCommand {
+export class ServerLeaderboard extends OsuCommand {
     declare protected params: {
         page: number;
         mode: apitypes.GameMode;
@@ -227,7 +227,7 @@ export class Leaderboard extends OsuCommand {
     };
     constructor() {
         super();
-        this.name = 'Leaderboard';
+        this.name = 'ServerLeaderboard';
         this.params = {
             page: 0,
             mode: 'osu',

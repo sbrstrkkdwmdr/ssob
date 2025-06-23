@@ -210,7 +210,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
             foundCommand = true;
             break;
         case 'leaderboard':
-            command = new helper.commands.osu.profiles.Leaderboard();
+            command = new helper.commands.osu.profiles.ServerLeaderboard();
             foundCommand = true;
             break;
         case 'map':

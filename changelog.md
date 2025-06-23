@@ -6,47 +6,66 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Changed
+
+-   rename `Leaderboard` to `ServerLeaderboard`
+-   edit `ServerLeaderboard` aliases (['serverlb', 'serverleaderboard'])
+
+### Added
+
+-   add `lb` and `leaderboard` aliases to `Rankings`
+
+### Removed
+
+-   remove `leaderboard` alias from maplb
+-   `Convert` in command data
+
 ## [5.1.1] - 2025-06-12
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/09b752d0f1fee2e1bbc4872236c64b1e30ecf9a5)</br>
 
 ### Fixed
-- changelog fetching from old repo name (sbrbot)
+
+-   changelog fetching from old repo name (sbrbot)
 
 ## [5.1.0] - 2025-06-12
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/226cbb61fa59efaaf93b58b027082f7a6fa57aed)</br>
 
 ### Fixed
-- undefined score country rank being visible
-- `recent best` now says recent best instead of just recent
-- NM scores not having a name in `mapscores`
-- fix scorelist URL links
-- help button inputs not working
-- page selector not working
+
+-   undefined score country rank being visible
+-   `recent best` now says recent best instead of just recent
+-   NM scores not having a name in `mapscores`
+-   fix scorelist URL links
+-   help button inputs not working
+-   page selector not working
 
 ### Changed
-- command name property now forced to be capitalised
-- change `this.args` to `this.params` for readability
+
+-   command name property now forced to be capitalised
+-   change `this.args` to `this.params` for readability
 
 ## [5.0.2] - 2025-05-30
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/a54ba737303e009e515d56c0474e85af2bee1be5)</br>
 
 ### Fixed
-- missing checks in userStatsCache
-- debug commandfiletype using old command names
-- recent activity having the wrong `this.name` value
-- remove unused commands from help 
+
+-   missing checks in userStatsCache
+-   debug commandfiletype using old command names
+-   recent activity having the wrong `this.name` value
+-   remove unused commands from help
 
 ## [5.0.1] - 2025-05-25
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/f952678c28d0558f95e0885232417aa3442c5409)</br>
 
 ### Fixed
-- general commands not having a name parameter set (broke buttons on changelog)
-- commands with no args crashing
-- scorelist commands re-sending API calls when switching pages
+
+-   general commands not having a name parameter set (broke buttons on changelog)
+-   commands with no args crashing
+-   scorelist commands re-sending API calls when switching pages
 
 ## [5.0.0] - 2025-05-23
 

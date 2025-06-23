@@ -251,16 +251,6 @@ export const cmds: bottypes.commandInfo[] = [
         ]
     },
     {
-        name: 'Convert',
-        description: 'DEPRECATED. [use this instead](https://sbrstrkkdwmdr.github.io/tools/convert)',
-        usage: 'convert',
-        category: 'general',
-        examples: [
-        ],
-        aliases: [],
-        args: []
-    },
-    {
         name: 'Help',
         description: 'Displays useful information about commands.',
         usage: 'help [command]',
@@ -513,9 +503,9 @@ export const cmds: bottypes.commandInfo[] = [
         args: scoreListCommandOptions
     },
     {
-        name: 'Leaderboard',
+        name: 'ServerLeaderboard',
         description: 'Shows the osu! rankings of a server.',
-        usage: 'lb [id] [mode]',
+        usage: 'serverleaderboard [id] [mode]',
         category: 'osu_other',
         aliases: [],
         args: [
@@ -683,7 +673,7 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'Returns the leaderboard of the most recent map in the guild with HDHR'
             }
         ],
-        aliases: ['leaderboard', 'maplb', 'ml'],
+        aliases: ['maplb', 'ml'],
         args: [
             {
                 name: 'id',
@@ -1061,7 +1051,7 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'Shows the leaderboards for the 227th spotlight'
             }
         ],
-        aliases: [],
+        aliases: ['rankings', 'lb', 'leaderboard'],
         args: [{
             name: 'country',
             type: 'string',
@@ -1208,7 +1198,7 @@ export const cmds: bottypes.commandInfo[] = [
     },
     {
         name: 'ScoreParse',
-        description: 'Returns information about a score. Doesn\'t work with new score ID system.',
+        description: 'Returns information about a score.',
         usage: 'scoreparse <id> [mode]',
         linkUsage: [
             'osu.ppy.sh/scores/<mode>/<id>'

@@ -276,8 +276,8 @@ function commandSelect(cmd: string, args: string[]) {
         case 'bws': case 'badgeweightsystem': case 'badgeweight': case 'badgeweightseed': case 'badgerank':
             command = new helper.commands.osu.profiles.BadgeWeightSeed();
             break;
-        case 'lb':
-            command = new helper.commands.osu.profiles.Leaderboard();
+        case 'serverleaderboard': case 'serverlb':
+            command = new helper.commands.osu.profiles.ServerLeaderboard();
             break;
         case 'osu': case 'profile': case 'o': case 'user':
             command = new helper.commands.osu.profiles.Profile();
@@ -303,7 +303,7 @@ function commandSelect(cmd: string, args: string[]) {
             command = new helper.commands.osu.profiles.Profile();
         }
             break;
-        case 'ranking': case 'rankings':
+        case 'ranking': case 'rankings': case 'lb': case 'leaderboard':
             command = new helper.commands.osu.profiles.Ranking();
             break;
         case 'recentactivity': case 'recentact': case 'rsact':
@@ -388,7 +388,7 @@ function commandSelect(cmd: string, args: string[]) {
         case 'firsts': case 'firstplaceranks': case 'fpr': case 'fp': case '#1s': case 'first': case '#1': case '1s':
             command = new helper.commands.osu.scores.Firsts();
             break;
-        case 'leaderboard': case 'maplb': case 'mapleaderboard': case 'ml':
+        case 'maplb': case 'mapleaderboard': case 'ml':
             command = new helper.commands.osu.scores.MapLeaderboard();
             break;
         case 'nochokes': case 'nc': {
