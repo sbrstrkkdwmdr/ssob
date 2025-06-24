@@ -9,8 +9,8 @@ import { OsuCommand } from './command.js';
 
 export class Map extends OsuCommand {
     declare protected params: {
-        mapid;
-        mapmods: string;
+        mapid: number;
+        mapmods: osumodcalc.types.Mod[];
         maptitleq: string;
         detailed: number;
         isppCalc: boolean;
@@ -30,7 +30,7 @@ export class Map extends OsuCommand {
         this.name = 'Map';
         this.params = {
             mapid: undefined,
-            mapmods: undefined,
+            mapmods: [],
             maptitleq: null,
             detailed: 1,
             isppCalc: false,
@@ -97,12 +97,6 @@ export class Map extends OsuCommand {
             );
             this.input.args = this.input.args.join(' ').replace(this.params.maptitleq, '').split(' ');
         }
-        if (this.input.args.join(' ').includes('+')) {
-            this.params.mapmods = this.input.args.join(' ').split('+')[1];
-            this.params.mapmods.includes(' ') ? this.params.mapmods = this.params.mapmods.split(' ')[0] : null;
-            this.input.args = this.input.args.join(' ').replace('+', '').replace(this.params.mapmods, '').split(' ');
-        }
-
         if (this.input.args.includes('-bg')) {
             this.params.showBg = true;
         }
@@ -116,6 +110,19 @@ export class Map extends OsuCommand {
         this.params.forceMode = modeTemp.mode;
         this.input.args = modeTemp.args;
 
+        if (this.input.args.join(' ').includes('+')) {
+            let temp = this.input.args.join(' ').split('+')[1].trim();
+            if (temp.includes(' ') && temp.split(' ').length > 1) {
+                temp = temp.split(' ')[0];
+            } else if (temp.length < 2) {
+                temp = null;
+            }
+            if (temp) {
+                this.params.mapmods = osumodcalc.mod.fromString(temp);
+            }
+            this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
+        }
+
         this.input.args = helper.tools.commands.cleanArgs(this.input.args);
         const mapTemp = await helper.tools.commands.mapIdFromLink(this.input.args.join(' '), true);
         this.params.mapid = mapTemp.map;
@@ -124,7 +131,7 @@ export class Map extends OsuCommand {
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
         this.params.mapid = interaction.options.getInteger('id');
-        this.params.mapmods = interaction.options.getString('mods');
+        this.params.mapmods = osumodcalc.mod.fromString(interaction.options.getString('mods').toUpperCase());
         this.params.detailed = interaction.options.getBoolean('detailed') ? 2 : 1;
         this.params.maptitleq = interaction.options.getString('query');
         interaction.options.getNumber('bpm') ? this.params.overrideBpm = interaction.options.getNumber('bpm') : null;
@@ -154,9 +161,17 @@ export class Map extends OsuCommand {
     }
     async setParamsLink() {
         const messagenohttp = this.input.message.content.replace('https://', '').replace('http://', '').replace('www.', '');
-        this.params.mapmods =
-            this.input.message.content.includes('+') ?
-                messagenohttp.split('+')[1] : 'NM';
+        if (this.input.args.join(' ').includes('+')) {
+            let temp = messagenohttp.split('+')[1].trim();
+            if (temp.includes(' ') && temp.split(' ').length > 1) {
+                temp = temp.split(' ')[0];
+            } else if (temp.length < 2) {
+                temp = null;
+            }
+            if (temp) {
+                this.params.mapmods = osumodcalc.mod.fromString(temp);
+            }
+        }
         if (this.input.args[0] && this.input.args[0].startsWith('query')) {
             this.params.maptitleq = this.input.args[1];
         } else if (messagenohttp.includes('q=')) {
@@ -193,7 +208,7 @@ export class Map extends OsuCommand {
             this.params.overwriteModal = this.input?.overrides?.overwriteModal ?? this.params.overwriteModal;
         }
         if (this.input.overrides?.id != null) {
-            this.params.mapid = this.input?.overrides?.id ?? this.params.mapid;
+            this.params.mapid = +(this.input?.overrides?.id ?? this.params.mapid);
         }
         if (this.input.overrides?.commanduser != null) {
             this.commanduser = this.input.overrides.commanduser;
@@ -221,7 +236,7 @@ export class Map extends OsuCommand {
         if (this.params.isppCalc) {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Map-${this.name}-${this.commanduser.id}-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods != 'NM' ? '+' + this.params.mapmods : ''}`)
+                    .setCustomId(`${helper.vars.versions.releaseDate}-Map-${this.name}-${this.commanduser.id}-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
                     .setStyle(helper.vars.buttons.type.current)
                     .setEmoji(helper.vars.buttons.label.extras.map)
             );
@@ -245,13 +260,14 @@ export class Map extends OsuCommand {
 
         if (!this.params.mapid && !this.params.maptitleq) {
             const temp = this.getLatestMap();
-            this.params.mapid = temp.mapid;
-            if (!this.params.mapmods || osumodcalc.OrderMods(this.params.mapmods).string.length == 0) {
+            this.params.mapid = +temp.mapid;
+
+            if (!this.params.mapmods || osumodcalc.mod.order(this.params.mapmods as osumodcalc.types.Mod[]).length == 0) {
                 this.params.mapmods = temp.mods;
             }
             this.params.forceMode = temp.mode;
         }
-        if (this.params.mapid == false && !this.params.maptitleq) {
+        if (this.params.mapid == 0 && !this.params.maptitleq) {
             helper.tools.commands.missingPrevID_map(this.input, 'map');
             return;
         }
@@ -433,11 +449,12 @@ export class Map extends OsuCommand {
             this.ctn.edit = true;
         } else {
             //parsing maps
-            if (this.params.mapmods == null || this.params.mapmods == '') {
-                this.params.mapmods = 'NM';
+
+            if (this.params.mapmods == null) {
+                this.params.mapmods = [];
             }
             else {
-                this.params.mapmods = osumodcalc.modHandler(this.params.mapmods.toUpperCase(), this.map.mode).join();
+                this.params.mapmods = osumodcalc.mod.fix(this.params.mapmods, this.map.mode);
             }
 
             //converts
@@ -480,39 +497,19 @@ export class Map extends OsuCommand {
             }
 
             let hitlength = useMapdata.hit_length;
-            const oldOverrideSpeed = this.params.overrideSpeed;
 
-            if (this.params.overrideBpm && !isNaN(this.params.overrideBpm) && (!this.params.overrideSpeed || isNaN(this.params.overrideSpeed) || this.params.overrideSpeed == 1) && this.params.overrideBpm != useMapdata.bpm) {
-                this.params.overrideSpeed = this.params.overrideBpm / useMapdata.bpm;
-            }
-            if (this.params.overrideSpeed && !isNaN(this.params.overrideSpeed) && (!this.params.overrideBpm || isNaN(this.params.overrideBpm)) && this.params.overrideSpeed != 1) {
-                this.params.overrideBpm = useMapdata.bpm * this.params.overrideSpeed;
-            }
-            if (this.params.mapmods.includes('DT') || this.params.mapmods.includes('NC')) {
-                this.params.overrideSpeed *= 1.5;
-                this.params.overrideBpm *= 1.5;
-            }
-            if (this.params.mapmods.includes('HT')) {
-                this.params.overrideSpeed *= 0.75;
-                this.params.overrideBpm *= 0.75;
-            }
-            if (this.params.overrideSpeed) {
-                hitlength /= this.params.overrideSpeed;
-            }
-
-            const inallvals = osumodcalc.calcValues(
-                +this.params.customCS,
-                +this.params.customAR,
-                +this.params.customOD,
-                +this.params.customHP,
-                this.params.overrideBpm ?? useMapdata.bpm,
-                hitlength,
-                this.params.mapmods
+            const allvals = osumodcalc.stats.modded({
+                cs: this.params.customCS,
+                ar: this.params.customAR,
+                od: this.params.customOD,
+                hp: this.params.customHP,
+                bpm: this.params.overrideBpm ?? useMapdata.bpm,
+                songLength: hitlength
+            }, this.params.mapmods,
+                this?.params?.overrideSpeed ?? undefined
             );
 
-            const allvals = osumodcalc.calcValuesAlt(
-                inallvals.cs, inallvals.ar, inallvals.od, inallvals.hp, inallvals.bpm, hitlength, oldOverrideSpeed
-            );
+
             const mapimg = helper.vars.emojis.gamemodes[useMapdata.mode];
 
             let ppComputed: rosu.PerformanceAttributes[];
@@ -538,7 +535,7 @@ export class Map extends OsuCommand {
                 });
                 pphd = await helper.tools.performance.calcFullCombo({
                     mapid: useMapdata.id,
-                    mods: 'HD',
+                    mods: ['HD'],
                     mode: useMapdata.mode_int,
                     accuracy: 100,
                     customCS: this.params.customCS,
@@ -549,7 +546,7 @@ export class Map extends OsuCommand {
                 });
                 pphr = await helper.tools.performance.calcFullCombo({
                     mapid: useMapdata.id,
-                    mods: 'HR',
+                    mods: ['HR'],
                     mode: useMapdata.mode_int,
                     accuracy: 100,
                     customCS: this.params.customCS,
@@ -560,7 +557,7 @@ export class Map extends OsuCommand {
                 });
                 ppdt = await helper.tools.performance.calcFullCombo({
                     mapid: useMapdata.id,
-                    mods: 'DT',
+                    mods: ['DT'],
                     mode: useMapdata.mode_int,
                     accuracy: 100,
                     customCS: this.params.customCS,
@@ -571,7 +568,7 @@ export class Map extends OsuCommand {
                 });
                 pphdhr = await helper.tools.performance.calcFullCombo({
                     mapid: useMapdata.id,
-                    mods: 'HDHR',
+                    mods: ['HD', 'HR'],
                     mode: useMapdata.mode_int,
                     accuracy: 100,
                     customCS: this.params.customCS,
@@ -582,7 +579,7 @@ export class Map extends OsuCommand {
                 });
                 pphddt = await helper.tools.performance.calcFullCombo({
                     mapid: useMapdata.id,
-                    mods: 'HDDT',
+                    mods: ['HD', 'DT'],
                     mode: useMapdata.mode_int,
                     accuracy: 100,
                     customCS: this.params.customCS,
@@ -593,7 +590,7 @@ export class Map extends OsuCommand {
                 });
                 pphddthr = await helper.tools.performance.calcFullCombo({
                     mapid: useMapdata.id,
-                    mods: 'HDDTHR',
+                    mods: ['HD', 'DT', 'HR'],
                     mode: useMapdata.mode_int,
                     accuracy: 100,
                     customCS: this.params.customCS,
@@ -615,7 +612,7 @@ export class Map extends OsuCommand {
             } catch (error) {
                 helper.tools.log.stdout(error);
                 ppissue = 'Error - pp could not be calculated';
-                const tstmods = this.params.mapmods.toUpperCase();
+                const tstmods = this.params.mapmods;
 
                 if (tstmods.includes('EZ') || tstmods.includes('HR')) {
                     ppissue += '\nInvalid mod combinations: EZ + HR';
@@ -664,8 +661,7 @@ export class Map extends OsuCommand {
                     title: false
                 }
             }, 1);
-            this.params.mapmods = this.params.mapmods.replace(',', '');
-            const maptitle: string = this.params.mapmods ? `\`${mapname} [${this.map.version}]\` +${this.params.mapmods}` : `\`${mapname} [${this.map.version}]\``;
+            const maptitle: string = this.params.mapmods ? `\`${mapname} [${this.map.version}]\` +${this.params.mapmods.join('')}` : `\`${mapname} [${this.map.version}]\``;
             const Embed = new Discord.EmbedBuilder()
                 .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
                 .setThumbnail(helper.tools.api.mapImages(this.map.beatmapset_id).list2x)
@@ -776,7 +772,7 @@ export class Map extends OsuCommand {
                             value:
                                 `CS${baseCS} AR${baseAR} OD${baseOD} HP${baseHP} ${totaldiff}⭐\n` +
                                 `${helper.vars.emojis.mapobjs.bpm}${baseBPM} | ` +
-                                `${helper.vars.emojis.mapobjs.total_length}${allvals.length != useMapdata.hit_length ? `${allvals.details.lengthFull}(${helper.tools.calculate.secondsToTime(useMapdata.hit_length)})` : allvals.details.lengthFull} | ` +
+                                `${helper.vars.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${allvals.extra.lengthReadable}(${helper.tools.calculate.secondsToTime(useMapdata.hit_length)})` : allvals.extra.lengthReadable} | ` +
                                 `${ppComputed[0].difficulty.maxCombo ?? this.map.max_combo}x combo\n ` +
                                 `${helper.vars.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.vars.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.vars.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n`,
                             inline: false
@@ -818,9 +814,9 @@ export class Map extends OsuCommand {
 
                 if (this.params.detailed == 2) {
                     basicvals =
-                        `CS${baseCS} (${allvals.details.csRadius?.toFixed(2)}r)
-        AR${baseAR}  (${allvals.details.arMs?.toFixed(2)}ms)
-        OD${baseOD} (300: ${allvals.details.odMs.hitwindow_300?.toFixed(2)}ms 100: ${allvals.details.odMs.hitwindow_100?.toFixed(2)}ms 50:  ${allvals.details.odMs.hitwindow_50?.toFixed(2)}ms)
+                        `CS${baseCS} (${allvals.extra.csRadius?.toFixed(2)}r)
+        AR${baseAR}  (${allvals.extra.arMs?.toFixed(2)}ms)
+        OD${baseOD} (300: ${allvals.extra.odMs.hitwindow_300?.toFixed(2)}ms 100: ${allvals.extra.odMs.hitwindow_100?.toFixed(2)}ms 50:  ${allvals.extra.odMs.hitwindow_50?.toFixed(2)}ms)
         HP${baseHP}`;
                 }
                 const strains = await helper.tools.performance.calcStrains(
@@ -922,7 +918,7 @@ export class Map extends OsuCommand {
                             name: helper.vars.defaults.invisbleChar,
                             value: `${helper.vars.emojis.mapobjs.bpm}${baseBPM}\n` +
                                 `${helper.vars.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.vars.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.vars.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n` +
-                                `${helper.vars.emojis.mapobjs.total_length}${allvals.length != useMapdata.hit_length ? `${helper.tools.calculate.secondsToTime(useMapdata.hit_length)}=>${allvals.details.lengthFull}` : allvals.details.lengthFull}\n`,
+                                `${helper.vars.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${helper.tools.calculate.secondsToTime(useMapdata.hit_length)}=>${allvals.extra.lengthReadable}` : allvals.extra.lengthReadable}\n`,
                             inline: true
                         },
                         {
@@ -1284,10 +1280,10 @@ export class RecommendMap extends OsuCommand {
             return;
         }
 
-        const randomMap = helper.tools.data.recommendMap(+(osumodcalc.recdiff(osudata.statistics.pp)).toFixed(2), this.params.useType, this.params.mode, this.params.maxRange ?? 1);
+        const randomMap = helper.tools.data.recommendMap(+(osumodcalc.extra.recdiff(osudata.statistics.pp)).toFixed(2), this.params.useType, this.params.mode, this.params.maxRange ?? 1);
         const exTxt =
             this.params.useType == 'closest' ? '' :
-                `Random map within ${this.params.maxRange}⭐ of ${(osumodcalc.recdiff(osudata.statistics.pp))?.toFixed(2)}
+                `Random map within ${this.params.maxRange}⭐ of ${(osumodcalc.extra.recdiff(osudata.statistics.pp))?.toFixed(2)}
     Pool of ${randomMap.poolSize}
     `;
 
@@ -1675,8 +1671,8 @@ export class UserBeatmaps extends OsuCommand {
             .setURL(`https://osu.ppy.sh/users/${this.osudata.id}/${this.osudata.playmode}#beatmaps`)
             .setColor(helper.vars.colours.embedColour.userlist.dec)
             .setDescription(this.params.reachedMaxCount ? 'Only the first 500 mapsets are shown\n\n' : '\n\n' + mapsarg.text);
-            helper.tools.formatter.userAuthor(this.osudata, mapList);
-            
+        helper.tools.formatter.userAuthor(this.osudata, mapList);
+
         if (mapsarg.text.length == 0) {
             mapList.setDescription('No mapsets found');
             (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);

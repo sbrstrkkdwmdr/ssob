@@ -1,6 +1,7 @@
 // database and caching
 import fs from 'fs';
 import * as moment from 'moment';
+import * as osumodcalc from 'osumodcalculator';
 import * as rosu from 'rosu-pp-js';
 import Sequelize from 'sequelize';
 import * as stats from 'simple-statistics';
@@ -294,7 +295,7 @@ export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) 
             fs.readFileSync(`${helper.vars.path.cache}/previous/${type}${serverId}.json`, 'utf-8')) as {
                 id: string | false,
                 apiData: apitypes.Score,
-                mods: string,
+                mods: osumodcalc.types.Mod[],
                 default: boolean,
                 mode: apitypes.GameMode,
                 last_access: string,
@@ -304,7 +305,7 @@ export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) 
         const data: {
             id: string | false,
             apiData: apitypes.Score,
-            mods: string;
+            mods: osumodcalc.types.Mod[];
             default: boolean,
             mode: apitypes.GameMode,
             last_access: string,
@@ -323,12 +324,12 @@ export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) 
 export function writePreviousId(type: 'map' | 'user' | 'score', serverId: string, data: {
     id: string,
     apiData: apitypes.Score,
-    mods: string,
+    mods: osumodcalc.types.Mod[],
     mode?: apitypes.GameMode,
     default?: boolean;
 }) {
     if (!data.mods || data.mods.length == 0) {
-        data.mods = 'NM';
+        data.mods = [];
     }
     data['default'] = false;
     data['last_access'] = moment.default.utc().format("YYYY-MM-DD HH:mm:ss.SSS");

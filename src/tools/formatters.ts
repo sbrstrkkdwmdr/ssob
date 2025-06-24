@@ -29,9 +29,9 @@ export async function scoreList(
         title: string,
         artist: string,
         version: string,
-        modsInclude: string,
-        modsExact: string,
-        modsExclude: string,
+        modsInclude: osumodcalc.types.Mod[],
+        modsExact: (osumodcalc.types.Mod | 'NONE')[],
+        modsExclude: osumodcalc.types.Mod[],
         rank: string,
         pp: string,
         score: string,
@@ -72,7 +72,7 @@ export async function scoreList(
         const perfs = await helper.tools.performance.fullPerformance(
             overrideMap?.id ?? score.beatmap_id,
             score.ruleset_id,
-            score.mods.map(x => x.acronym).join(''),
+            score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
             score.accuracy,
             overrides.speed,
             score.statistics,
@@ -94,9 +94,9 @@ export async function scoreList(
                 info += `・[${score.user.username}](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `u/${score.user_id}`})`;
                 break;
             case 'single_map': {
-                let t = osumodcalc.OrderMods(score.mods.map(x => x.acronym).join('')).string + modadjustments;
-                if(t==''){
-                    t = 'NM'
+                let t = osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments;
+                if (t == '') {
+                    t = 'NM';
                 }
                 info += `・[${t}](https://osu.ppy.sh/scores/${score.id})`;
             } break;
@@ -110,11 +110,25 @@ export async function scoreList(
 
         info +=
             `** ${dateToDiscordFormat(new Date(tempScore.ended_at))}
-${score.passed ? helper.vars.emojis.grades[score.rank] : helper.vars.emojis.grades.F + `(${helper.vars.emojis.grades[score.rank]} if pass)`} | \`${helper.tools.calculate.numberShorthand(helper.tools.other.getTotalScore(score))}\` | ${tempScore.mods.length > 0 && preset != 'single_map' ? ' **' + osumodcalc.OrderMods(tempScore.mods.map(x => x.acronym).join('')).string + modadjustments + '**' : ''} `;
+${score.passed ? helper.vars.emojis.grades[score.rank] : helper.vars.emojis.grades.F + `(${helper.vars.emojis.grades[score.rank]} if pass)`} | \`${helper.tools.calculate.numberShorthand(helper.tools.other.getTotalScore(score))}\` | ${tempScore.mods.length > 0 && preset != 'single_map' ? ' **' + osumodcalc.mod.order(tempScore.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' : ''} `;
         if (filter.isnochoke && score.statistics.miss > 0) {
             let rm = score.statistics.miss;
             score.statistics.miss = 0;
-            let na = osumodcalc.calcgrade(score.statistics.great, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
+            let na: number = 1;
+            switch (osumodcalc.mode.toName(score.ruleset_id)) {
+                case 'osu': default:
+                    na = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
+                    break;
+                case 'taiko':
+                    na = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
+                    break;
+                case 'fruits':
+                    na = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
+                    break;
+                case 'mania':
+                    na = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
+                    break;
+            }
             info +=
                 `| **Removed ${rm}❌**\n\`${returnHits(score.statistics, score.ruleset_id).short}\` | ${combo} | ${(score.accuracy * 100).toFixed(2)}% ->  **${na.toFixed(2)}%**`;
         } else {
@@ -161,9 +175,9 @@ export async function filterScores(
         title: string,
         artist: string,
         version: string,
-        modsInclude: string,
-        modsExact: string,
-        modsExclude: string,
+        modsInclude: osumodcalc.types.Mod[],
+        modsExact: (osumodcalc.types.Mod | 'NONE')[],
+        modsExclude: osumodcalc.types.Mod[],
         rank: string,
         pp: string,
         score: string,
@@ -221,15 +235,11 @@ export async function filterScores(
         const tempArg = argRange(filter.bpm, true);
         newScores = newScores.filter(score => filterArgRange((overrideMap ?? score.beatmap).id, tempArg));
     }
-    if (filter?.modsInclude?.includes('NM')) {
-        filter.modsExact = filter.modsInclude.replace('NM', '');
-        filter.modsInclude = null;
-    }
     if (filter?.modsInclude) {
         newScores = newScores.filter(score => {
             let x: boolean = true;
             score.mods.forEach(mod => {
-                if (!osumodcalc.modHandler(filter.modsInclude, osumodcalc.ModeIntToName(score.ruleset_id)).includes(mod.acronym as osumodcalc.Mods)) {
+                if (!osumodcalc.mod.fix(filter.modsInclude, osumodcalc.mode.toName(score.ruleset_id)).includes(mod.acronym as osumodcalc.types.Mod)) {
                     x = false;
                 }
             });
@@ -237,13 +247,13 @@ export async function filterScores(
         });
     }
     if (filter?.modsExact && !filter.modsInclude) {
-        if (['NM', 'NONE', 'NO', 'NOMOD'].some(mod => mod == filter.modsExact.toUpperCase())) {
+        if (filter.modsExact.includes('NONE')) {
             newScores = newScores.filter(score => score.mods.length == 0 || score.mods.map(x => x.acronym).join('') == 'CL' || score.mods.map(x => x.acronym).join('') == 'LZ');
         } else {
-            newScores = newScores.filter(score => score.mods.map(x => x.acronym).join('') == osumodcalc.modHandler(filter.modsExact, osumodcalc.ModeIntToName(score.ruleset_id)).join(''));
+            newScores = newScores.filter(score => score.mods.map(x => x.acronym).join('') == osumodcalc.mod.fix(filter.modsExact as osumodcalc.types.Mod[], osumodcalc.mode.toName(score.ruleset_id)).join(''));
         }
     } else if (filter?.modsExclude) {
-        const xlModsArr = osumodcalc.modHandler(filter.modsExclude, osumodcalc.ModeIntToName(newScores?.[0]?.ruleset_id ?? 0));
+        const xlModsArr = osumodcalc.mod.fix(filter.modsExclude, osumodcalc.mode.toName(newScores?.[0]?.ruleset_id ?? 0));
         if (filter.modsExclude.includes('DT') && filter.modsExclude.includes('NC')) {
             xlModsArr.push('DT');
         }
@@ -253,7 +263,7 @@ export async function filterScores(
         newScores = newScores.filter(score => {
             let x: boolean = true;
             score.mods.forEach(mod => {
-                if (xlModsArr.includes(mod.acronym as osumodcalc.Mods)) {
+                if (xlModsArr.includes(mod.acronym as osumodcalc.types.Mod)) {
                     x = false;
                 }
             });
@@ -271,11 +281,25 @@ export async function filterScores(
                         let tempmss = score.statistics.miss;
                         let usestats = score.statistics;
                         usestats.miss = 0;
-                        let useacc = osumodcalc.calcgrade(usestats.great, usestats.ok, usestats.meh, 0).accuracy;
+                        let useacc = 1;
+                        switch (osumodcalc.mode.toName(score.ruleset_id)) {
+                            case 'osu': default:
+                                useacc = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
+                                break;
+                            case 'taiko':
+                                useacc = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
+                                break;
+                            case 'fruits':
+                                useacc = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
+                                break;
+                            case 'mania':
+                                useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
+                                break;
+                        }
                         perf = await helper.tools.performance.calcFullCombo({
                             mapid: overrideMap?.id ?? score.beatmap_id,
                             mode: score.ruleset_id,
-                            mods: score.mods.map(x => x.acronym).join(''),
+                            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                             accuracy: useacc,
                             clockRate: helper.tools.performance.getModSpeed(score.mods),
                             stats: score.statistics,
@@ -287,7 +311,7 @@ export async function filterScores(
                         perf = await helper.tools.performance.calcScore({
                             mapid: overrideMap?.id ?? score.beatmap_id,
                             mode: score.ruleset_id,
-                            mods: score.mods.map(x => x.acronym).join(''),
+                            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                             accuracy: score.accuracy,
                             clockRate: helper.tools.performance.getModSpeed(score.mods),
                             stats: score.statistics,
@@ -956,7 +980,7 @@ export function CurrentToLegacyScore(score: apitypes.Score): apitypes.ScoreLegac
         match: null,
         max_combo: score.max_combo,
         mode_int: score.ruleset_id,
-        mode: osumodcalc.ModeIntToName(score.ruleset_id),
+        mode: osumodcalc.mode.toName(score.ruleset_id),
         mods: score.mods.map(x => x.acronym),
         passed: score.passed,
         perfect: score.is_perfect_combo,
@@ -1062,3 +1086,10 @@ const filterArgRange = (value: number, args: {
     }
     return keep;
 };
+
+/**
+ * split string by every x characters
+ */
+export function splitStringBy(str: string, every: number) {
+    return str.replace(eval(`/(.{${every}})/g`), "$1 ").split(' ');
+}

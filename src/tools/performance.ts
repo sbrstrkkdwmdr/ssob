@@ -9,7 +9,7 @@ import * as apitypes from '../types/osuapi.js';
 export async function calcScore(input: {
     mapid: number,
     mode: rosu.GameMode,
-    mods: string,
+    mods: osumodcalc.types.Mod[],
     accuracy: number,
     clockRate?: number,
     stats?: apitypes.ScoreStatistics,
@@ -31,11 +31,6 @@ export async function calcScore(input: {
     if (data.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(data.mode);
     }
-    const mods = data.mods ?
-        data.mods.length < 1 ?
-            'NM' :
-            data.mods :
-        'NM';
     if (isNaN(data.accuracy)) {
         data.accuracy = 100;
     }
@@ -46,7 +41,7 @@ export async function calcScore(input: {
         data.accuracy /= 100;
     }
     const baseScore: rosu.PerformanceArgs = {
-        mods: osumodcalc.ModStringToInt(mods),
+        mods: input.mods,
         accuracy: data.accuracy ?? 100,
     };
     const oldStats = helper.tools.other.lazerToOldStatistics(data.stats, data.mode, true);
@@ -100,7 +95,7 @@ export async function calcScore(input: {
 export async function calcFullCombo(input: {
     mapid: number,
     mode: rosu.GameMode,
-    mods: string,
+    mods: osumodcalc.types.Mod[],
     accuracy: number,
     clockRate?: number,
     stats?: apitypes.ScoreStatistics,
@@ -138,7 +133,7 @@ export async function calcFullCombo(input: {
 export async function calcMap(input: {
     mapid: number,
     mode: rosu.GameMode,
-    mods: string,
+    mods: osumodcalc.types.Mod[],
     mapLastUpdated: Date,
     clockRate: number,
     customCS?: number,
@@ -172,7 +167,7 @@ export async function calcMap(input: {
 export async function calcStrains(input: {
     mapid: number,
     mode: rosu.GameMode,
-    mods: string,
+    mods: osumodcalc.types.Mod[],
     mapLastUpdated: Date,
 }) {
     if (!fs.existsSync(helper.vars.path.main + '/files/maps/')) {
@@ -186,7 +181,7 @@ export async function calcStrains(input: {
     }
     const strainValues =
         new rosu.Difficulty({
-            mods: osumodcalc.ModStringToInt(input.mods),
+            mods: input.mods
         })
             .strains(map);
     const straintimes = [];
@@ -292,7 +287,7 @@ export function template(mapdata: apitypes.Beatmap): rosu.PerformanceAttributes 
 export async function fullPerformance(
     mapid: number,
     mode: rosu.GameMode,
-    mods: string,
+    mods: osumodcalc.types.Mod[],
     accuracy: number,
     clockRate?: number,
     stats?: apitypes.ScoreStatistics,

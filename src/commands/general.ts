@@ -1,13 +1,9 @@
 import Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../helper.js';
 import * as bottypes from '../types/bot.js';
-import * as weathertypes from '../types/openmeteoapi.js';
-import * as countrytypes from '../types/restcountriesapi.js';
 import * as tz from '../vars/timezones.js';
 
 import * as fs from 'fs';
-import * as luxon from 'luxon';
 import moment from 'moment';
 import pkgjson from '../../package.json';
 import { Command } from './command.js';

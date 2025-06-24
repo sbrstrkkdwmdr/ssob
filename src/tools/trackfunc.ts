@@ -1,6 +1,6 @@
 import * as Discord from 'discord.js';
 import fs from 'fs';
-import Sequelize from 'sequelize';
+import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../helper.js';
 import * as apitypes from '../types/osuapi.js';
 import * as tooltypes from '../types/tools.js';
@@ -108,8 +108,7 @@ export async function getEmbed(
 
     const overrides = helper.tools.calculate.modOverrides(curscore.mods);
     const perf = await helper.tools.performance.calcScore({
-        mods: curscore.mods.map(x => x.acronym).join('').length > 1 ?
-            curscore.mods.map(x => x.acronym).join('') : 'NM',
+        mods: curscore.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
         mode: curscore.ruleset_id,
         mapid: curscore.beatmap.id,
         stats: scorestats,
@@ -123,8 +122,7 @@ export async function getEmbed(
         clockRate: overrides.speed,
     });
     const fcperf = await helper.tools.performance.calcFullCombo({
-        mods: curscore.mods.map(x => x.acronym).join('').length > 1 ?
-            curscore.mods.map(x => x.acronym).join('') : 'NM',
+        mods: curscore.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
         mode: curscore.ruleset_id,
         mapid: curscore.beatmap.id,
         accuracy: curscore.accuracy,

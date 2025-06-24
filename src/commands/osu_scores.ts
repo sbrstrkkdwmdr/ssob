@@ -27,9 +27,9 @@ export class ScoreListCommand extends OsuCommand {
         filterRank: apitypes.Rank;
         parseScore: boolean;
         parseId: string | number;
-        modsInclude: string;
-        modsExact: string;
-        modsExclude: string;
+        modsInclude: osumodcalc.types.Mod[];
+        modsExact: (osumodcalc.types.Mod | 'NONE')[];
+        modsExclude: osumodcalc.types.Mod[];
         pp: string;
         score: string;
         acc: string;
@@ -56,7 +56,7 @@ export class ScoreListCommand extends OsuCommand {
             filterRank: null,
             parseScore: null,
             parseId: null,
-            modsInclude: null,
+            modsInclude: [],
             modsExact: null,
             modsExclude: null,
             pp: null,
@@ -205,9 +205,16 @@ export class ScoreListCommand extends OsuCommand {
         }
         this.input.args = helper.tools.commands.cleanArgs(this.input.args);
         if (this.input.args.join(' ').includes('+')) {
-            this.params.modsInclude = this.input.args.join(' ').split('+')[1];
-            this.params.modsInclude.includes(' ') ? this.params.modsInclude = this.params.modsInclude.split(' ')[0] : null;
-            this.input.args = this.input.args.join(' ').replace('+', '').replace(this.params.modsInclude, '').split(' ');
+            let temp = this.input.args.join(' ').split('+')[1].trim();
+            if (temp.includes(' ') && temp.split(' ').length > 1) {
+                temp = temp.split(' ')[0];
+            } else if (temp.length < 2) {
+                temp = null;
+            }
+            if (temp) {
+                this.params.modsInclude = osumodcalc.mod.fromString(temp);
+            }
+            this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
         }
 
         await this.paramsMsgExtra();
@@ -235,10 +242,15 @@ export class ScoreListCommand extends OsuCommand {
         this.params.filterTitle = interaction.options.getString('filter') ?? null;
         this.params.parseId = interaction.options.getInteger('parse') ?? null;
         this.params.parseScore = this.params.parseId != null ? true : false;
-        this.params.modsInclude = interaction.options.getString('mods') ?? null;
-        this.params.modsExact = interaction.options.getString('modsExact') ?? null;
-        this.params.modsExclude = interaction.options.getString('modsExclude') ?? null;
-        this.params.filterRank = interaction.options.getString('filterRank') ? osumodcalc.checkGrade(interaction.options.getString('filterRank')) : null;
+        this.params.modsInclude = osumodcalc.mod.fromString(interaction.options.getString('mods')) as osumodcalc.types.Mod[] ?? null;
+        const tempexact = interaction.options.getString('modsExact');
+        if ([].some(x => tempexact.includes(x))) {
+            this.params.modsExact = ['NONE'];
+        } else {
+            this.params.modsExact = osumodcalc.mod.fromString(tempexact) as osumodcalc.types.Mod[] ?? null;
+        }
+        this.params.modsExclude = osumodcalc.mod.fromString(interaction.options.getString('modsExclude')) as osumodcalc.types.Mod[] ?? null;
+        this.params.filterRank = interaction.options.getString('filterRank') as apitypes.Rank;
         this.params.pp = interaction.options.getString('pp') ?? null;
         this.params.score = interaction.options.getString('score') ?? null;
         this.params.acc = interaction.options.getString('acc') ?? null;
@@ -488,13 +500,13 @@ export class ScoreListCommand extends OsuCommand {
         let seturl = '';
         switch (this.type) {
             case 'recent':
-                seturl = `https://osu.ppy.sh/users/${this.osudata.id}/${osumodcalc.ModeIntToName(this.scores?.[0]?.ruleset_id)}#historical`;
+                seturl = `https://osu.ppy.sh/users/${this.osudata.id}/${osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}#historical`;
                 break;
             case 'map':
                 seturl = `https://osu.ppy.sh/b/${this.map.id}`;
                 break;
             default:
-                seturl = `https://osu.ppy.sh/users/${this.osudata.id}/${osumodcalc.ModeIntToName(this.scores?.[0]?.ruleset_id)}#top_ranks`;
+                seturl = `https://osu.ppy.sh/users/${this.osudata.id}/${osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}#top_ranks`;
                 break;
         }
         const scoresEmbed = new Discord.EmbedBuilder()
@@ -548,7 +560,7 @@ export class ScoreListCommand extends OsuCommand {
         });
 
         scoresEmbed.setFooter({
-            text: `${scoresFormat.curPage}/${scoresFormat.maxPage} | ${this.params.mode ?? osumodcalc.ModeIntToName(this.scores?.[0]?.ruleset_id)}`
+            text: `${scoresFormat.curPage}/${scoresFormat.maxPage} | ${this.params.mode ?? osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}`
         });
         if (scoresFormat.text.includes('ERROR')) {
             scoresEmbed.setDescription('**ERROR**\nNo scores found');
@@ -792,12 +804,12 @@ export class SingleScoreCommand extends OsuCommand {
     mapset: apitypes.Beatmapset;
 
     async renderEmbed() {
-        let cg: osumodcalc.AccGrade;
+        let cg;
         const gamehits = this.score.statistics;
         apitypes.RulesetEnum.osu;
         switch (this.score.ruleset_id) {
             case apitypes.RulesetEnum.osu: default:
-                cg = osumodcalc.calcgrade(
+                cg = osumodcalc.accuracy.standard(
                     gamehits.great,
                     (gamehits.ok ?? 0),
                     (gamehits.meh ?? 0),
@@ -805,26 +817,26 @@ export class SingleScoreCommand extends OsuCommand {
                 );
                 break;
             case apitypes.RulesetEnum.taiko:
-                cg = osumodcalc.calcgradeTaiko(
+                cg = osumodcalc.accuracy.taiko(
                     gamehits.great,
                     (gamehits.good ?? 0),
                     (gamehits.miss ?? 0)
                 );
                 break;
             case apitypes.RulesetEnum.fruits:
-                cg = osumodcalc.calcgradeCatch(
+                cg = osumodcalc.accuracy.fruits(
                     gamehits.great,
                     (gamehits.ok ?? 0),
-                    (gamehits.meh ?? 0),
-                    gamehits.small_tick_hit,
+                    (gamehits.small_tick_hit ?? 0),
+                    (gamehits.small_tick_miss ?? 0),
                     (gamehits.miss ?? 0)
                 );
                 break;
             case apitypes.RulesetEnum.mania:
-                cg = osumodcalc.calcgradeMania(
+                cg = osumodcalc.accuracy.mania(
                     (gamehits.perfect ?? 0),
                     gamehits.great,
-                    gamehits.good,
+                    gamehits.good ?? 0,
                     (gamehits.ok ?? 0),
                     (gamehits.meh ?? 0),
                     (gamehits.miss ?? 0)
@@ -876,8 +888,7 @@ export class SingleScoreCommand extends OsuCommand {
             perfs = await helper.tools.performance.fullPerformance(
                 this.score.beatmap.id,
                 this.score.ruleset_id,
-                this.score.mods.map(x => x.acronym).join('').length > 1 ?
-                    this.score.mods.map(x => x.acronym).join('') : 'NM',
+                this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                 this.score.accuracy,
                 overrides.speed,
                 this.score.statistics,
@@ -985,14 +996,14 @@ ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.sco
         switch (this.type) {
             case 'default':
                 embed.setTitle(fulltitle)
-                    .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.OrderMods(this.score.mods.map(x => x.acronym).join('').toUpperCase()).string + modadjustments + ' |' : ''} <t:${new Date(this.score.ended_at).getTime() / 1000}:R>
+                    .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments + ' |' : ''} <t:${new Date(this.score.ended_at).getTime() / 1000}:R>
 ${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.vars.emojis.gamemodes[this.score.ruleset_id]}
 `);
                 helper.tools.formatter.userAuthor(this.osudata, embed, this.params.overrideAuthor);
                 break;
             case 'recent':
                 embed.setTitle(`#${this.params.page + 1} most recent ${this.params.showFails == 1 ? 'play' : 'pass'} for ${this.score.user.username} | <t:${new Date(this.score.ended_at).getTime() / 1000}:R>`)
-                    .setDescription(`[\`${fulltitle}\`](https://osu.ppy.sh/b/${this.map.id}) ${this.score.mods.length > 0 ? '+' + osumodcalc.OrderMods(this.score.mods.map(x => x.acronym).join('').toUpperCase()).string + modadjustments : ''} 
+                    .setDescription(`[\`${fulltitle}\`](https://osu.ppy.sh/b/${this.map.id}) ${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments : ''} 
 ${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.vars.emojis.gamemodes[this.score.ruleset_id]}
 ${helper.tools.formatter.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
 `);
@@ -1007,7 +1018,7 @@ ${helper.tools.formatter.dateToDiscordFormat(new Date(this.score.ended_at), 'F')
         const strains = await helper.tools.performance.calcStrains({
             mapid: map.id,
             mode: score.ruleset_id,
-            mods: score.mods.map(x => x.acronym).join(''),
+            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
             mapLastUpdated: new Date(map.last_updated)
         });
         try {
@@ -1210,13 +1221,13 @@ export class ScoreParse extends SingleScoreCommand {
             {
                 id: `${this.score.id}`,
                 apiData: this.score,
-                mods: this.score.mods.map(x => x.acronym).join()
+                mods: this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]
             });
         helper.tools.data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.map.id}`,
                 apiData: null,
-                mods: this.score.mods.map(x => x.acronym).join()
+                mods: this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]
             }
         );
 
@@ -1439,13 +1450,13 @@ export class Recent extends SingleScoreCommand {
             {
                 id: `${this.score.id}`,
                 apiData: this.score,
-                mods: this.score.mods.map(x => x.acronym).join()
+                mods: this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]
             });
         helper.tools.data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.map.id}`,
                 apiData: null,
-                mods: this.score.mods.map(x => x.acronym).join()
+                mods: this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]
             }
         );
         helper.tools.commands.storeButtonArgs(this.input.id, {
@@ -1468,7 +1479,7 @@ export class Recent extends SingleScoreCommand {
 export class MapLeaderboard extends OsuCommand {
     declare protected params: {
         mapid: number;
-        mapmods: string;
+        mapmods: osumodcalc.types.Mod[];
         page: number;
         parseId: number;
         parseScore: boolean;
@@ -1478,7 +1489,7 @@ export class MapLeaderboard extends OsuCommand {
         this.name = 'MapLeaderboard';
         this.params = {
             mapid: undefined,
-            mapmods: undefined,
+            mapmods: [],
             page: undefined,
             parseId: undefined,
             parseScore: false,
@@ -1499,9 +1510,16 @@ export class MapLeaderboard extends OsuCommand {
         }
 
         if (this.input.args.join(' ').includes('+')) {
-            this.params.mapmods = this.input.args.join(' ').split('+')[1];
-            this.params.mapmods.includes(' ') ? this.params.mapmods = this.params.mapmods.split(' ')[0] : null;
-            this.input.args = this.input.args.join(' ').replace('+', '').replace(this.params.mapmods, '').split(' ');
+            let temp = this.input.args.join(' ').split('+')[1].trim();
+            if (temp.includes(' ') && temp.split(' ').length > 1) {
+                temp = temp.split(' ')[0];
+            } else if (temp.length < 2) {
+                temp = null;
+            }
+            if (temp) {
+                this.params.mapmods = osumodcalc.mod.fromString(temp);
+            }
+            this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
         }
         this.input.args = helper.tools.commands.cleanArgs(this.input.args);
 
@@ -1512,7 +1530,7 @@ export class MapLeaderboard extends OsuCommand {
         this.commanduser = interaction?.member?.user ?? interaction?.user;
         this.params.mapid = interaction.options.getInteger('id');
         this.params.page = interaction.options.getInteger('page');
-        this.params.mapmods = interaction.options.getString('mods');
+        this.params.mapmods = osumodcalc.mod.fromString(interaction.options.getString('mods')) ?? null;
         this.params.parseId = interaction.options.getInteger('parse');
         if (this.params.parseId != null) {
             this.params.parseScore = true;
@@ -1589,7 +1607,7 @@ export class MapLeaderboard extends OsuCommand {
 
         let mods: string;
         if (this.params.mapmods) {
-            mods = osumodcalc.OrderMods(this.params.mapmods).string + '';
+            mods = osumodcalc.mod.order(this.params.mapmods).join('');
         }
         const lbEmbed = new Discord.EmbedBuilder();
 
@@ -1601,7 +1619,7 @@ export class MapLeaderboard extends OsuCommand {
         ) {
             lbdataReq = helper.tools.data.findFile(this.input.id, 'lbdata');
         } else {
-            lbdataReq = await helper.tools.api.getMapLeaderboardNonLegacy(this.params.mapid, mapdata.mode, mods, []);
+            lbdataReq = await helper.tools.api.getMapLeaderboardNonLegacy(this.params.mapid, mapdata.mode, this.params.mapmods, []);
         }
         const lbdataf: apitypes.BeatmapScores<apitypes.Score> = lbdataReq.apiData;
         if (lbdataReq?.error) {
@@ -1708,7 +1726,7 @@ export class MapLeaderboard extends OsuCommand {
 
         buttons.addComponents(
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Map-${this.name}-any-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods != 'NM' ? '+' + this.params.mapmods : ''}`)
+                .setCustomId(`${helper.vars.versions.releaseDate}-Map-${this.name}-any-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
                 .setStyle(helper.vars.buttons.type.current)
                 .setEmoji(helper.vars.buttons.label.extras.map)
         );
@@ -1745,14 +1763,14 @@ export class ReplayParse extends SingleScoreCommand {
                 {
                     id: `${this.map.id}`,
                     apiData: null,
-                    mods: osumodcalc.ModIntToString(score.info?.mods?.bitwise ?? 0)
+                    mods: osumodcalc.mod.intToAcronym(score.info?.mods?.bitwise ?? 0)
                 }
             ) : '';
         }
         this.mapset = this.map.beatmapset;
 
         try {
-            this.osudata = await this.getProfile(score.info.username, osumodcalc.ModeIntToName(score.info.rulesetId));
+            this.osudata = await this.getProfile(score.info.username, osumodcalc.mode.toName(score.info.rulesetId));
         } catch (e) {
             return;
         }
@@ -1808,11 +1826,8 @@ export class ReplayParse extends SingleScoreCommand {
     }
     setScore(score: osuclasses.Score) {
         const tmods =
-            typeof score.info.rawMods == 'string' ? osumodcalc.OrderMods(score.info.rawMods) :
-                osumodcalc.OrderMods(osumodcalc.ModIntToString(score.info.rawMods));
-        const mods: apitypes.Mod[] = tmods.array.map(x => {
-            return { acronym: x };
-        });
+            typeof score.info.rawMods == 'string' ? osumodcalc.mod.order(osumodcalc.mod.fromString(score.info.rawMods)) :
+                osumodcalc.mod.order(osumodcalc.mod.intToAcronym(score.info.rawMods));
         this.score = {
             accuracy: score.info.accuracy,
             classic_total_score: score.info.totalScore,
@@ -1835,7 +1850,7 @@ export class ReplayParse extends SingleScoreCommand {
                 small_tick_hit: 0, // count 50
                 legacy_combo_increase: 0, // max stats
             },
-            mods,
+            mods: tmods.map(x => { return { acronym: x }; }),
             passed: score.info.passed,
             playlist_item_id: 0,
             preserve: false,
@@ -2070,8 +2085,7 @@ export class ScoreStats extends OsuCommand {
                 for (const score of scoresdata) {
                     calculations.push(
                         await helper.tools.performance.calcScore({
-                            mods: score.mods.map(x => x.acronym).join('').length > 1 ?
-                                score.mods.map(x => x.acronym).join('') : 'NM',
+                            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                             mode: score.ruleset_id,
                             mapid: score.beatmap.id,
                             stats: score.statistics,
@@ -2440,7 +2454,7 @@ export class Simulate extends OsuCommand {
         const perfs = await helper.tools.performance.fullPerformance(
             this.params.mapid,
             0,
-            this.params.mods,
+            osumodcalc.mod.fromString(this.params.mods),
             this.params.acc,
             this.params.overrideSpeed,
             scorestat,
@@ -2459,8 +2473,7 @@ export class Simulate extends OsuCommand {
         if (gotTot != mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) {
             use300s += (mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) - use300s;
         }
-
-        const useAcc = osumodcalc.calcgrade(
+        const useAcc = osumodcalc.accuracy.standard(
             use300s,
             this.params.n100 ?? 0,
             this.params.n50 ?? 0,
@@ -2468,7 +2481,7 @@ export class Simulate extends OsuCommand {
         );
 
         const mapPerf = await helper.tools.performance.calcMap({
-            mods: this.params.mods,
+            mods: osumodcalc.mod.fromString(this.params.mods),
             mode: 0,
             mapid: this.params.mapid,
             clockRate: this.params.overrideSpeed,

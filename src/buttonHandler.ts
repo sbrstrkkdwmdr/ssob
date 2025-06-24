@@ -72,7 +72,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         'Changelog',
     ];
     const ScoreSortCommands = [
-        'Firsts', 'MapLeaderboard', 'NoChokes', 'OsuTop', 'Pinned', 'RecentList', 'MapScores', 
+        'Firsts', 'MapLeaderboard', 'NoChokes', 'OsuTop', 'Pinned', 'RecentList', 'MapScores',
 
     ];
     if (buttonType == 'Search' && PageOnlyCommands.includes(cmd)) {
@@ -138,7 +138,12 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         if (buttonsplit[5].includes('+')) {
             const temp = buttonsplit[5].split('+');
             overrides.id = temp[0];
-            overrides.filterMods = temp[1];
+            const fm = temp[1];
+            if (temp[1].includes(',')) {
+                overrides.filterMods = fm.split(',') as osumodcalc.types.Mod[];
+            } else {
+                overrides.filterMods = [fm as osumodcalc.types.Mod];
+            }
         }
         overrides.commandAs = 'interaction';
         overrides.commanduser = interaction.member.user as Discord.User;
@@ -168,9 +173,15 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
                 // #<mode>/id
                 overrides.id = curEmbed.url.split('#')[1].split('/')[1];
                 overrides.mode = curEmbed.url.split('#')[1].split('/')[0] as apitypes.GameMode;
-                overrides.filterMods = curEmbed.title?.split('+')?.[1] && curEmbed.title?.split('+')?.[1] != 'NM' && !osumodcalc.unrankedMods_stable(curEmbed.title?.split('+')?.[1])
+                const fm = curEmbed.title?.split('+')?.[1] && curEmbed.title?.split('+')?.[1] != 'NM'
                     ? curEmbed.title?.split('+')?.[1]
                     : null;
+                if (fm.includes(',')) {
+                    overrides.filterMods = fm.split(',') as osumodcalc.types.Mod[];
+                } else if (fm != null) {
+                    overrides.filterMods = [fm as osumodcalc.types.Mod];
+                }
+
                 overrides.commandAs = 'interaction';
 
                 overrides.commanduser = interaction.member.user as Discord.User;

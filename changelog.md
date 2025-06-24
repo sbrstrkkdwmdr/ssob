@@ -10,6 +10,9 @@
 
 -   rename `Leaderboard` to `ServerLeaderboard`
 -   edit `ServerLeaderboard` aliases (['serverlb', 'serverleaderboard'])
+-   update osumodcalculator to 2.0.2
+-   use mod acronyms instead of int in rosu-pp
+-   use array of mods instead of strings
 
 ### Added
 
@@ -19,6 +22,7 @@
 
 -   remove `leaderboard` alias from maplb
 -   `Convert` in command data
+-   unused API stuff
 
 ## [5.1.1] - 2025-06-12
 
