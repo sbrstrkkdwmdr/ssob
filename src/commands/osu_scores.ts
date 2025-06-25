@@ -2451,11 +2451,23 @@ export class Simulate extends OsuCommand {
             miss: this.params.nMiss ?? 0,
         };
 
+        let use300s = (this.params.n300 ?? 0);
+        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
+        if (gotTot != mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) {
+            use300s += (mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) - use300s;
+        }
+        const useAcc = this.params.acc ?? osumodcalc.accuracy.standard(
+            use300s,
+            this.params.n100 ?? 0,
+            this.params.n50 ?? 0,
+            this.params.nMiss ?? 0
+        ).accuracy;
+
         const perfs = await helper.tools.performance.fullPerformance(
             this.params.mapid,
             0,
             osumodcalc.mod.fromString(this.params.mods),
-            this.params.acc,
+            useAcc / 100,
             this.params.overrideSpeed,
             scorestat,
             this.params.combo,
@@ -2467,18 +2479,6 @@ export class Simulate extends OsuCommand {
             this.params.customHP,
         );
         helper.tools.data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
-
-        let use300s = (this.params.n300 ?? 0);
-        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
-        if (gotTot != mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) {
-            use300s += (mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) - use300s;
-        }
-        const useAcc = osumodcalc.accuracy.standard(
-            use300s,
-            this.params.n100 ?? 0,
-            this.params.n50 ?? 0,
-            this.params.nMiss ?? 0
-        );
 
         const mapPerf = await helper.tools.performance.calcMap({
             mods: osumodcalc.mod.fromString(this.params.mods),
@@ -2498,7 +2498,7 @@ export class Simulate extends OsuCommand {
                 {
                     name: 'Score Details',
                     value:
-                        `${(this.params.acc ?? useAcc?.accuracy)?.toFixed(2)}% | ${this.params.nMiss ?? 0}x misses
+                        `${(useAcc)?.toFixed(2)}% | ${this.params.nMiss ?? 0}x misses
     ${this.params.combo ?? mxCombo}x/**${mxCombo}**x
     ${this.params.mods ?? 'No mods'}
     \`${this.params.n300}/${this.params.n100}/${this.params.n50}/${this.params.nMiss}\`
@@ -2510,7 +2510,7 @@ export class Simulate extends OsuCommand {
                     name: 'Performance',
                     value:
                         `
-    ${perfs[0].pp?.toFixed(2)}pp | ${perfs[1].pp?.toFixed(2)}pp if ${(this.params.acc ?? useAcc?.accuracy)?.toFixed(2)}% FC
+    ${perfs[0].pp?.toFixed(2)}pp | ${perfs[1].pp?.toFixed(2)}pp if ${(useAcc)?.toFixed(2)}% FC
     SS: ${mapPerf[0].pp?.toFixed(2)}
     99: ${mapPerf[1].pp?.toFixed(2)}
     98: ${mapPerf[2].pp?.toFixed(2)}

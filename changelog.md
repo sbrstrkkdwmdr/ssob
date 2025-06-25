@@ -6,11 +6,15 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Fixed
+
+- simulate having under-estimated values
+
 ### Changed
 
 -   rename `Leaderboard` to `ServerLeaderboard`
 -   edit `ServerLeaderboard` aliases (['serverlb', 'serverleaderboard'])
--   update osumodcalculator to 2.0.2
+-   update osumodcalculator to 2.0.3
 -   use mod acronyms instead of int in rosu-pp
 -   use array of mods instead of strings
 
