@@ -1,9 +1,7 @@
 import * as Discord from 'discord.js';
 import fs from 'fs';
 import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import * as apitypes from '../types/osuapi.js';
+import * as helper from '../helper';
 
 export async function sendMessage(input: {
     type: 'message' | 'interaction' | 'link' | 'button' | "other",
@@ -209,7 +207,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
 
     const object: {
         set: number,
-        mode: apitypes.GameMode,
+        mode: helper.osuapi.types_v2.GameMode,
         map: number,
     } = {
         set: null,
@@ -234,7 +232,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
         case url.includes('?m='): {
             const modeTemp = url.split('?m=')[1];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as apitypes.GameMode;
+                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
             } else {
                 object.mode = osumodcalc.mode.toName(+modeTemp);
             }
@@ -255,7 +253,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             object.set = +url.split('beatmapsets/')[1].split('#')[0];
             const modeTemp = url.split('#')[1].split('/')[0];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as apitypes.GameMode;
+                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
             } else {
                 object.mode = osumodcalc.mode.toName(+modeTemp);
             }
@@ -265,7 +263,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             object.set = +url.split('/s/')[1].split('#')[0];
             const modeTemp = url.split('#')[1].split('/')[0];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as apitypes.GameMode;
+                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
             } else {
                 object.mode = osumodcalc.mode.toName(+modeTemp);
             }
@@ -282,8 +280,8 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             break;
     }
     // if (callIfMapIdNull && object.map == null && object.set) {
-    //     const bmsdataReq = await helper.tools.api.getMapset(object.set, []);
-    //     object.map = (bmsdataReq.apiData as apitypes.Beatmapset)?.beatmaps?.[0]?.id ?? null;
+    //     const bmsdataReq = await helper.api.getMapset(object.set, []);
+    //     object.map = (bmsdataReq.apiData as helper.osuapi.types_v2.Beatmapset)?.beatmaps?.[0]?.id ?? null;
     // }
     return object;
 }
@@ -319,7 +317,7 @@ export function fetchUser(args: string[]) {
     }
     const object: {
         id: string,
-        mode: apitypes.GameMode,
+        mode: helper.osuapi.types_v2.GameMode,
         args: string[];
     } = {
         id: null,
@@ -335,7 +333,7 @@ export function fetchUser(args: string[]) {
      * {username}
      * -u
      */
-    const userArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.user, args, true, 'string', true, false);
+    const userArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.user, args, true, 'string', true, false);
     switch (true) {
         case userArgFinder.found:
             if (userArgFinder.found) {
@@ -351,7 +349,7 @@ export function fetchUser(args: string[]) {
                     object.id = url.split('/users/')[1];
                     if (url.split('/users/')[1].includes('/')) {
                         object.id = url.split('/users/')[1].split('/')[0];
-                        object.mode = (url.split('/users/')[1].split('/')[1]) as apitypes.GameMode;
+                        object.mode = (url.split('/users/')[1].split('/')[1]) as helper.osuapi.types_v2.GameMode;
                     }
                     break;
             }
@@ -450,7 +448,7 @@ export function scoreIdFromLink(url: string) {
     }
     const object: {
         id: string,
-        mode: apitypes.GameMode,
+        mode: helper.osuapi.types_v2.GameMode,
     } = {
         id: null,
         mode: null,
@@ -462,7 +460,7 @@ export function scoreIdFromLink(url: string) {
     object.id = url.split('/scores/')[1];
     if (url.split('/scores/')[1].includes('/')) {
         object.id = url.split('/scores/')[1].split('/')[1];
-        object.mode = helper.tools.other.modeValidator(url.split('/scores/')[1].split('/')[0]);
+        object.mode = helper.other.modeValidator(url.split('/scores/')[1].split('/')[0]);
     }
     if (object.id.trim() == "") {
         object.id = null;
@@ -474,7 +472,7 @@ export function scoreIdFromLink(url: string) {
  * @param noLinks ignore "button" and "link" command types
  * logs error, sends error to command user then promptly aborts the command
  */
-export async function errorAndAbort(input: bottypes.commandInput, commandName: string, interactionEdit: boolean, err: string, noLinks: boolean) {
+export async function errorAndAbort(input: helper.bottypes.commandInput, commandName: string, interactionEdit: boolean, err: string, noLinks: boolean) {
     if (!err) {
         err = 'undefined error';
     }
@@ -524,16 +522,16 @@ export type params = {
     user?: string,
     page?: number,
     maxPage?: number,
-    mode?: apitypes.GameMode,
+    mode?: helper.osuapi.types_v2.GameMode,
     userId?: string,
     mapId?: number,
     spotlight?: string | number,
     detailed?: number,
     filter?: string,
     list?: boolean, //recent
-    fails?: number, //recent
+    fails?: 1 | 0, //recent
     nochokes?: boolean, //top
-    rankingtype?: apitypes.RankingType, //ranking
+    rankingtype?: helper.osuapi.types_v2.RankingType, //ranking
     country?: string, //ranking
     //scorelist AND ubm
     parse?: boolean,
@@ -544,7 +542,7 @@ export type params = {
     reverse?: boolean,
     filterMapper?: string,
     filterMods?: string,
-    filterRank?: apitypes.Rank,
+    filterRank?: helper.osuapi.types_v2.Rank,
     modsInclude?: osumodcalc.types.Mod[],
     modsExact?: (osumodcalc.types.Mod | "NONE")[],
     modsExclude?: osumodcalc.types.Mod[],
@@ -555,7 +553,7 @@ export type params = {
     filterMiss?: string,
     filterBpm?: string,
 
-    sort?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | bottypes.ubmSort,
+    sort?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | helper.bottypes.ubmSort,
 
     //map
     overrideSpeed?: number,
@@ -564,8 +562,8 @@ export type params = {
     maptitleq?: string,
 
     //ubm
-    sortMap?: bottypes.ubmSort,
-    mapType?: bottypes.ubmFilter,
+    sortMap?: helper.bottypes.ubmSort,
+    mapType?: helper.bottypes.ubmFilter,
     //compare
     searchIdFirst?: string,
     searchIdSecond?: string,
@@ -575,8 +573,8 @@ export type params = {
 };
 
 export function getButtonArgs(commandId: string | number) {
-    if (fs.existsSync(`${helper.vars.path.main}/cache/params/${commandId}.json`)) {
-        const x = fs.readFileSync(`${helper.vars.path.main}/cache/params/${commandId}.json`, 'utf-8');
+    if (fs.existsSync(`${helper.path.main}/cache/params/${commandId}.json`)) {
+        const x = fs.readFileSync(`${helper.path.main}/cache/params/${commandId}.json`, 'utf-8');
         return JSON.parse(x) as params;
     }
     return {
@@ -588,10 +586,10 @@ export function storeButtonArgs(commandId: string | number, params: params) {
     if (params?.page < 1) {
         params.page = 1;
     }
-    fs.writeFileSync(`${helper.vars.path.main}/cache/params/${commandId}.json`, JSON.stringify(params, null, 2));
+    fs.writeFileSync(`${helper.path.main}/cache/params/${commandId}.json`, JSON.stringify(params, null, 2));
 }
 
-export function buttonPage(page: number, max: number, button: bottypes.buttonType) {
+export function buttonPage(page: number, max: number, button: helper.bottypes.buttonType) {
     switch (button) {
         case 'BigLeftArrow':
             page = 1;
@@ -609,7 +607,7 @@ export function buttonPage(page: number, max: number, button: bottypes.buttonTyp
     return page;
 }
 
-export function buttonDetail(level: number, button: bottypes.buttonType) {
+export function buttonDetail(level: number, button: helper.bottypes.buttonType) {
     switch (button) {
         case 'Detail0':
             level = 0;
@@ -628,25 +626,25 @@ export async function pageButtons(command: string, commanduser: Discord.User | D
     const pgbuttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder()
         .addComponents(
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-BigLeftArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.first).setDisabled(false),
+                .setCustomId(`${helper.versions.releaseDate}-BigLeftArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.first).setDisabled(false),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-LeftArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.previous),
+                .setCustomId(`${helper.versions.releaseDate}-LeftArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.previous),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Search-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.search),
+                .setCustomId(`${helper.versions.releaseDate}-Search-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.search),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-RightArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.next),
+                .setCustomId(`${helper.versions.releaseDate}-RightArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.next),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-BigRightArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.last),
+                .setCustomId(`${helper.versions.releaseDate}-BigRightArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.last),
         );
     return pgbuttons;
 }
@@ -663,9 +661,9 @@ export async function buttonsAddDetails(command: string, commanduser: Discord.Us
         case 0: {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.main.detailMore),
+                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.main.detailMore),
             );
         }
             break;
@@ -673,13 +671,13 @@ export async function buttonsAddDetails(command: string, commanduser: Discord.Us
             const temp: Discord.RestOrArray<Discord.AnyComponentBuilder> = [];
 
             const set0 = new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Detail0-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.main.detailLess);
+                .setCustomId(`${helper.versions.releaseDate}-Detail0-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.main.detailLess);
             const set2 = new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Detail2-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.main.detailMore);
+                .setCustomId(`${helper.versions.releaseDate}-Detail2-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.main.detailMore);
 
             if (disabled) {
                 if (disabled.compact == false) {
@@ -708,9 +706,9 @@ export async function buttonsAddDetails(command: string, commanduser: Discord.Us
         case 2: {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.main.detailLess),
+                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.main.detailLess),
             );
         }
             break;
@@ -733,8 +731,8 @@ export function cleanArgs(args: string[]) {
     return newArgs;
 }
 
-export async function parseArgsMode(input: bottypes.commandInput) {
-    let mode: apitypes.GameMode;
+export async function parseArgsMode(input: helper.bottypes.commandInput) {
+    let mode: helper.osuapi.types_v2.GameMode;
     const otemp = matchArgMultiple(['-o', '-osu'], input.args, false, null, false, false);
     if (otemp.found) {
         mode = 'osu';
@@ -777,20 +775,20 @@ export function startType(object: Discord.Message | Discord.Interaction) {
     }
 }
 
-export async function missingPrevID_map(input: bottypes.commandInput, name: string) {
+export async function missingPrevID_map(input: helper.bottypes.commandInput, name: string) {
     if (input.type != 'button' && input.type != 'link') {
         await sendMessage({
             type: input.type,
             message: input.message,
             interaction: input.interaction,
             args: {
-                content: helper.vars.errors.uErr.osu.map.m_msp,
+                content: helper.errors.uErr.osu.map.m_msp,
                 edit: true
             }
         }, input.canReply);
     }
-    helper.tools.log.commandErr(
-        helper.vars.errors.uErr.osu.map.m_msp,
+    helper.log.commandErr(
+        helper.errors.uErr.osu.map.m_msp,
         input.id,
         name,
         input.message,
@@ -849,16 +847,16 @@ export function disableAllButtons(msg: Discord.Message) {
     });
 }
 
-export function getCommand(query: string): bottypes.commandInfo {
-    return helper.vars.commandData.cmds.find(
+export function getCommand(query: string): helper.bottypes.commandInfo {
+    return helper.commandData.cmds.find(
         x => x.aliases.concat([x.name]).includes(query)
     );
 
 
 }
 
-export function getCommands(query?: string): bottypes.commandInfo[] {
-    return helper.vars.commandData.cmds.filter(
+export function getCommands(query?: string): helper.bottypes.commandInfo[] {
+    return helper.commandData.cmds.filter(
         x => x.category.includes(query)
-    ) ?? helper.vars.commandData.cmds;
+    ) ?? helper.commandData.cmds;
 }

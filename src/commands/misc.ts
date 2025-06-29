@@ -1,7 +1,7 @@
 import Discord from 'discord.js';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import { Command } from './command.js';
+import * as helper from '../helper';
+import * as bottypes from '../types/bot';
+import { Command } from './command';
 
 export class _8Ball extends Command {
     declare protected params: {};
@@ -17,16 +17,16 @@ export class _8Ball extends Command {
         const value = Math.floor(Math.random() * 4);
         switch (value) {
             case 0:
-                this.ctn.content = helper.vars.responses.affirm[Math.floor(Math.random() * helper.vars.responses.affirm.length)];
+                this.ctn.content = helper.responses.affirm[Math.floor(Math.random() * helper.responses.affirm.length)];
                 break;
             case 1:
-                this.ctn.content = helper.vars.responses.negate[Math.floor(Math.random() * helper.vars.responses.negate.length)];
+                this.ctn.content = helper.responses.negate[Math.floor(Math.random() * helper.responses.negate.length)];
                 break;
             case 2:
-                this.ctn.content = helper.vars.responses.huh[Math.floor(Math.random() * helper.vars.responses.huh.length)];
+                this.ctn.content = helper.responses.huh[Math.floor(Math.random() * helper.responses.huh.length)];
                 break;
             case 3: default:
-                this.ctn.content = helper.vars.responses.other[Math.floor(Math.random() * helper.vars.responses.other.length)];
+                this.ctn.content = helper.responses.other[Math.floor(Math.random() * helper.responses.other.length)];
                 break;
         }
 
@@ -47,7 +47,7 @@ export class CoinFlip extends Command {
 
         const arr = ['Heads', 'Tails'];
         const msg = arr[Math.floor(Math.random() * arr.length)];
-        const file = new Discord.AttachmentBuilder(`${helper.vars.path.precomp}/files/coin/${msg}.png`);
+        const file = new Discord.AttachmentBuilder(`${helper.path.precomp}/files/coin/${msg}.png`);
         const embed = new Discord.EmbedBuilder()
             .setTitle(msg)
             .setImage(`attachment://${msg}.png`);
@@ -90,47 +90,41 @@ export class Gif extends Command {
         this.logInput();
         // do stuff
 
-        let gifSelection = [helper.vars.defaults.images.any.url];
+        let gifSelection = [helper.defaults.images.any.url];
         let baseString = 'null';
         const self = this.commanduser.id == this.params.target.id;
         switch (this.params.type) {
             case 'hug': {
-                gifSelection = helper.vars.gif.hug;
                 baseString = self ?
                     'user wants a hug' :
                     'user gives target a big hug';
             }
                 break;
             case 'kiss': {
-                gifSelection = helper.vars.gif.kiss;
                 baseString = self ?
                     'user wants a kiss' :
                     'user kisses target';
             }
                 break;
             case 'lick': {
-                gifSelection = helper.vars.gif.lick;
                 baseString = self ?
                     'user licks themselves' :
                     'user licks target';
             }
                 break;
             case 'pet': {
-                gifSelection = helper.vars.gif.pet;
                 baseString = self ?
                     'user wants to be pet' :
                     'user pets target softly';
             }
                 break;
             case 'punch': {
-                gifSelection = helper.vars.gif.punch;
                 baseString = self ?
                     'user punches themselves' :
                     'user punches target very hard';
             }
                 break;
             case 'slap': {
-                gifSelection = helper.vars.gif.slap;
                 baseString = self ?
                     'user slaps themselves' :
                     'user slaps target very hard';
@@ -138,13 +132,13 @@ export class Gif extends Command {
                 break;
         }
 
-        const gifSearch = await helper.tools.api.getGif(this.params.type);
+        const gifSearch = await helper.api.getGif(this.params.type);
         if (gifSearch?.data?.results?.length > 1) {
             gifSelection = gifSearch?.data?.results?.map(x => x.media_formats.gif.url);
         }
 
         if (gifSelection.length < 1) {
-            gifSelection.push(helper.vars.defaults.images.any.url);
+            gifSelection.push(helper.defaults.images.any.url);
         }
 
         const embed = new Discord.EmbedBuilder()
@@ -178,7 +172,7 @@ export class Janken extends Command {
         await this.setParams();
         this.logInput();
         // do stuff
-        const real = helper.tools.game.jankenConvert(this.params.userchoice);
+        const real = helper.game.jankenConvert(this.params.userchoice);
         if (real == 'INVALID') {
             this.voidcontent();
             this.ctn.content = 'Please input a valid argument';

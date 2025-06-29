@@ -8,7 +8,7 @@
 
 ### Fixed
 
-- simulate having under-estimated values
+-   simulate having under-estimated values
 
 ### Changed
 
@@ -17,6 +17,10 @@
 -   update osumodcalculator to 2.0.3
 -   use mod acronyms instead of int in rosu-pp
 -   use array of mods instead of strings
+-   switch to using [toa](https://github.com/sbrstrkkdwmdr/toa) for osu! api calls
+-   edit helper module
+-   edit tsconfig
+-   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }`
 
 ### Added
 
@@ -27,6 +31,12 @@
 -   remove `leaderboard` alias from maplb
 -   `Convert` in command data
 -   unused API stuff
+-   unused files from old versions
+-   `tz` arg in `Info`
+
+### BREAKING
+
+-   The way cache is stored has been changed slightly. Cache prior to this version should be cleared
 
 ## [5.1.1] - 2025-06-12
 

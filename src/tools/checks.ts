@@ -1,8 +1,7 @@
 import * as Discord from 'discord.js';
 import * as fs from 'fs';
-import * as helper from '../helper.js';
-import * as path from '../path.js';
-import * as bottypes from '../types/bot.js';
+import * as helper from '../helper';
+import * as path from '../path';
 
 export function checkConfig() {
     const config = JSON.parse(fs.readFileSync(path.precomp + '/config/config.json', 'utf-8'));
@@ -11,13 +10,13 @@ export function checkConfig() {
     }
     if (config.hasOwnProperty("osu")) {
         if (!config["osu"].hasOwnProperty("clientId") && typeof config["important"]["clientId"] != "string") {
-            helper.tools.log.stdout("Property `osu.clientId` is invalid or an incorrect type");
-            helper.tools.log.stdout("The bot cannot run without this property");
+            helper.log.stdout("Property `osu.clientId` is invalid or an incorrect type");
+            helper.log.stdout("The bot cannot run without this property");
             process.exit(0);
         }
         if (!config["osu"].hasOwnProperty("clientSecret") && typeof config["important"]["clientSecret"] != "string") {
-            helper.tools.log.stdout("Property `osu.clientSecret` is invalid or an incorrect type");
-            helper.tools.log.stdout("The bot cannot run without this property");
+            helper.log.stdout("Property `osu.clientSecret` is invalid or an incorrect type");
+            helper.log.stdout("The bot cannot run without this property");
             process.exit(0);
         }
 
@@ -25,41 +24,41 @@ export function checkConfig() {
         throw new Error('missing `osu` value in config');
     }
     if (!config.hasOwnProperty("prefix") || typeof config["prefix"] != "string") {
-        helper.tools.log.stdout("Prefix value is either missing or an invalid type\nThe default value of `sbr-` will be used");
+        helper.log.stdout("Prefix value is either missing or an invalid type\nThe default value of `sbr-` will be used");
         config['prefix'] = 'sbr-';
     }
     if (!config.hasOwnProperty("owners")) {
-        helper.tools.log.stdout("owners value is either missing or an invalid type\nThe default value of `['INVALID_ID']` will be used");
+        helper.log.stdout("owners value is either missing or an invalid type\nThe default value of `['INVALID_ID']` will be used");
         config['owners'] = ['INVALID_ID'];
     }
     if (!config.hasOwnProperty("tenorKey") || typeof config["tenorKey"] != "string") {
         config['tenorKey'] = 'INVALID_ID';
-        helper.tools.log.stdout("tenorKey value is either missing or an invalid type\nThe default value of `['INVALID_ID']` will be used");
+        helper.log.stdout("tenorKey value is either missing or an invalid type\nThe default value of `['INVALID_ID']` will be used");
     }
     if (!config.hasOwnProperty("enableTracking") || typeof config["enableTracking"] != "boolean") {
-        helper.tools.log.stdout("enableTracking value is either missing or an invalid type\nThe default value of `false` will be used");
+        helper.log.stdout("enableTracking value is either missing or an invalid type\nThe default value of `false` will be used");
         config['enableTracking'] = false;
     }
     if (config.hasOwnProperty("logs")) {
         if (!config["logs"].hasOwnProperty("console") || typeof config["logs"]["console"] != "boolean") {
-            helper.tools.log.stdout("logs.console value is either missing or an invalid type\nThe default value of `true` will be used");
+            helper.log.stdout("logs.console value is either missing or an invalid type\nThe default value of `true` will be used");
             config['logs']['console'] = false;
 
         }
         if (!config["logs"].hasOwnProperty("file") || typeof config["logs"]["file"] != "boolean") {
-            helper.tools.log.stdout("logs.file value is either missing or an invalid type\nThe default value of `true` will be used");
+            helper.log.stdout("logs.file value is either missing or an invalid type\nThe default value of `true` will be used");
             config['logs']['file'] = false;
 
         }
     } else {
-        helper.tools.log.stdout("Missing log options. Using default values {console:true,file:true}");
+        helper.log.stdout("Missing log options. Using default values {console:true,file:true}");
         config['logs'] = {
             console: true,
             file: true
         };
 
     }
-    return config as bottypes.config;
+    return config as helper.bottypes.config;
 }
 
 /**

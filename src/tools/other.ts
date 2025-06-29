@@ -4,10 +4,9 @@ import Discord from 'discord.js';
 import fs from 'fs';
 import * as osuclasses from 'osu-classes';
 import * as osuparsers from 'osu-parsers';
-import Sequelize from 'sequelize';
-import * as helper from '../helper.js';
-import * as apitypes from '../types/osuapi.js';
-import * as tooltypes from '../types/tools.js';
+import * as rosu from 'rosu-pp-js';
+import * as helper from '../helper';
+
 export function appendUrlParamsString(url: string, params: string[]) {
     let temp = url;
     for (let i = 0; i < params.length; i++) {
@@ -22,24 +21,24 @@ export function appendUrlParamsString(url: string, params: string[]) {
 
 export function debug(data: any, type: string, name: string, serverId: string | number, params: string) {
     const pars = params.replaceAll(',', '=');
-    if (!fs.existsSync(`${helper.vars.path.main}/cache/debug/${type}`)) {
-        fs.mkdirSync(`${helper.vars.path.main}/cache/debug/${type}`);
+    if (!fs.existsSync(`${helper.path.main}/cache/debug/${type}`)) {
+        fs.mkdirSync(`${helper.path.main}/cache/debug/${type}`);
     }
-    if (!fs.existsSync(`${helper.vars.path.main}/cache/debug/${type}/${name}/`)) {
-        fs.mkdirSync(`${helper.vars.path.main}/cache/debug/${type}/${name}`);
+    if (!fs.existsSync(`${helper.path.main}/cache/debug/${type}/${name}/`)) {
+        fs.mkdirSync(`${helper.path.main}/cache/debug/${type}/${name}`);
     }
     try {
         if (data?.input?.config) {
-            data.helper.vars.config = helper.tools.other.censorConfig();
+            data.helper.vars.config = helper.other.censorConfig();
         }
-        fs.writeFileSync(`${helper.vars.path.main}/cache/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
+        fs.writeFileSync(`${helper.path.main}/cache/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
     }
     return;
 }
 
 export function modeValidator(mode: string | number) {
-    let returnf: apitypes.GameMode = 'osu';
+    let returnf: helper.osuapi.types_v2.GameMode = 'osu';
     switch (mode) {
         case 0: case 'osu': default: case 'o': case 'std': case 'standard':
             returnf = 'osu';
@@ -58,7 +57,7 @@ export function modeValidator(mode: string | number) {
 }
 
 export function modeValidatorAlt(mode: string | number) {
-    let returnf: apitypes.GameMode = 'osu';
+    let returnf: helper.osuapi.types_v2.GameMode = 'osu';
 
     if (typeof mode == 'number') {
         switch (mode) {
@@ -382,8 +381,8 @@ export async function graph(
         let i = 1;
         for (const newData of extra) {
             if (newData?.data?.length > 0) {
-                const nHSV = helper.tools.colourcalc.rgbToHsv(101, 101, 135);
-                const newclr = helper.tools.colourcalc.hsvToRgb(nHSV.h + (diff * i), nHSV.s, nHSV.v);
+                const nHSV = helper.colourcalc.rgbToHsv(101, 101, 135);
+                const newclr = helper.colourcalc.hsvToRgb(nHSV.h + (diff * i), nHSV.s, nHSV.v);
                 const xData = {
                     label: newData.label,
                     data: newData.data,
@@ -607,13 +606,13 @@ export async function graph(
     // })
 
     const filename = `${(new Date).getTime()}`;
-    let curt = `${helper.vars.path.main}/cache/graphs/${filename}.jpg`;
+    let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
     try {
         const buffer = tc.toBuffer();
         fs.writeFileSync(curt, buffer);
     } catch (err) {
-        helper.tools.log.stdout(err);
-        curt = `${helper.vars.path.precomp}/files/blank_graph.png`;
+        helper.log.stdout(err);
+        curt = `${helper.path.precomp}/files/blank_graph.png`;
     }
 
     return {
@@ -653,15 +652,15 @@ export function formatHours(arr: string[]) {
 }
 
 export function ubitflagsAsName(flags: Discord.UserFlagsBitField) {
-    helper.tools.log.stdout(flags);
+    helper.log.stdout(flags);
     const fl = flags.toArray();
-    helper.tools.log.stdout(fl);
+    helper.log.stdout(fl);
     return 'aa';
 }
 
 export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     const temp = flags.toArray();
-    const tempMap = temp.map(x => helper.vars.emojis.discord.flags[x]);
+    const tempMap = temp.map(x => helper.emojis.discord.flags[x]);
     const newArr: string[] = [];
     for (let i = 0; i < temp.length; i++) {
         let a = '';
@@ -675,7 +674,7 @@ export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     return newArr;
 }
 
-export function scoreTotalHits(stats: apitypes.ScoreStatistics) {
+export function scoreTotalHits(stats: helper.osuapi.types_v2.ScoreStatistics) {
     let total = 0;
     for (const value in stats) {
         total += stats[value];
@@ -684,7 +683,7 @@ export function scoreTotalHits(stats: apitypes.ScoreStatistics) {
 }
 
 export function scoreIsComplete(
-    stats: apitypes.ScoreStatistics,
+    stats: helper.osuapi.types_v2.ScoreStatistics,
     circles: number,
     sliders: number,
     spinners: number,
@@ -697,7 +696,7 @@ export function scoreIsComplete(
     };
 }
 
-export function filterScoreQuery(scores: apitypes.Score[], search: string) {
+export function filterScoreQuery(scores: helper.osuapi.types_v2.Score[], search: string) {
     return scores.filter((score) =>
         (
             score.beatmapset.title.toLowerCase().replaceAll(' ', '')
@@ -739,13 +738,14 @@ export async function getFailPoint(
 
         }
     } else {
-        helper.tools.log.stdout("Path does not exist:" + mapPath);
+        helper.log.stdout("Path does not exist:" + mapPath);
     }
     return time;
 }
+
 // checks if code is a valid iso 3166-1 alpha-2 code
 export function validCountryCodeA2(code: string) {
-    return helper.vars.iso._3166_1_alpha2.some(x => x == code.toUpperCase());
+    return helper.iso._3166_1_alpha2.some(x => x == code.toUpperCase());
 }
 
 /**
@@ -753,8 +753,8 @@ export function validCountryCodeA2(code: string) {
  * @param defaultToNan - if the stat isnt found, return NaN instead of 0 
  * @returns 
  */
-export function lazerToOldStatistics(stats: apitypes.ScoreStatistics, mode: apitypes.Ruleset, defaultToNan?: boolean): apitypes.Statistics {
-    let foo: apitypes.Statistics;
+export function lazerToOldStatistics(stats: helper.osuapi.types_v2.ScoreStatistics, mode: rosu.GameMode, defaultToNan?: boolean): helper.osuapi.types_v2.Statistics {
+    let foo: helper.osuapi.types_v2.Statistics;
     let dv = defaultToNan ? NaN : 0;
     switch (mode) {
         case 0:
@@ -801,7 +801,7 @@ export function lazerToOldStatistics(stats: apitypes.ScoreStatistics, mode: apit
     return foo;
 }
 
-export function getTotalScore(score: apitypes.Score): number {
+export function getTotalScore(score: helper.osuapi.types_v2.Score): number {
     return score.mods.map(x => x.acronym).includes('CL') ?
         scoreIsStable(score) ?
             score?.legacy_total_score :
@@ -813,7 +813,7 @@ export function getTotalScore(score: apitypes.Score): number {
 /**
  * true for stable, false for lazer
  */
-export function scoreIsStable(score: apitypes.Score): boolean {
+export function scoreIsStable(score: helper.osuapi.types_v2.Score): boolean {
     /**
  * check score is on stable or lazer
  * stable ->

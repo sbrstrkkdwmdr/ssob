@@ -64,13 +64,13 @@ export const uErr = {
             ms: 'Missing arg <SCORE ID>'
         },
         scores: {
-            pinned: 'Could not find the [ID]\'s pinned scores',
+            pinned: 'Could not find [ID]\'s pinned scores',
             pinned_ms: '[ID] has no pinned scores',
-            best: 'Could not find the [ID]\'s top scores',
+            best: 'Could not find [ID]\'s top scores',
             best_ms: '[ID] has no top scores',
-            recent: 'Could not find the [ID]\'s recent scores',
+            recent: 'Could not find [ID]\'s recent scores',
             recent_ms: '[ID] has no recent [MODE] scores',
-            first: 'Could not find the [ID]\'s #1 scores',
+            first: 'Could not find [ID]\'s #1 scores',
             first_ms: '[ID] has no #1 scores',
             map: 'Could not find [ID]\'s scores on beatmap [MID]',
             map_ms: '[ID] has no scores on beatmap [MID]',

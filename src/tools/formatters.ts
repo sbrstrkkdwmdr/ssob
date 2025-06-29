@@ -1,7 +1,6 @@
 import * as Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../helper.js';
-import * as apitypes from '../types/osuapi.js';
+import * as helper from '../helper';
 
 type formatterInfo = {
     text: string,
@@ -22,7 +21,7 @@ const ranks = [
 ];
 
 export async function scoreList(
-    scores: apitypes.Score[],
+    scores: helper.osuapi.types_v2.Score[],
     sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank',
     filter: {
         mapper: string,
@@ -46,9 +45,9 @@ export async function scoreList(
     page: number,
     showOriginalIndex: boolean,
     preset?: 'map_leaderboard' | 'single_map',
-    overrideMap?: apitypes.Beatmap
+    overrideMap?: helper.osuapi.types_v2.BeatmapExtended
 ): Promise<formatterInfo> {
-    const newScores = await filterScores(scores as apitypes.Score[], sort, filter, reverse, overrideMap);
+    const newScores = await filterScores(scores as helper.osuapi.types_v2.Score[], sort, filter, reverse, overrideMap);
     if (newScores.length == 0) {
         return {
             text: 'No scores were found (check the filter options)',
@@ -67,9 +66,9 @@ export async function scoreList(
     for (let i = 0; i < max && i < newScores.length - offset; i++) {
         let score = newScores[i + offset];
         if (!score) break;
-        // let convertedScore = CurrentToLegacyScore(score as apitypes.Score);
-        const overrides = helper.tools.calculate.modOverrides(score.mods);
-        const perfs = await helper.tools.performance.fullPerformance(
+        // let convertedScore = CurrentToLegacyScore(score as helper.osuapi.types_v2.Score);
+        const overrides = helper.calculate.modOverrides(score.mods);
+        const perfs = await helper.performance.fullPerformance(
             overrideMap?.id ?? score.beatmap_id,
             score.ruleset_id,
             score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
@@ -106,11 +105,11 @@ export async function scoreList(
         }
         let combo = `${score?.max_combo}/**${perfs[1].difficulty.maxCombo}x**`;
         if (score.max_combo == perfs[1].difficulty.maxCombo || !score.max_combo) combo = `**${score.max_combo}x**`;
-        const tempScore = score as indexedScore<apitypes.Score>;
+        const tempScore = score as indexedScore<helper.osuapi.types_v2.Score>;
 
         info +=
             `** ${dateToDiscordFormat(new Date(tempScore.ended_at))}
-${score.passed ? helper.vars.emojis.grades[score.rank] : helper.vars.emojis.grades.F + `(${helper.vars.emojis.grades[score.rank]} if pass)`} | \`${helper.tools.calculate.numberShorthand(helper.tools.other.getTotalScore(score))}\` | ${tempScore.mods.length > 0 && preset != 'single_map' ? ' **' + osumodcalc.mod.order(tempScore.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' : ''} `;
+${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[score.rank]} if pass)`} | \`${helper.calculate.numberShorthand(helper.other.getTotalScore(score))}\` | ${tempScore.mods.length > 0 && preset != 'single_map' ? ' **' + osumodcalc.mod.order(tempScore.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' : ''} `;
         if (filter.isnochoke && score.statistics.miss > 0) {
             let rm = score.statistics.miss;
             score.statistics.miss = 0;
@@ -168,7 +167,7 @@ type indexedScore<T> = T & {
 };
 
 export async function filterScores(
-    scores: apitypes.Score[],
+    scores: helper.osuapi.types_v2.Score[],
     sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank',
     filter: {
         mapper: string,
@@ -188,9 +187,9 @@ export async function filterScores(
         isnochoke: boolean,
     },
     reverse: boolean,
-    overrideMap?: apitypes.Beatmap
-): Promise<indexedScore<apitypes.Score>[]> {
-    let newScores = [] as indexedScore<apitypes.Score>[];
+    overrideMap?: helper.osuapi.types_v2.Beatmap
+): Promise<indexedScore<helper.osuapi.types_v2.Score>[]> {
+    let newScores = [] as indexedScore<helper.osuapi.types_v2.Score>[];
     for (let i = 0; i < scores.length; i++) {
         const newScore = { ...scores[i], ...{ originalIndex: i } };
         newScores.push(newScore);
@@ -296,27 +295,27 @@ export async function filterScores(
                                 useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
                                 break;
                         }
-                        perf = await helper.tools.performance.calcFullCombo({
+                        perf = await helper.performance.calcFullCombo({
                             mapid: overrideMap?.id ?? score.beatmap_id,
                             mode: score.ruleset_id,
                             mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                             accuracy: useacc,
-                            clockRate: helper.tools.performance.getModSpeed(score.mods),
+                            clockRate: helper.performance.getModSpeed(score.mods),
                             stats: score.statistics,
                             mapLastUpdated: new Date(score.ended_at),
                         });
                         usestats.miss = tempmss;
                     }
                     else {
-                        perf = await helper.tools.performance.calcScore({
+                        perf = await helper.performance.calcScore({
                             mapid: overrideMap?.id ?? score.beatmap_id,
                             mode: score.ruleset_id,
                             mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                             accuracy: score.accuracy,
-                            clockRate: helper.tools.performance.getModSpeed(score.mods),
+                            clockRate: helper.performance.getModSpeed(score.mods),
                             stats: score.statistics,
                             maxcombo: score.max_combo,
-                            passedObjects: helper.tools.other.scoreTotalHits(score.statistics),
+                            passedObjects: helper.other.scoreTotalHits(score.statistics),
                             mapLastUpdated: new Date(score.ended_at),
                         });
                     }
@@ -354,7 +353,7 @@ export async function filterScores(
 
 
 export function mapList(
-    mapsets: apitypes.Beatmapset[],
+    mapsets: helper.osuapi.types_v2.BeatmapsetExtended[],
     sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length',
     filter: {
         mapper?: string,
@@ -379,8 +378,8 @@ export function mapList(
         const topmap = mapset.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0];
 
         let info = `**#${i + offset + 1}・[\`${mapset.artist} - ${mapset.title}\`](https://osu.ppy.sh/s/${mapset.id})**
-${helper.vars.emojis.rankedstatus[mapset.status]} | ${helper.vars.emojis.gamemodes[topmap.mode]} | ${helper.tools.calculate.secondsToTime(topmap.total_length)} | ${mapset.bpm}${helper.vars.emojis.mapobjs.bpm}
-${helper.tools.calculate.separateNum(mapset.play_count)} plays | ${helper.tools.calculate.separateNum(topmap.passcount)} passes | ${helper.tools.calculate.separateNum(mapset.favourite_count)} favourites
+${helper.emojis.rankedstatus[mapset.status]} | ${helper.emojis.gamemodes[topmap.mode]} | ${helper.calculate.secondsToTime(topmap.total_length)} | ${mapset.bpm}${helper.emojis.mapobjs.bpm}
+${helper.calculate.separateNum(mapset.play_count)} plays | ${helper.calculate.separateNum(topmap.passcount)} passes | ${helper.calculate.separateNum(mapset.favourite_count)} favourites
 Submitted <t:${new Date(mapset.submitted_date).getTime() / 1000}:R> | ${topmap.status == 'ranked' ?
                 `Ranked <t:${Math.floor(new Date(mapset.ranked_date).getTime() / 1000)}:R>` :
                 topmap.status == 'approved' || topmap.status == 'qualified' ?
@@ -401,7 +400,7 @@ Submitted <t:${new Date(mapset.submitted_date).getTime() / 1000}:R> | ${topmap.s
 }
 
 export function filterMaps(
-    mapsets: apitypes.Beatmapset[],
+    mapsets: helper.osuapi.types_v2.BeatmapsetExtended[],
     sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length',
     filter: {
         mapper?: string,
@@ -497,7 +496,7 @@ export function filterMaps(
 }
 
 export function mapPlaysList(
-    mapsets: apitypes.BeatmapPlaycount[],
+    mapsets: helper.osuapi.types_v2.BeatmapPlaycount[],
     sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length',
     filter: {
         mapper?: string,
@@ -521,9 +520,9 @@ export function mapPlaysList(
         if (!map) break;
         map.beatmapset;
         let info = `**#${i + 1}・[\`${map.beatmapset.artist} - ${map.beatmapset.title} [${map.beatmap.version}]\`](https://osu.ppy.sh/b/${map.beatmap.id})**
-**${helper.tools.calculate.separateNum(map.count)}x plays**
-${helper.vars.emojis.rankedstatus[map.beatmapset.status]} | ${helper.vars.emojis.gamemodes[map.beatmap.mode]}
-${helper.tools.calculate.secondsToTime(map.beatmap.total_length)} | ${helper.tools.calculate.separateNum(map.beatmapset.favourite_count)} favourites`;
+**${helper.calculate.separateNum(map.count)}x plays**
+${helper.emojis.rankedstatus[map.beatmapset.status]} | ${helper.emojis.gamemodes[map.beatmap.mode]}
+${helper.calculate.secondsToTime(map.beatmap.total_length)} | ${helper.calculate.separateNum(map.beatmapset.favourite_count)} favourites`;
         info += '\n\n';
         text += info;
     }
@@ -536,7 +535,7 @@ ${helper.tools.calculate.secondsToTime(map.beatmap.total_length)} | ${helper.too
 }
 
 export function filterMapPlays(
-    mapsets: apitypes.BeatmapPlaycount[],
+    mapsets: helper.osuapi.types_v2.BeatmapPlaycount[],
     sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length',
     filter: {
         mapper?: string,
@@ -627,7 +626,7 @@ export function filterMapPlays(
 }
 
 export function userList(
-    users: apitypes.User[],
+    users: helper.osuapi.types_v2.User[],
     sort: 'pp' | 'score' | 'acc',
     filter: {
         country: string;
@@ -693,43 +692,43 @@ export function argRange(arg: string, forceAboveZero: boolean) {
 }
 
 export function hitList(
-    mode: apitypes.GameMode,
-    obj: apitypes.Statistics
+    mode: helper.osuapi.types_v2.GameMode,
+    obj: helper.osuapi.types_v2.Statistics
 ) {
     let hitList: string;
     switch (mode) {
         case 'osu':
         default:
-            hitList = `${helper.tools.calculate.separateNum(obj.count_300)}/${helper.tools.calculate.separateNum(obj.count_100)}/${helper.tools.calculate.separateNum(obj.count_50)}/${helper.tools.calculate.separateNum(obj.count_miss)}`;
+            hitList = `${helper.calculate.separateNum(obj.count_300)}/${helper.calculate.separateNum(obj.count_100)}/${helper.calculate.separateNum(obj.count_50)}/${helper.calculate.separateNum(obj.count_miss)}`;
             break;
         case 'taiko':
-            hitList = `${helper.tools.calculate.separateNum(obj.count_300)}/${helper.tools.calculate.separateNum(obj.count_100)}/${helper.tools.calculate.separateNum(obj.count_miss)}`;
+            hitList = `${helper.calculate.separateNum(obj.count_300)}/${helper.calculate.separateNum(obj.count_100)}/${helper.calculate.separateNum(obj.count_miss)}`;
             break;
         case 'fruits':
-            hitList = `${helper.tools.calculate.separateNum(obj.count_300)}/${helper.tools.calculate.separateNum(obj.count_100)}/${helper.tools.calculate.separateNum(obj.count_50)}/${helper.tools.calculate.separateNum(obj.count_miss)}`;
+            hitList = `${helper.calculate.separateNum(obj.count_300)}/${helper.calculate.separateNum(obj.count_100)}/${helper.calculate.separateNum(obj.count_50)}/${helper.calculate.separateNum(obj.count_miss)}`;
             break;
         case 'mania':
-            hitList = `${helper.tools.calculate.separateNum(obj.count_geki)}/${helper.tools.calculate.separateNum(obj.count_300)}/${helper.tools.calculate.separateNum(obj.count_katu)}/${helper.tools.calculate.separateNum(obj.count_100)}/${helper.tools.calculate.separateNum(obj.count_50)}/${helper.tools.calculate.separateNum(obj.count_miss)}`;
+            hitList = `${helper.calculate.separateNum(obj.count_geki)}/${helper.calculate.separateNum(obj.count_300)}/${helper.calculate.separateNum(obj.count_katu)}/${helper.calculate.separateNum(obj.count_100)}/${helper.calculate.separateNum(obj.count_50)}/${helper.calculate.separateNum(obj.count_miss)}`;
             break;
     }
     return hitList;
 }
 
 export function gradeToEmoji(str: string) {
-    return helper.vars.emojis.grades[str];
+    return helper.emojis.grades[str];
 }
 
 
-export function userAuthor(osudata: apitypes.User, embed: Discord.EmbedBuilder, replaceName?: string) {
+export function userAuthor(osudata: helper.osuapi.types_v2.User, embed: Discord.EmbedBuilder, replaceName?: string) {
     let name = replaceName ?? osudata.username;
     if (osudata?.statistics?.global_rank) {
-        name += ` | #${helper.tools.calculate.separateNum(osudata?.statistics?.global_rank)}`;
+        name += ` | #${helper.calculate.separateNum(osudata?.statistics?.global_rank)}`;
     }
     if (osudata?.statistics?.country_rank) {
-        name += ` | #${helper.tools.calculate.separateNum(osudata?.statistics?.country_rank)} ${osudata.country_code}`;
+        name += ` | #${helper.calculate.separateNum(osudata?.statistics?.country_rank)} ${osudata.country_code}`;
     }
     if (osudata?.statistics?.pp) {
-        name += ` | ${helper.tools.calculate.separateNum(osudata?.statistics?.pp)}pp`;
+        name += ` | ${helper.calculate.separateNum(osudata?.statistics?.pp)}pp`;
     }
     embed.setAuthor({
         name,
@@ -815,25 +814,25 @@ ${input.artist_unicode} - ${input.title_unicode}`;
 export function difficultyColour(difficulty: number) {
     switch (true) {
         case difficulty >= 8:
-            return helper.vars.colours.diffcolour[7];
+            return helper.colours.diffcolour[7];
         case difficulty >= 7:
-            return helper.vars.colours.diffcolour[6];
+            return helper.colours.diffcolour[6];
         case difficulty >= 6:
-            return helper.vars.colours.diffcolour[5];
+            return helper.colours.diffcolour[5];
         case difficulty >= 4.5:
-            return helper.vars.colours.diffcolour[4];
+            return helper.colours.diffcolour[4];
         case difficulty >= 3.25:
-            return helper.vars.colours.diffcolour[3];
+            return helper.colours.diffcolour[3];
         case difficulty >= 2.5:
-            return helper.vars.colours.diffcolour[2];
+            return helper.colours.diffcolour[2];
         case difficulty >= 2:
-            return helper.vars.colours.diffcolour[1];
+            return helper.colours.diffcolour[1];
         case difficulty >= 1.5: default:
-            return helper.vars.colours.diffcolour[0];
+            return helper.colours.diffcolour[0];
     }
 }
 
-export function nonNullStats(hits: apitypes.ScoreStatistics): apitypes.ScoreStatistics {
+export function nonNullStats(hits: helper.osuapi.types_v2.ScoreStatistics): helper.osuapi.types_v2.ScoreStatistics {
     return {
         perfect: hits?.perfect ?? 0,
         great: hits?.great ?? 0,
@@ -847,7 +846,7 @@ export function nonNullStats(hits: apitypes.ScoreStatistics): apitypes.ScoreStat
     };
 }
 
-export function returnHits(hits: apitypes.ScoreStatistics, mode: apitypes.Ruleset) {
+export function returnHits(hits: helper.osuapi.types_v2.ScoreStatistics, mode: helper.osuapi.types_v2.Ruleset) {
     const object: {
         short: string,
         long: string,
@@ -859,7 +858,7 @@ export function returnHits(hits: apitypes.ScoreStatistics, mode: apitypes.Rulese
     };
     hits = nonNullStats(hits);
     switch (mode) {
-        case apitypes.RulesetEnum.osu:
+        case helper.osuapi.Ruleset.osu:
             object.short = `${hits.great}/${hits.ok}/${hits.meh}/${hits.miss}`;
             object.long = `**300:** ${hits.great} \n **100:** ${hits.ok} \n **50:** ${hits.meh} \n **Miss:** ${hits.miss}`;
             object.ex = [
@@ -881,7 +880,7 @@ export function returnHits(hits: apitypes.ScoreStatistics, mode: apitypes.Rulese
                 }
             ];
             break;
-        case apitypes.RulesetEnum.taiko:
+        case helper.osuapi.Ruleset.taiko:
             object.short = `${hits.great}/${hits.good}/${hits.miss}`;
             object.long = `**Great:** ${hits.great} \n **Good:** ${hits.good} \n **Miss:** ${hits.miss}`;
             object.ex = [
@@ -899,7 +898,7 @@ export function returnHits(hits: apitypes.ScoreStatistics, mode: apitypes.Rulese
                 }
             ];
             break;
-        case apitypes.RulesetEnum.fruits:
+        case helper.osuapi.Ruleset.fruits:
             object.short = `${hits.great}/${hits.ok}/${hits.small_tick_hit}/${hits.miss}/${hits.small_tick_miss}`;
             object.long = `**Fruits:** ${hits.great} \n **Drops:** ${hits.ok} \n **Droplets:** ${hits.small_tick_hit} \n **Miss:** ${hits.miss} \n **Miss(droplets):** ${hits.small_tick_miss}`;
             object.ex = [
@@ -925,7 +924,7 @@ export function returnHits(hits: apitypes.ScoreStatistics, mode: apitypes.Rulese
                 },
             ];
             break;
-        case apitypes.RulesetEnum.mania:
+        case helper.osuapi.Ruleset.mania:
             object.short = `${hits.perfect}/${hits.great}/${hits.good}/${hits.ok}/${hits.meh}/${hits.miss}`;
             object.long = `**300+:** ${hits.perfect} \n **300:** ${hits.great} \n **200:** ${hits.good} \n **100:** ${hits.ok} \n **50:** ${hits.meh} \n **Miss:** ${hits.miss}`;
             object.ex = [
@@ -969,7 +968,7 @@ export function removeURLparams(url: string) {
 /**
  * converts a lazer score to legacy score (for compatibility reasons)
  */
-export function CurrentToLegacyScore(score: apitypes.Score): apitypes.ScoreLegacy {
+export function CurrentToLegacyScore(score: helper.osuapi.types_v2.Score): helper.osuapi.types_v2.ScoreLegacy {
     return {
         accuracy: score.accuracy,
         beatmap: score.beatmap,
