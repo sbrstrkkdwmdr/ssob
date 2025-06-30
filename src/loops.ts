@@ -33,7 +33,7 @@ export function loops() {
             return false;
         }
         const mapFile = maps[Math.floor(Math.random() * maps.length)];
-        const map = (JSON.parse(fs.readFileSync(`${filesPathing}/${mapFile}`, 'utf-8'))).apiData as helper.osuapi.types_v2.Beatmap;
+        const map = (JSON.parse(fs.readFileSync(`${filesPathing}/${mapFile}`, 'utf-8'))) as helper.osuapi.types_v2.Beatmap;
         return map;
     }
     function setActivity() {

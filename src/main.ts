@@ -11,6 +11,7 @@ import * as linkHandler from './linkHandler';
 import { loops } from './loops';
 import * as slashcmds from './slashCommands';
 
+console.log('Initialising client...');
 const client = new Client({
     intents: [
         GatewayIntentBits.DirectMessages,
@@ -38,6 +39,7 @@ const client = new Client({
 
 helper.vars.client = client;
 
+console.log('Initialising sequelize...');
 const sequelize = new Sequelize.Sequelize('database', 'username', 'password', {
     host: 'localhost',
     dialect: 'sqlite',
@@ -45,6 +47,7 @@ const sequelize = new Sequelize.Sequelize('database', 'username', 'password', {
     storage: 'database.sqlite',
 });
 
+console.log('Initialising userdata...');
 const userdata = sequelize.define('userdata', {
     userid: {
         type: Sequelize.STRING,
@@ -80,6 +83,7 @@ const userdata = sequelize.define('userdata', {
     }
 });
 
+console.log('Initialising guildSettings...');
 const guildSettings = sequelize.define('guildSettings', {
     guildid: {
         type: Sequelize.TEXT,
@@ -104,6 +108,7 @@ const guildSettings = sequelize.define('guildSettings', {
     }
 });
 
+console.log('Initialising trackDb...');
 const trackDb = sequelize.define('trackUsers', {
     osuid: {
         type: Sequelize.STRING,
@@ -126,6 +131,7 @@ const trackDb = sequelize.define('trackUsers', {
     },
 });
 
+console.log('Initialising statsCache...');
 const statsCache = sequelize.define('statsCache', {
     osuid: {
         type: Sequelize.STRING,
@@ -155,7 +161,9 @@ helper.vars.guildSettings = guildSettings;
 helper.vars.trackDb = trackDb;
 helper.vars.statsCache = statsCache;
 
-helper.osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.clientId);
+console.log('Initialising osu!api...');
+helper.osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.clientSecret);
+helper.osuapi.logCalls(true);
 
 client.once('ready', () => {
     const currentDate = new Date();

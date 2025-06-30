@@ -1,5 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
+import * as util from 'util';
 import * as apitypes from './apitypes';
 import * as helper from './helper';
 import { Dict } from './types';
@@ -7,6 +8,7 @@ import { Dict } from './types';
 export function oAuth(): apitypes.OAuth {
     const str = fs.readFileSync(`./osuauth.json`, 'utf-8');
     helper.credentials.auth = JSON.parse(str) as apitypes.OAuth;
+    helper.credentials.lastAuthUpdate = new Date();
     return helper.credentials.auth;
 }
 
@@ -22,6 +24,7 @@ export function setVersion(version: string) {
 }
 
 export async function PostOAuth() {
+    helper.log('Updating OAuth token');
     return new Promise(async (resolve, reject) => {
         const newtoken: apitypes.OAuth = (await axios.post('https://osu.ppy.sh/oauth/token',
             `grant_type=client_credentials&client_id=${helper.credentials.id}&client_secret=${helper.credentials.secret}&scope=public`,
@@ -43,6 +46,9 @@ export async function PostOAuth() {
         if (newtoken?.access_token) {
             fs.writeFileSync(`./osuauth.json`, JSON.stringify(newtoken));
             helper.credentials.auth = newtoken;
+            helper.credentials.lastAuthUpdate = new Date();
+        } else {
+            reject(new Error(util.format(newtoken)));
         }
         resolve(true);
     });
@@ -62,23 +68,36 @@ export function checkCredentials(version: 1 | 2): [boolean, string] {
             msgs += 'Missing client secret. Please input the secret with v2.login(id,secret)\n';
             p = false;
         }
+        if (helper.credentials?.id == helper.credentials?.secret) {
+            msgs += 'Client ID and Secret are the same value.\n';
+            p = false;
+        }
         return [p, msgs];
     }
     return [true, ''];
 }
 
 export async function checkAuth() {
+    helper.log('Verifying OAuth');
+    let getting = true;
+    if (helper.credentials.auth) {
+        if (helper.credentials.auth.expires_in ?? 0 <= helper.credentials.lastAuthUpdate.getTime()) {
+            await PostOAuth();
+        }
+        getting = false;
+    }
     try {
         oAuth();
     } catch (error) {
         await PostOAuth();
+        getting = false;
     }
     if (fs.existsSync(`./osuauth.json`)) {
         const stat = fs.statSync(`./osuauth.json`);
-        if (helper.credentials.auth?.expires_in ?? 0 <= stat.mtimeMs) {
+        if ((helper.credentials.auth?.expires_in ?? 0 <= stat.mtimeMs) && getting) {
             await PostOAuth();
         }
-    } else {
+    } else if (getting) {
         await PostOAuth();
     }
 }
@@ -91,7 +110,6 @@ export async function get_v2(url: string, params: Dict, tries: number = 0) {
     if (!c[0]) {
         throw new Error(c[1]);
     }
-    await checkAuth();
     let inp = new URL('https://osu.ppy.sh/api/v2' + url);
     for (const key in params) {
         if (Array.isArray(params[key])) {
@@ -103,7 +121,8 @@ export async function get_v2(url: string, params: Dict, tries: number = 0) {
             inp.searchParams.append(key, params[key]);
         }
     }
-    const data = (await axios.get(helper.baseUrl.v2 + url, {
+    helper.log('v2 get: ' + inp.toString());
+    const data = (await axios.get(inp.toString(), {
         headers: {
             Authorization: `Bearer ${helper.credentials?.auth?.access_token}`,
             "Content-Type": "application/json",
@@ -124,7 +143,15 @@ export async function get_v2(url: string, params: Dict, tries: number = 0) {
         }
     })).data;
     if (data?.authentication) {
-        await PostOAuth();
+        helper.log('Authentication error...\nUpdating authentication and retrying...');
+        try {
+            await PostOAuth();
+        } catch (error) {
+            console.log(error);
+            return {
+                error
+            };
+        }
         return get_v2(url, params, tries + 1);
     }
     return data;
@@ -138,7 +165,6 @@ export async function post_v2(url: string, params: Dict, body: Dict, tries: numb
     if (c[0]) {
         throw new Error(c[1]);
     }
-    await checkAuth();
     let inp = new URL('https://osu.ppy.sh/api/v2' + url);
     for (const key in params) {
         if (Array.isArray(params[key])) {
@@ -150,7 +176,9 @@ export async function post_v2(url: string, params: Dict, body: Dict, tries: numb
             inp.searchParams.append(key, params[key]);
         }
     }
-    const data = (await axios.post(helper.baseUrl.v2 + url,
+    helper.log('v2 post: ' + inp.toString());
+    helper.log('v2 post body: ' + body);
+    const data = (await axios.post(inp.toString(),
         JSON.stringify(body),
         {
             headers: {
@@ -173,9 +201,18 @@ export async function post_v2(url: string, params: Dict, body: Dict, tries: numb
             }
         })).data;
     if (data?.authentication) {
-        await PostOAuth();
+        helper.log('Authentication error...\nUpdating authentication and retrying...');
+        try {
+            await PostOAuth();
+        } catch (error) {
+            console.log(error);
+            return {
+                error
+            };
+        }
         return post_v2(url, params, body, tries + 1);
     }
+    console.log(data)
     return data;
 }
 
@@ -200,7 +237,8 @@ export async function get_v1(url: string, params: Dict, tries: number = 0) {
             inp.searchParams.append(key, params[key]);
         }
     }
-    const data = (await axios.get(helper.baseUrl.v1 + url, {
+    helper.log('v1 get: ' + inp.toString().replace(helper.credentials.key, 'KEY'));
+    const data = (await axios.get(inp.toString(), {
         headers: {
             "Content-Type": "application/json",
             Accept: "application/json",

@@ -7,5 +7,5 @@ export * as v2 from './v2';
 
 export * as types_v2 from './apitypes';
 export * as types_v1 from './apitypes_old';
-export { Ruleset } from './helper';
+export { Ruleset, logCaller as logCalls } from './helper';
 

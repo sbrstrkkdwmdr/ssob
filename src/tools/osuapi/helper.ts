@@ -7,10 +7,17 @@ export const credentials: {
     id?: string,
     secret?: string,
     auth?: apitypes.OAuth,
+    lastAuthUpdate?: Date,
     key?: string,
     user?: boolean,
     lazer?: boolean,
 } = {};
+
+export let logCalls = false;
+
+export function logCaller(i: boolean) {
+    logCalls = i;
+}
 
 // TODO - for things like chat access and checking if scopes are enabled
 const validScopes: apitypes.Scope[] = ['public'];
@@ -53,6 +60,12 @@ function setParams_all(input: Dict, params: Dict) {
         }
     }
     return params;
+}
+
+export function log(data: any) {
+    if (logCalls) {
+        console.log(data);
+    }
 }
 
 export * as requests from './requests';

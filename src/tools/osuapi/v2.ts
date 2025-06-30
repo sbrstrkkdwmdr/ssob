@@ -3,6 +3,7 @@ import { credentials } from './helper';
 export function login(clientId: string, clientSecret: string) {
     credentials.id = clientId;
     credentials.secret = clientSecret;
+    return;
 }
 
 export * as types from './apitypes';
