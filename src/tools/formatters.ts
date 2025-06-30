@@ -110,7 +110,7 @@ export async function scoreList(
         info +=
             `** ${dateToDiscordFormat(new Date(tempScore.ended_at))}
 ${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[score.rank]} if pass)`} | \`${helper.calculate.numberShorthand(helper.other.getTotalScore(score))}\` | ${tempScore.mods.length > 0 && preset != 'single_map' ? ' **' + osumodcalc.mod.order(tempScore.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' : ''} `;
-        if (filter.isnochoke && score.statistics.miss > 0) {
+        if (filter?.isnochoke && score.statistics.miss > 0) {
             let rm = score.statistics.miss;
             score.statistics.miss = 0;
             let na: number = 1;
@@ -234,7 +234,7 @@ export async function filterScores(
         const tempArg = argRange(filter.bpm, true);
         newScores = newScores.filter(score => filterArgRange((overrideMap ?? score.beatmap).id, tempArg));
     }
-    if (filter?.modsInclude) {
+    if (filter?.modsInclude && filter?.modsInclude.length > 0) {
         newScores = newScores.filter(score => {
             let x: boolean = true;
             score.mods.forEach(mod => {
@@ -276,7 +276,7 @@ export async function filterScores(
 
                 if (!score.pp || isNaN(score.pp)) {
                     let perf;
-                    if (filter.isnochoke) {
+                    if (filter?.isnochoke) {
                         let tempmss = score.statistics.miss;
                         let usestats = score.statistics;
                         usestats.miss = 0;
