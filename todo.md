@@ -3,6 +3,7 @@
 newest-oldest
 
 ## current
+- [ ] fix maplb page buttons crashing
 - [ ] reduce code complexity
 - [x] fix changelog (buttons switch commands, etc.)
 - [x] fix commands re-sending api calls when switching pages
