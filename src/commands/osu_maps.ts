@@ -1533,10 +1533,10 @@ export class UserBeatmaps extends OsuCommand {
         await this.setParams();
         this.logInput();
         // do stuff
+
         if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
             this.params.page = 1;
         }
-        this.params.page--;
 
         {
             const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
@@ -1685,7 +1685,7 @@ export class UserBeatmaps extends OsuCommand {
             mapType: this.params.filter,
             sortMap: this.params.sort,
             reverse: this.params.reverse,
-            page: this.params.page + 1,
+            page: this.params.page,
             maxPage: mapsarg.maxPage,
             parse: this.params.parseMap,
             parseId: this.params.parseId,

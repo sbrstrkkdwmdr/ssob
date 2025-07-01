@@ -14,6 +14,7 @@
 -   `Help` fetching commands by their name instead of alias returning null (case-sensitivty issues)
 - `Compare` code blocks not being the whole line
 - `fetchUser()` sometimes causing crashes
+- `UserBeatmaps` not switching properly if started on page 1
 
 ### Changed
 
