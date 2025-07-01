@@ -13,6 +13,7 @@
 -   numbers over 1e9 not formatting into <foo\*1000>M instead of <foo>B
 -   `Help` fetching commands by their name instead of alias returning null (case-sensitivty issues)
 - `Compare` code blocks not being the whole line
+- `fetchUser()` sometimes causing crashes
 
 ### Changed
 
@@ -27,6 +28,7 @@
 -   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }`
 -   `BadgeWeightSeed` reformat embed
 -   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
+- `MapScores` add `-b` and `-map` params to specify map (map url still works)
 
 ### Added
 

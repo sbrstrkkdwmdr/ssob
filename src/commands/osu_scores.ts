@@ -746,7 +746,14 @@ export class MapScores extends ScoreListCommand {
         this.name = 'MapScores';
     }
     async argsMsgExtra(): Promise<void> {
-        this.params.mapid = (await helper.commandTools.mapIdFromLink(this.input.args.join(' '), true,)).map;
+        const mapIdArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.toFlag(['b', 'map']), this.input.args, true, 'string', false, true);
+        if (mapIdArgFinder.found) {
+            this.params.mapid = mapIdArgFinder.output;
+            this.input.args = mapIdArgFinder.args;
+        }
+        if(!this.params.mapid){
+            this.params.mapid = (await helper.commandTools.mapIdFromLink(this.input.args.join(' '), true,)).map;
+        }
         if (this.params.mapid != null) {
             this.input.args.splice(this.input.args.indexOf(this.input.args.find(arg => arg.includes('https://osu.ppy.sh/'))), 1);
         }
