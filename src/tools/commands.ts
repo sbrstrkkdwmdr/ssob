@@ -320,7 +320,7 @@ export function fetchUser(args: string[]) {
         mode: helper.osuapi.types_v2.GameMode,
         args: string[];
     } = {
-        id: null,
+        id: '',
         mode: null,
         args
     };
@@ -361,7 +361,7 @@ export function fetchUser(args: string[]) {
             object.id = url;
             break;
     }
-    if (object.id.trim() == "") {
+    if (object?.id?.trim() == "") {
         object.id = null;
     }
     return object;
