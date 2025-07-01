@@ -1,4 +1,5 @@
 import Discord from 'discord.js';
+import { bws } from 'osumodcalculator/dist/extra';
 import * as helper from '../helper';
 import { OsuCommand } from './command';
 
@@ -176,31 +177,20 @@ export class BadgeWeightSeed extends OsuCommand {
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
-        const badgecount = osudata?.badges?.length ?? 0;
+        let res = 'User\'s weighted rank cannot be calculated';
+        if (osudata?.statistics?.global_rank) {
+            res = this.response(osudata?.statistics?.global_rank, osudata?.badges?.length ?? 0);
+        } else if (osudata?.statistics?.pp) {
+            const estRank = await helper.data.getRankPerformance('pp->rank', osudata?.statistics?.pp ?? 0, 'osu');
+            res = '***Using an estimated rank***\n\n' + this.response(estRank.value, osudata?.badges?.length ?? 0);
+        }
 
         const embed = new Discord.EmbedBuilder()
             .setTitle(`Badge weighting for ${osudata.username}`)
             .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
-            .setDescription(
-                'Current number of badges: ' + badgecount
-            )
-            .addFields([
-                {
-                    name: `${badgecount == 1 ? badgecount + ' badge' : badgecount + ' badges'}`,
-                    value: `${Math.floor(this.bwsF(badgecount, osudata))}`,
-                    inline: true
-                },
-                {
-                    name: `${badgecount + 1 == 1 ? badgecount + 1 + ' badge' : badgecount + 1 + ' badges'}`,
-                    value: `${Math.floor(this.bwsF(badgecount + 1, osudata))}`,
-                    inline: true
-                },
-                {
-                    name: `${badgecount + 2} badges`,
-                    value: `${Math.floor(this.bwsF(badgecount + 2, osudata))}`,
-                    inline: true
-                },
-            ]);
+            .setDescription(res)
+            .setFooter({ text: 'Values are rounded' });
+
         helper.formatter.userAuthor(osudata, embed);
 
         this.ctn.embeds = [embed];
@@ -208,10 +198,29 @@ export class BadgeWeightSeed extends OsuCommand {
         this.send();
     }
 
-    bwsF(badgenum: number, osudata: helper.osuapi.types_v2.User) {
-        return badgenum > 0 ?
-            osudata.statistics.global_rank ** (0.9937 ** (badgenum ** 2)) :
-            osudata.statistics.global_rank;
+    response(rank: number, badgecount: number = 0) {
+        let n = rank ?? 1;
+        let bd = 0;
+        while (Math.round(n) > 1) {
+            bd++;
+            n = bws(bd, rank);
+        }
+        let extraFields = '\n\n---Rank estimates---';
+        let i = 0;
+        let br = badgecount;
+        while (i < 10) {
+            let temp = Math.round(bws(br, rank));
+            extraFields += '\n' + br + ' badges: ' + temp;
+            if (temp == 1) break;
+            br++;
+            i++;
+        }
+        if (extraFields == '\n\n---Rank estimates---') extraFields = '';
+
+        return 'Current rank: ' + rank +
+            '\nCurrent number of badges: ' + badgecount +
+            '\nCurrent weighted rank: ' + Math.round(bws(badgecount, rank)) +
+            '\nBadges needed for #1: ' + bd + extraFields;
     }
 }
 
