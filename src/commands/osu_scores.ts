@@ -782,7 +782,7 @@ export class MapScores extends ScoreListCommand {
         }
         if (this.input.overrides.commanduser) {
             this.commanduser = this.input.overrides.commanduser;
-            this.ctn.content = `Requested by <@${this.commanduser.id}>`;
+            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
         }
         if (this.input.overrides.user) {
             this.params.user = this.input.overrides.user;
@@ -1553,7 +1553,7 @@ export class MapLeaderboard extends OsuCommand {
         }
         if (this.input.overrides.commanduser) {
             this.commanduser = this.input.overrides.commanduser;
-            this.ctn.content = `Requested by <@${this.commanduser.id}>`;
+            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
         }
     }
     async execute() {

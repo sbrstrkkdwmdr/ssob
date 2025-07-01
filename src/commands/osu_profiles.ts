@@ -591,7 +591,7 @@ export class Profile extends OsuCommand {
         }
         if (this.input.overrides.commanduser) {
             this.commanduser = this.input.overrides.commanduser;
-            this.ctn.content = `Requested by <@${this.commanduser.id}>`;
+            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
         }
     }
     async execute() {

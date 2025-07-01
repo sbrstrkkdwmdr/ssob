@@ -214,7 +214,7 @@ export class Map extends OsuCommand {
         }
         if (this.input.overrides?.commanduser != null) {
             this.commanduser = this.input.overrides.commanduser;
-            this.ctn.content = `Requested by <@${this.commanduser.id}>\n`;
+            // this.ctn.content = `Requested by <@${this.commanduser.id}>\n`;
         }
         if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;

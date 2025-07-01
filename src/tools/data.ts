@@ -356,18 +356,11 @@ export function randomMap(type?: 'Ranked' | 'Loved' | 'Approved' | 'Qualified' |
     //check if cache exists
     const cache = fs.existsSync(`${helper.path.cache}/commandData`);
     if (cache) {
-        let mapsExist = fs.readdirSync(`${helper.path.cache}/commandData`).filter(x => x.includes('mapdata'));
-        const maps: helper.osuapi.types_v2.Beatmap[] = [];
+        let maps: helper.osuapi.types_v2.Beatmap[] = getStoredMaps();
         if (type) {
-            mapsExist = mapsExist.filter(x => x.includes(type));
+            maps = maps.filter(x => x.status == type.toLowerCase());
         }
 
-        for (let i = 0; i < mapsExist.length; i++) {
-            if (mapsExist[i].includes('.json')) {
-                const dataAsStr = fs.readFileSync(`${helper.path.cache}/commandData/${mapsExist[i]}`, 'utf-8');
-                maps.push(JSON.parse(dataAsStr) as helper.osuapi.types_v2.Beatmap);
-            }
-        }
         if (maps.length > 0) {
             try {
                 const curmap = maps[Math.floor(Math.random() * maps.length)];

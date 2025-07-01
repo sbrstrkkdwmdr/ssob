@@ -48,6 +48,7 @@
 -   unused API stuff
 -   unused files from old versions
 -   `tz` arg in `Info`
+- `Requested by` sections on `Map`, `Profile`, `MapScores`, `MapLeaderboard`
 
 ### BREAKING
 
