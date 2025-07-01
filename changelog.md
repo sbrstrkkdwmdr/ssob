@@ -9,6 +9,7 @@
 ### Fixed
 
 -   simulate having under-estimated values
+-   `MapLeaderboard` not using `this.#name` when creating buttons
 
 ### Changed
 
@@ -21,10 +22,14 @@
 -   edit helper module
 -   edit tsconfig
 -   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }`
+-   `BadgeWeightSeed` reformat embed
+-   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
 
 ### Added
 
--   add `lb` and `leaderboard` aliases to `Rankings`
+-   `Rankings` add `lb` and `leaderboard` aliases
+-   `BadgeWeightSeed` add "Current weighted rank"
+-   `BadgeWeightSeed` add "Badges needed for #1"
 
 ### Removed
 
