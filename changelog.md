@@ -25,7 +25,8 @@
 -   switch to using [toa](https://github.com/sbrstrkkdwmdr/toa) for osu! api calls
 -   edit helper module
 -   edit tsconfig
--   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }`
+-   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }` but just `<res>`
+- fetching scores with customised mods also applies the customisations to subsequent commands 
 -   `BadgeWeightSeed` reformat embed
 -   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
 - `MapScores` add `-b` and `-map` params to specify map (map url still works)

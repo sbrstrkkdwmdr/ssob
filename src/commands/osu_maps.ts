@@ -686,7 +686,12 @@ export class Map extends OsuCommand {
                     title: false
                 }
             }, 1);
-            const maptitle: string = this.params.mapmods ? `\`${mapname} [${this.map.version}]\` +${this.params.mapmods.join('')}` : `\`${mapname} [${this.map.version}]\``;
+            const showMods =
+                this.params.mapmods && this.params.mapmods.length > 0 ?
+                    ' +' + this.params.mapmods.join('') :
+                    '';
+
+            const maptitle: string = `\`${mapname} [${this.map.version}]\`${showMods}`;
             const Embed = new Discord.EmbedBuilder()
                 .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
                 .setThumbnail(helper.osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
@@ -1562,23 +1567,23 @@ export class UserBeatmaps extends OsuCommand {
 
         let maplistdata: (helper.osuapi.types_v2.Beatmapset[] | helper.osuapi.types_v2.BeatmapPlaycount[]) = [];
 
-        async function getScoreCount(cinitnum:number, input:helper.bottypes.commandInput, args, osudata) {
+        async function getScoreCount(cinitnum: number, input: helper.bottypes.commandInput, args, osudata) {
             if (cinitnum >= 499) {
                 args.reachedMaxCount = true;
                 return;
             }
-            const fd = 
-            args.filter == 'most_played' ? 
-            await helper.osuapi.v2.users.mostPlayed({
-                user_id: osudata.id,
-                offset: cinitnum
-            })
-            :
-            await helper.osuapi.v2.users.beatmaps({
-                user_id: osudata.id,
-                type: args.filter,
-                offset: cinitnum
-            });
+            const fd =
+                args.filter == 'most_played' ?
+                    await helper.osuapi.v2.users.mostPlayed({
+                        user_id: osudata.id,
+                        offset: cinitnum
+                    })
+                    :
+                    await helper.osuapi.v2.users.beatmaps({
+                        user_id: osudata.id,
+                        type: args.filter,
+                        offset: cinitnum
+                    });
             if (fd?.hasOwnProperty('error')) {
                 await helper.commandTools.errorAndAbort(input, this.name, true, helper.errors.uErr.osu.map.group_nf.replace('[TYPE]', args.filter), true);
                 return;
