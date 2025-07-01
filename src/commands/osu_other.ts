@@ -202,7 +202,7 @@ export class Compare extends OsuCommand {
             topdata = await helper.osuapi.v2.scores.best({
                 user_id: user,
                 mode
-            })
+            });
         }
 
         if (topdata?.hasOwnProperty('error')) {
@@ -281,14 +281,14 @@ export class Compare extends OsuCommand {
             const secondscore: helper.osuapi.types_v2.Score = secondtopdata.find(score => score.beatmap.id == firstscore.beatmap.id);
             if (secondscore == null) break;
             const format = (score: helper.osuapi.types_v2.Score) =>
-                `\`${score.pp.toFixed(2)}pp | ${(score.accuracy * 100).toFixed(2)}% ${score.mods.length > 0 ? '| +' + score.mods.map(x => x.acronym).join('') : ''}`;
+                `${score.pp.toFixed(2)}pp | ${(score.accuracy * 100).toFixed(2)}% ${score.mods.length > 0 ? '| +' + score.mods.map(x => x.acronym).join('') : ''}`;
             const firstscorestr = format(firstscore);
             const secondscorestr = format(secondscore);
             arrscore.push(
                 `
 **[\`${firstscore.beatmapset.title} [${firstscore.beatmap.version}]\`](https://osu.ppy.sh/b/${firstscore.beatmap.id})**
 \`${firstuser.username.padEnd(30, ' ').substring(0, 30)} | ${seconduser.username.padEnd(30, ' ').substring(0, 30)}\`
-${firstscorestr.substring(0, 30)} || ${secondscorestr.substring(0, 30)}`
+\`${firstscorestr} || ${secondscorestr}\``
             );
         }
         let fields = [];
@@ -827,7 +827,7 @@ export class WhatIf extends OsuCommand {
         this.ctn.components = [buttons];
         this.send();
     }
-    async getTopData(user: number, mode: helper.osuapi.types_v2.GameMode) {      
+    async getTopData(user: number, mode: helper.osuapi.types_v2.GameMode) {
         let topdata: helper.osuapi.types_v2.Score[];
         if (helper.data.findFile(this.input.id, 'osutopdata') &&
             !('error' in helper.data.findFile(this.input.id, 'osutopdata')) &&
@@ -838,7 +838,7 @@ export class WhatIf extends OsuCommand {
             topdata = await helper.osuapi.v2.scores.best({
                 user_id: user,
                 mode
-            })
+            });
         }
 
         if (topdata?.hasOwnProperty('error')) {
@@ -849,6 +849,6 @@ export class WhatIf extends OsuCommand {
         }
         helper.data.storeFile(topdata, this.input.id, 'osutopdata');
         return topdata;
-    
+
     }
 }
