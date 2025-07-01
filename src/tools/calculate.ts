@@ -1,6 +1,4 @@
-import * as helper from '../helper.js';
-import * as apitypes from '../types/osuapi.js';
-import * as conversions from '../vars/conversions.js';
+import * as helper from '../helper';
 /**
  * eg 1,000 -> 1k
  * 1,000,000 -> 1m
@@ -13,6 +11,7 @@ export function numberShorthand(input: number) {
     switch (true) {
         case value >= 1e9:
             output = value / 1e9 + 'B';
+            break;
         case value >= 1e8:
         case value >= 1e7:
         case value >= 1e6:
@@ -113,132 +112,6 @@ export function separateNum(number: string | number, separator?: string) {
     return ans;
 }
 
-export function convert(input: string, output: string, value: number) {
-    const tcat1 = helper.tools.other.removeSIPrefix(input);
-    const tcat2 = helper.tools.other.removeSIPrefix(output);
-    let hasErr = false;
-    let usePre1 = true;
-    let usePre2 = true;
-    let formula: string = 'Conversion not found';
-    let type: string = 'Invalid';
-    let extra: string;
-    let otherUnits: string = '-';
-    let significantFigures: string = 'NaN';
-    let change: string = 'Error';
-    const numAsStr: string = value.toString();
-    function inval() {
-        hasErr = true;
-    }
-    function toName(x: conversions.convVal | conversions.convValCalc) {
-        return x.names[1] ? `${x.names[0]} (${x.names[1]})` : x.names[0];
-    }
-    for (let i = 0; i < conversions.values.length; i++) {
-        const curObject = conversions.values[i];
-        if (!curObject) {
-            inval();
-            break;
-        }
-
-        const names: string[] = [];
-        curObject.names.forEach(x => {
-            if (x !== null) {
-                names.push(x.toUpperCase());
-            }
-        });
-
-        if (names.includes(tcat1.originalValue.toUpperCase()) || names.includes(input.toUpperCase())) {
-            if (names.includes(input.toUpperCase()) && !names.includes(tcat1.originalValue.toUpperCase())) {
-                usePre1 = false;
-            }
-            for (let j = 0; j < curObject.calc.length; j++) {
-                const curCalc = curObject.calc[j];
-                if (!curCalc) {
-                    inval();
-                    break;
-                }
-                const calcNames: string[] = [];
-                curCalc.names.forEach(x => {
-                    if (x !== null) {
-                        calcNames.push(x.toUpperCase());
-                    }
-                });
-                if (calcNames.includes(tcat2.originalValue.toUpperCase()) || calcNames.includes(output.toUpperCase())) {
-                    let secondaryMetric = false;
-                    formula = curCalc.text;
-
-                    if (calcNames.includes(output.toUpperCase()) && !calcNames.includes(tcat2.originalValue.toUpperCase())) {
-                        usePre2 = false;
-                    }
-
-                    for (let i = 0; i < conversions.values.length; i++) {
-                        const curObject2 = conversions.values[i];
-                        if (!curObject2) {
-                            inval();
-                            break;
-                        }
-                        const names2: string[] = [];
-                        curObject2.names.forEach(x => {
-                            if (x !== null) {
-                                names2.push(x.toUpperCase());
-                            }
-                        });
-                        if (names2.includes(tcat2.originalValue.toUpperCase()) && curObject2.system == 'Metric') {
-                            secondaryMetric = true;
-                        }
-                    }
-                    let fromType = curObject.name;
-                    let toType = curCalc.to;
-                    if (curObject.system == 'Metric' && tcat1.prefix.removed.length > 0 && usePre1) {
-                        value *= tcat1.power;
-                        fromType = tcat1.prefix?.long?.length > 0 ? helper.tools.formatter.toCapital(tcat1.prefix.long) + curObject.name.toLowerCase() : curObject.name;
-                        const formStart = `${tcat1.power}`;
-                        formula = `${formStart}*(${formula})`;
-                    }
-
-                    let outvalue = curCalc.func(value);
-                    if (secondaryMetric && tcat2.prefix.removed.length > 0 && usePre2) {
-                        outvalue /= tcat2.power;
-                        toType = tcat2.prefix?.long?.length > 0 ? helper.tools.formatter.toCapital(tcat2.prefix.long) + curCalc.to.toLowerCase() : curCalc.to;
-                        const formEnd = `${tcat2.power}`;
-                        formula = `(${formula})/${formEnd}`;
-                    }
-                    type = curObject.type;
-                    change = `${fromType} => ${toType}`;
-                    significantFigures = scientificNotation(outvalue, helper.tools.calculate.getSigFigs(numAsStr));
-                    const usVol = [];
-                    otherUnits = curObject.calc
-                        .filter(x => !x.names.includes('Arbitrary units'))
-                        .map(x => toName(x))
-                        .join(', ');
-                    if (curObject.type == 'Volume' && (usVol.includes(curObject.name) || usVol.includes(curCalc.to))) {
-                        extra = 'Using US measurements not Imperial';
-                    }
-                    return {
-                        formula,
-                        outvalue,
-                        type,
-                        hasErr,
-                        extra,
-                        significantFigures,
-                        change,
-                        otherUnits,
-                    };
-                    break;
-                }
-            }
-        }
-    }
-    return {
-        formula,
-        NaN,
-        type,
-        hasErr,
-        extra,
-        significantFigures,
-        change,
-        otherUnits,
-    };
-}
 
 export function toOrdinal(num: number) {
     let txt: string;
@@ -284,26 +157,6 @@ export function numConvert(value: string, inBase: number, outBase: number) {
     const init = parseInt(value as string, inBase);
     const outVal = init.toString(outBase);
     return outVal;
-}
-
-export function numConvertTyping(string): "Binary" | "Octal" | "Decimal" | "Hexadecimal" {
-    const nList = conversions.namesListBaseNum;
-    let t: "Binary" | "Octal" | "Decimal" | "Hexadecimal" = null;
-    switch (true) {
-        case nList.bin.includes(string):
-            t = 'Binary';
-            break;
-        case nList.oct.includes(string):
-            t = 'Octal';
-            break;
-        case nList.dec.includes(string):
-            t = 'Decimal';
-            break;
-        case nList.hex.includes(string):
-            t = 'Hexadecimal';
-            break;
-    }
-    return t;
 }
 
 /**
@@ -642,7 +495,7 @@ export function isWithinValue(input: number, value: number, against: number) {
 }
 
 
-export function modOverrides(mods: apitypes.Mod[]) { 
+export function modOverrides(mods: helper.osuapi.types_v2.Mod[]) { 
     let speed:number;
     let cs:number;
     let ar:number;

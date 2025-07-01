@@ -1,9 +1,7 @@
 import * as Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
-import { Command } from './commands/command.js';
-import * as helper from './helper.js';
-import * as bottypes from './types/bot.js';
-import * as apitypes from './types/osuapi.js';
+import { Command } from './commands/command';
+import * as helper from './helper';
 // message = interaction.message
 const buttonWarnedUsers = new Set();
 let command: Command;
@@ -11,12 +9,12 @@ let foundCommand = true;
 let mainId: number;
 export async function onInteraction(interaction: Discord.Interaction) {
     if (!(interaction.type == Discord.InteractionType.MessageComponent || interaction.type == Discord.InteractionType.ModalSubmit)) return;
-    if (interaction.applicationId != helper.vars.client.application.id) return;
-    let overrides: bottypes.overrides = {
+    if (interaction.applicationId != helper.vars.client?.application?.id) return;
+    let overrides: helper.bottypes.overrides = {
         commandAs: 'button',
     };
     let canReply = true;
-    if (!helper.tools.checks.botHasPerms(interaction, ['ReadMessageHistory'])) {
+    if (!helper.checks.botHasPerms(interaction, ['ReadMessageHistory'])) {
         canReply = false;
     }
     interaction = interaction as Discord.ButtonInteraction; //| Discord.SelectMenuInteraction
@@ -25,19 +23,19 @@ export async function onInteraction(interaction: Discord.Interaction) {
     //buttonVer-button-command-specid-id-???
     const buttonsplit = interaction.customId.split('-');
     const buttonVer = buttonsplit[0];
-    const buttonType = buttonsplit[1] as bottypes.buttonType;
+    const buttonType = buttonsplit[1] as helper.bottypes.buttonType;
     const cmd = buttonsplit[2];
     const specid = buttonsplit[3];
     mainId = +buttonsplit[4];
 
-    if (buttonVer != helper.vars.versions.releaseDate) {
-        const findcommand = helper.vars.versions.versions.find(x =>
+    if (buttonVer != helper.versions.releaseDate) {
+        const findcommand = helper.versions.versions.find(x =>
             x.name == buttonVer ||
             x.releaseDate.replaceAll('-', '') == buttonVer
         ) ?? false;
         await interaction.reply({
             content: `You cannot use this command as it is outdated
-Bot version: ${helper.vars.versions.releaseDate} (${helper.vars.versions.current})
+Bot version: ${helper.versions.releaseDate} (${helper.versions.current})
 Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name})` : 'INVALID'}
 `,
             flags: Discord.MessageFlags.Ephemeral,
@@ -72,13 +70,13 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         'Changelog',
     ];
     const ScoreSortCommands = [
-        'Firsts', 'MapLeaderboard', 'NoChokes', 'OsuTop', 'Pinned', 'RecentList', 'MapScores', 
+        'Firsts', 'MapLeaderboard', 'NoChokes', 'OsuTop', 'Pinned', 'RecentList', 'MapScores',
 
     ];
     if (buttonType == 'Search' && PageOnlyCommands.includes(cmd)) {
         const menu = new Discord.ModalBuilder()
             .setTitle('Page')
-            .setCustomId(`${helper.vars.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${mainId}`)
+            .setCustomId(`${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${mainId}`)
             .addComponents(
                 //@ts-expect-error - TextInputBuilder not assignable to AnyInputBuilder
                 new Discord.ActionRowBuilder()
@@ -138,12 +136,17 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         if (buttonsplit[5].includes('+')) {
             const temp = buttonsplit[5].split('+');
             overrides.id = temp[0];
-            overrides.filterMods = temp[1];
+            const fm = temp[1];
+            if (temp[1].includes(',')) {
+                overrides.filterMods = fm.split(',') as osumodcalc.types.Mod[];
+            } else {
+                overrides.filterMods = [fm as osumodcalc.types.Mod];
+            }
         }
         overrides.commandAs = 'interaction';
         overrides.commanduser = interaction.member.user as Discord.User;
-        mainId = helper.tools.commands.getCmdId();
-        command = new helper.commands.osu.maps.Map();
+        mainId = helper.commandTools.getCmdId();
+        command = new helper.cmd_osu_maps.Map();
         foundCommand = true;
         await runCommand(interaction, buttonType, overrides, 'other', false);
         return;
@@ -151,12 +154,12 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
 
     if (buttonType == 'User') {
         overrides.id = buttonsplit[5].split('+')[0];
-        overrides.mode = buttonsplit[5].split('+')[1] as apitypes.GameMode;
+        overrides.mode = buttonsplit[5].split('+')[1] as helper.osuapi.types_v2.GameMode;
         overrides.commandAs = 'interaction';
         overrides.commanduser = interaction.member.user as Discord.User;
 
-        mainId = helper.tools.commands.getCmdId();
-        command = new helper.commands.osu.profiles.Profile();
+        mainId = helper.commandTools.getCmdId();
+        command = new helper.cmd_osu_profiles.Profile();
         foundCommand = true;
         await runCommand(interaction, buttonType, overrides, 'other', false);
         return;
@@ -167,15 +170,21 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
                 const curEmbed = interaction.message.embeds[0];
                 // #<mode>/id
                 overrides.id = curEmbed.url.split('#')[1].split('/')[1];
-                overrides.mode = curEmbed.url.split('#')[1].split('/')[0] as apitypes.GameMode;
-                overrides.filterMods = curEmbed.title?.split('+')?.[1] && curEmbed.title?.split('+')?.[1] != 'NM' && !osumodcalc.unrankedMods_stable(curEmbed.title?.split('+')?.[1])
+                overrides.mode = curEmbed.url.split('#')[1].split('/')[0] as helper.osuapi.types_v2.GameMode;
+                const fm = curEmbed.title?.split('+')?.[1] && curEmbed.title?.split('+')?.[1] != 'NM'
                     ? curEmbed.title?.split('+')?.[1]
                     : null;
+                if (fm.includes(',')) {
+                    overrides.filterMods = fm.split(',') as osumodcalc.types.Mod[];
+                } else if (fm != null) {
+                    overrides.filterMods = [fm as osumodcalc.types.Mod];
+                }
+
                 overrides.commandAs = 'interaction';
 
                 overrides.commanduser = interaction.member.user as Discord.User;
-                mainId = helper.tools.commands.getCmdId();
-                command = new helper.commands.osu.scores.MapLeaderboard();
+                mainId = helper.commandTools.getCmdId();
+                command = new helper.cmd_osu_scores.MapLeaderboard();
                 foundCommand = true;
                 await runCommand(interaction, buttonType, overrides, 'other', false);
                 return;
@@ -188,7 +197,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         overrides.user = buttonsplit[5].split('+')[1];
         overrides.commandAs = 'interaction';
         overrides.commanduser = interaction.member.user as Discord.User;
-        command = new helper.commands.osu.scores.MapScores();
+        command = new helper.cmd_osu_scores.MapScores();
         foundCommand = true;
         await runCommand(interaction, buttonType, overrides, 'other', false);
         return;
@@ -198,80 +207,80 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
 
     switch (cmd.toLowerCase()) {
         case 'changelog':
-            command = new helper.commands.gen.Changelog();
+            command = new helper.cmd_gen.Changelog();
             foundCommand = true;
             break;
         case 'compare':
-            command = new helper.commands.osu.other.Compare();
+            command = new helper.cmd_osu_other.Compare();
             foundCommand = true;
             break;
         case 'firsts':
-            command = new helper.commands.osu.scores.Firsts();
+            command = new helper.cmd_osu_scores.Firsts();
             foundCommand = true;
             break;
         case 'leaderboard':
-            command = new helper.commands.osu.profiles.Leaderboard();
+            command = new helper.cmd_osu_other.ServerLeaderboard();
             foundCommand = true;
             break;
         case 'map':
-            command = new helper.commands.osu.maps.Map();
+            command = new helper.cmd_osu_maps.Map();
             foundCommand = true;
             break;
         case 'mapleaderboard':
-            command = new helper.commands.osu.scores.MapLeaderboard();
+            command = new helper.cmd_osu_scores.MapLeaderboard();
             foundCommand = true;
             break;
         case 'nochokes':
             overrides.miss = true;
-            command = new helper.commands.osu.scores.NoChokes();
+            command = new helper.cmd_osu_scores.NoChokes();
             foundCommand = true;
             break;
         case 'profile':
-            command = new helper.commands.osu.profiles.Profile();
+            command = new helper.cmd_osu_profiles.Profile();
             foundCommand = true;
             break;
         case 'osutop':
-            command = new helper.commands.osu.scores.OsuTop();
+            command = new helper.cmd_osu_scores.OsuTop();
             foundCommand = true;
             break;
         case 'pinned':
-            command = new helper.commands.osu.scores.Pinned();
+            command = new helper.cmd_osu_scores.Pinned();
             foundCommand = true;
             break;
         case 'ranking':
-            command = new helper.commands.osu.profiles.Ranking();
+            command = new helper.cmd_osu_profiles.Ranking();
             foundCommand = true;
             break;
         case 'recent':
-            command = new helper.commands.osu.scores.Recent();
+            command = new helper.cmd_osu_scores.Recent();
             foundCommand = true;
             break;
         case 'recentlist':
-            command = new helper.commands.osu.scores.RecentList();
+            command = new helper.cmd_osu_scores.RecentList();
             foundCommand = true;
             break;
         case 'recentactivity':
-            command = new helper.commands.osu.profiles.RecentActivity();
+            command = new helper.cmd_osu_profiles.RecentActivity();
             foundCommand = true;
             break;
         case 'scoreparse':
-            command = new helper.commands.osu.scores.ScoreParse();
+            command = new helper.cmd_osu_scores.ScoreParse();
             foundCommand = true;
             break;
         case 'mapscores':
-            command = new helper.commands.osu.scores.MapScores();
+            command = new helper.cmd_osu_scores.MapScores();
             foundCommand = true;
             break;
         case 'scorestats':
-            command = new helper.commands.osu.scores.ScoreStats();
+            command = new helper.cmd_osu_scores.ScoreStats();
             foundCommand = true;
             break;
         case 'userbeatmaps':
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
             foundCommand = true;
             break;
         case 'help':
-            command = new helper.commands.gen.Help();
+            command = new helper.cmd_gen.Help();
             foundCommand = true;
             break;
         default:
@@ -281,7 +290,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
     runCommand(interaction, buttonType, overrides, null, true);
 }
 
-async function runCommand(interaction: Discord.ButtonInteraction, buttonType: bottypes.buttonType, overrides: bottypes.overrides, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
+async function runCommand(interaction: Discord.ButtonInteraction, buttonType: helper.bottypes.buttonType, overrides: helper.bottypes.overrides, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
     if (defer) {
         await interaction.deferUpdate()
             .catch(error => { });

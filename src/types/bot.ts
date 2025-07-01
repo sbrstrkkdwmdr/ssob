@@ -1,5 +1,6 @@
 import Discord from 'discord.js';
-import * as apitypes from '../types/osuapi.js';
+import * as osumodcalc from 'osumodcalculator';
+import * as osuapi from '../tools/osuapi/index';
 
 export type commandInfo = {
     name: string,
@@ -52,7 +53,7 @@ export type commandInput = {
 export type overrides = {
     user?: any,
     page?: number,
-    mode?: apitypes.GameMode,
+    mode?: osuapi.types_v2.GameMode,
     sort?: string,
     reverse?: boolean,
     ex?: string | number,
@@ -62,7 +63,7 @@ export type overrides = {
     commanduser?: Discord.User | Discord.APIUser,
     commandAs?: "message" | "interaction" | "link" | "button" | "other",
     filterMapper?: string,
-    filterMods?: string,
+    filterMods?: osumodcalc.types.Mod[],
     miss?: true,
 } | null;
 

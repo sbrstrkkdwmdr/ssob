@@ -1,17 +1,13 @@
 import Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import * as apitypes from '../types/osuapi.js';
-import * as tooltypes from '../types/tools.js';
-import { OsuCommand } from './command.js';
+import * as helper from '../helper';
+import { OsuCommand } from './command';
 
 // add, remove, list, channel
 
 export class TrackAR extends OsuCommand {
     declare protected params: {
         user: string;
-        mode: apitypes.GameMode;
+        mode: helper.osuapi.types_v2.GameMode;
     };
     type: 'add' | 'remove';
     constructor() {
@@ -23,11 +19,11 @@ export class TrackAR extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            const temp = await helper.tools.commands.parseArgsMode(this.input);
+            const temp = await helper.commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
-        const userArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.user, this.input.args, true, 'string', true, false);
+        const userArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.user, this.input.args, true, 'string', true, false);
         if (userArgFinder.found) {
             this.params.user = userArgFinder.output;
             this.input.args = userArgFinder.args;
@@ -44,12 +40,12 @@ export class TrackAR extends OsuCommand {
         // do stuff
 
         if (this.params.user == null || !this.params.user || this.params.user.length < 1) {
-            await helper.tools.commands.sendMessage({
+            await helper.commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
                 args: {
-                    content: helper.vars.errors.uErr.osu.tracking.nullUser,
+                    content: helper.errors.uErr.osu.tracking.nullUser,
                     edit: true
                 }
             }, this.input.canReply);
@@ -59,23 +55,23 @@ export class TrackAR extends OsuCommand {
         const guildsetting = await helper.vars.guildSettings.findOne({ where: { guildid: this.input.message?.guildId ?? this.input.interaction?.guildId } });
 
         if (!guildsetting?.dataValues?.trackChannel) {
-            await helper.tools.commands.sendMessage({
+            await helper.commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
                 args: {
-                    content: helper.vars.errors.uErr.osu.tracking.channel_ms,
+                    content: helper.errors.uErr.osu.tracking.channel_ms,
                     edit: true
                 }
             }, this.input.canReply);
             return;
         } else if (guildsetting?.dataValues?.trackChannel != (this.input?.message?.channelId ?? this.input?.interaction?.channelId)) {
-            await helper.tools.commands.sendMessage({
+            await helper.commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
                 args: {
-                    content: helper.vars.errors.uErr.osu.tracking.channel_wrong.replace('[CHID]', guildsetting?.dataValues?.trackChannel),
+                    content: helper.errors.uErr.osu.tracking.channel_wrong.replace('[CHID]', guildsetting?.dataValues?.trackChannel),
                     edit: true
                 }
             }, this.input.canReply);
@@ -83,7 +79,7 @@ export class TrackAR extends OsuCommand {
 
         }
 
-        let osudata: apitypes.User;
+        let osudata: helper.osuapi.types_v2.User;
 
         try {
             const t = await this.getProfile(this.params.user, this.params.mode);
@@ -94,7 +90,7 @@ export class TrackAR extends OsuCommand {
 
         this.ctn.content = this.getMsg(osudata.username);
 
-        helper.tools.track.editTrackUser({
+        helper.track.editTrackUser({
             userid: osudata.id,
             action: this.type,
             guildId: this.input.message?.guildId ?? this.input.interaction?.guildId,
@@ -164,18 +160,18 @@ export class TrackChannel extends OsuCommand {
         const guildsetting = await helper.vars.guildSettings.findOne({ where: { guildid: this.input.message?.guildId ?? this.input.interaction?.guildId } });
         if (!this.params.channelId) {
             if (!guildsetting.dataValues.trackChannel) {
-                await helper.tools.commands.sendMessage({
+                await helper.commandTools.sendMessage({
                     type: this.input.type,
                     message: this.input.message,
                     interaction: this.input.interaction,
                     args: {
-                        content: helper.vars.errors.uErr.osu.tracking.channel_ms,
+                        content: helper.errors.uErr.osu.tracking.channel_ms,
                         edit: true
                     }
                 }, this.input.canReply);
                 return;
             }
-            await helper.tools.commands.sendMessage({
+            await helper.commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
@@ -187,12 +183,12 @@ export class TrackChannel extends OsuCommand {
             return;
         }
         if (!this.params.channelId || isNaN(+this.params.channelId) || !helper.vars.client.channels.cache.get(this.params.channelId)) {
-            await helper.tools.commands.sendMessage({
+            await helper.commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
                 args: {
-                    content: helper.vars.errors.uErr.admin.channel.msid,
+                    content: helper.errors.uErr.admin.channel.msid,
                     edit: true
                 }
             }, this.input.canReply);
@@ -250,9 +246,9 @@ export class TrackList extends OsuCommand {
         }
         const userListEmbed = new Discord.EmbedBuilder()
             .setTitle(`All tracked users in ${this.input.message.guild.name}`)
-            .setColor(helper.vars.colours.embedColour.userlist.dec)
+            .setColor(helper.colours.embedColour.userlist.dec)
             .setDescription(`There are ${userList.length} users being tracked in this server\n\n` +
-                `${userList.map((user, i) => `${i + 1}. ${helper.vars.emojis.gamemodes[user.mode == 'undefined' ? 'osu' : user.mode]} https://osu.ppy.sh/users/${user.osuid}`).join('\n')}`
+                `${userList.map((user, i) => `${i + 1}. ${helper.emojis.gamemodes[user.mode == 'undefined' ? 'osu' : user.mode]} https://osu.ppy.sh/users/${user.osuid}`).join('\n')}`
             );
         this.ctn.embeds = [userListEmbed];
         this.send();

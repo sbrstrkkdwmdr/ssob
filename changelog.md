@@ -6,47 +6,104 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.2.0] - 2025-07-02
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+
+### Fixed
+
+-   simulate having under-estimated values
+-   `MapLeaderboard` not using `this.#name` when creating buttons
+-   numbers over 1e9 not formatting into <foo\*1000>M instead of <foo>B
+-   `Help` fetching commands by their name instead of alias returning null (case-sensitivty issues)
+-   `Compare` code blocks not being the whole line
+-   `fetchUser()` sometimes causing crashes
+-   `UserBeatmaps` not switching properly if started on page 1
+-   `ServerLeaderboard` using undefined mode
+
+### Changed
+
+-   rename `Leaderboard` to `ServerLeaderboard`
+-   edit `ServerLeaderboard` aliases (['serverlb', 'serverleaderboard', 'slb'])
+-   update osumodcalculator to 2.0.3
+-   use mod acronyms instead of int in rosu-pp
+-   use array of mods instead of strings
+-   switch to using [toa](https://github.com/sbrstrkkdwmdr/toa) for osu! api calls
+-   edit helper module
+-   edit tsconfig
+-   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }` but just `<res>`
+-   fetching scores with customised mods also applies the customisations to subsequent commands
+-   `BadgeWeightSeed` reformat embed
+-   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
+-   `MapScores` add `-b` and `-map` params to specify map (map url still works)
+-   move `ServerLeaderboard` to `osu_other` (same as in command data)
+- `ServerLeaderboard` slightly change spacing
+
+### Added
+
+-   `Rankings` add `lb` and `leaderboard` aliases
+-   `BadgeWeightSeed` add "Current weighted rank"
+-   `BadgeWeightSeed` add "Badges needed for #1"
+
+### Removed
+
+-   remove `leaderboard` alias from maplb
+-   `Convert` in command data
+-   unused API stuff
+-   unused files from old versions
+-   `tz` arg in `Info`
+- `Requested by` sections on `Map`, `Profile`, `MapScores`, `MapLeaderboard`
+
+### BREAKING
+
+-   The way cache is stored has been changed slightly. Cache prior to this version should be cleared
+
 ## [5.1.1] - 2025-06-12
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/09b752d0f1fee2e1bbc4872236c64b1e30ecf9a5)</br>
 
 ### Fixed
-- changelog fetching from old repo name (sbrbot)
+
+-   changelog fetching from old repo name (sbrbot)
 
 ## [5.1.0] - 2025-06-12
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/226cbb61fa59efaaf93b58b027082f7a6fa57aed)</br>
 
 ### Fixed
-- undefined score country rank being visible
-- `recent best` now says recent best instead of just recent
-- NM scores not having a name in `mapscores`
-- fix scorelist URL links
-- help button inputs not working
-- page selector not working
+
+-   undefined score country rank being visible
+-   `recent best` now says recent best instead of just recent
+-   NM scores not having a name in `mapscores`
+-   fix scorelist URL links
+-   help button inputs not working
+-   page selector not working
 
 ### Changed
-- command name property now forced to be capitalised
-- change `this.args` to `this.params` for readability
+
+-   command name property now forced to be capitalised
+-   change `this.args` to `this.params` for readability
 
 ## [5.0.2] - 2025-05-30
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/a54ba737303e009e515d56c0474e85af2bee1be5)</br>
 
 ### Fixed
-- missing checks in userStatsCache
-- debug commandfiletype using old command names
-- recent activity having the wrong `this.name` value
-- remove unused commands from help 
+
+-   missing checks in userStatsCache
+-   debug commandfiletype using old command names
+-   recent activity having the wrong `this.name` value
+-   remove unused commands from help
 
 ## [5.0.1] - 2025-05-25
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/f952678c28d0558f95e0885232417aa3442c5409)</br>
 
 ### Fixed
-- general commands not having a name parameter set (broke buttons on changelog)
-- commands with no args crashing
-- scorelist commands re-sending API calls when switching pages
+
+-   general commands not having a name parameter set (broke buttons on changelog)
+-   commands with no args crashing
+-   scorelist commands re-sending API calls when switching pages
 
 ## [5.0.0] - 2025-05-23
 

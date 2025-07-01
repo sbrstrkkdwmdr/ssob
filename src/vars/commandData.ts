@@ -1,8 +1,8 @@
-import * as bottypes from '../types/bot.js';
+import * as helper from '../helper';
 
-import * as buttonsObjs from './buttons.js';
+import * as buttonsObjs from './buttons';
 
-const mods = 'See [here](https://sbrstrkkdwmdr.github.io/projects/ssob_docs/types.html#mods)';
+const mods = 'See [here](https://sbrstrkkdwmdr.me/projects/ssob_docs/helper.bottypes#mods)';
 const scoreListString =
     `Mods can be specified with +[mods], -mx [exact mods] or -me [exclude mods]
 The arguments \`pp\`, \`score\`, \`acc\`, \`bpm\` and \`miss\` use the following format:
@@ -27,7 +27,7 @@ const range = (key: string): string[] => {
  * [] is optional
  */
 
-const user: bottypes.commandInfoOption = {
+const user: helper.bottypes.commandInfoOption = {
     name: 'user',
     type: 'string/integer/user mention',
     required: false,
@@ -35,7 +35,7 @@ const user: bottypes.commandInfoOption = {
     format: ['foo', '@foo', '-u foo', '-user foo', '-uid foo', 'osu.ppy.sh/u/foo', 'osu.ppy.sh/users/foo'],
     defaultValue: 'The user who ran the command',
 };
-const mode: bottypes.commandInfoOption = {
+const mode: helper.bottypes.commandInfoOption = {
     name: 'mode',
     type: 'string',
     required: false,
@@ -44,7 +44,7 @@ const mode: bottypes.commandInfoOption = {
     format: ['-foo'],
     defaultValue: 'osu',
 };
-const page: bottypes.commandInfoOption = {
+const page: helper.bottypes.commandInfoOption = {
     name: 'page',
     type: 'integer',
     required: false,
@@ -52,7 +52,7 @@ const page: bottypes.commandInfoOption = {
     format: ['-p foo', '-page foo'],
     defaultValue: '1',
 };
-const userTrack: bottypes.commandInfoOption = {
+const userTrack: helper.bottypes.commandInfoOption = {
     name: 'user',
     type: 'string',
     required: true,
@@ -60,7 +60,7 @@ const userTrack: bottypes.commandInfoOption = {
     format: user.format,
     defaultValue: 'N/A',
 };
-const userAdmin: bottypes.commandInfoOption = {
+const userAdmin: helper.bottypes.commandInfoOption = {
     name: 'user',
     type: 'integer/user mention',
     required: false,
@@ -70,14 +70,15 @@ const userAdmin: bottypes.commandInfoOption = {
 };
 
 const scoreListArgs = '[user] [page] [mode] [mapper] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]';
-const mapformat = ['foo',
+const mapformat = [
+    'foo',
     'osu.ppy.sh/b/foo',
     'osu.ppy.sh/s/SETID',
     'osu.ppy.sh/beatmaps/foo',
     'osu.ppy.sh/beatmapsets/SETID',
     'osu.ppy.sh/beatmapsets/SETID#MODE/foo'
 ];
-const scoreListCommandOptions: bottypes.commandInfoOption[] = [
+const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
     user, mode,
     {
         name: 'sort',
@@ -214,7 +215,7 @@ const scoreListCommandOptions: bottypes.commandInfoOption[] = [
 ];
 
 
-export const cmds: bottypes.commandInfo[] = [
+export const cmds: helper.bottypes.commandInfo[] = [
     {
         name: 'Changelog',
         description: 'Displays the changes for the current version or version requested.',
@@ -249,16 +250,6 @@ export const cmds: bottypes.commandInfo[] = [
                 defaultValue: 'latest',
             },
         ]
-    },
-    {
-        name: 'Convert',
-        description: 'DEPRECATED. [use this instead](https://sbrstrkkdwmdr.github.io/tools/convert)',
-        usage: 'convert',
-        category: 'general',
-        examples: [
-        ],
-        aliases: [],
-        args: []
     },
     {
         name: 'Help',
@@ -312,7 +303,7 @@ export const cmds: bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'Return just that specific value',
-                options: ['uptime', 'version', 'server', 'website', 'timezone', 'source'],
+                options: ['uptime', 'version', 'server', 'website', 'source'],
                 format: ['foo'],
                 defaultValue: 'null',
             },
@@ -513,11 +504,11 @@ export const cmds: bottypes.commandInfo[] = [
         args: scoreListCommandOptions
     },
     {
-        name: 'Leaderboard',
+        name: 'ServerLeaderboard',
         description: 'Shows the osu! rankings of a server.',
-        usage: 'lb [id] [mode]',
+        usage: 'serverleaderboard [id] [mode]',
         category: 'osu_other',
-        aliases: [],
+        aliases: ['serverlb', 'slb'],
         args: [
             {
                 name: 'id',
@@ -683,7 +674,7 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'Returns the leaderboard of the most recent map in the guild with HDHR'
             }
         ],
-        aliases: ['leaderboard', 'maplb', 'ml'],
+        aliases: ['maplb', 'ml'],
         args: [
             {
                 name: 'id',
@@ -855,7 +846,7 @@ export const cmds: bottypes.commandInfo[] = [
     {
         name: 'Set',
         description: 'Sets your osu! username/mode/skin or any setting.',
-        usage: 'set <username> [mode] [skin] [timezone] [location]',
+        usage: 'set <username> [mode] [skin]',
         category: 'osu_other',
         examples: [
             {
@@ -879,7 +870,7 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'Sets your skin to rafis'
             },
         ],
-        aliases: ['setuser', 'set', 'setmode', 'setskin', 'settime', 'settz', 'setweather', 'setlocation'],
+        aliases: ['setuser', 'set', 'setmode', 'setskin',],
         args: [
             {
                 name: 'username',
@@ -898,22 +889,6 @@ export const cmds: bottypes.commandInfo[] = [
                 format: ['-skin foo'],
                 defaultValue: 'osu! default 2014',
             },
-            {
-                name: 'timezone',
-                type: 'string',
-                required: false,
-                description: 'The timezone to set',
-                format: ['-tz foo'],
-                defaultValue: 'null',
-            },
-            {
-                name: 'location',
-                type: 'string',
-                required: false,
-                description: 'The location to set',
-                format: ['-location foo'],
-                defaultValue: 'null',
-            }
         ]
     },
     {
@@ -1061,7 +1036,7 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'Shows the leaderboards for the 227th spotlight'
             }
         ],
-        aliases: [],
+        aliases: ['rankings', 'lb', 'leaderboard'],
         args: [{
             name: 'country',
             type: 'string',
@@ -1208,7 +1183,7 @@ export const cmds: bottypes.commandInfo[] = [
     },
     {
         name: 'ScoreParse',
-        description: 'Returns information about a score. Doesn\'t work with new score ID system.',
+        description: 'Returns information about a score.',
         usage: 'scoreparse <id> [mode]',
         linkUsage: [
             'osu.ppy.sh/scores/<mode>/<id>'
@@ -1244,7 +1219,7 @@ export const cmds: bottypes.commandInfo[] = [
     {
         name: 'MapScores',
         description: 'Shows the scores of a user on a beatmap.\n' + scoreListString,
-        usage: 'mapscores [user] [id] [page] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]',
+        usage: 'mapscores [user] [map id] [page] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]',
         category: 'osu_scores',
         examples: [
             {
@@ -1272,11 +1247,11 @@ export const cmds: bottypes.commandInfo[] = [
         args:
             scoreListCommandOptions.concat([
                 {
-                    name: 'id',
+                    name: 'map id',
                     type: 'integer/map link',
                     required: false,
                     description: 'The map ID to search for',
-                    format: mapformat,
+                    format: mapformat.concat('-b foo', '-map foo'),
                     defaultValue: 'the most recent map in the guild',
                 },
             ])
@@ -1749,7 +1724,7 @@ export const cmds: bottypes.commandInfo[] = [
                 name: 'arg',
                 type: 'integer/string',
                 required: false,
-                description: 'the types of files to clear (read the options section)',
+                description: 'the helper.bottypes of files to clear (read the options section)',
                 options: ['normal', 'all (only cmd data)', 'trueall', 'map', 'users', 'previous', 'pmaps', 'pscores', 'pusers', 'errors', 'graph'],
                 format: ['foo',],
                 defaultValue: 'temporary files only',

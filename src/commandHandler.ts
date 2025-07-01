@@ -1,10 +1,9 @@
 import * as Discord from 'discord.js';
-import { Command } from './commands/command.js';
-import * as helper from './helper.js';
-import * as bottypes from './types/bot.js';
+import { Command } from './commands/command';
+import * as helper from './helper';
 
 let command: Command = null;
-let overrides: bottypes.overrides = {};
+let overrides: helper.bottypes.overrides = {};
 const disableSlashCommands = false;
 export function onMessage(message: Discord.Message) {
     command = null;
@@ -143,27 +142,27 @@ function commandCheck(cmd: string, message: Discord.Message, interaction: Discor
 
     const missingPermsBot: Discord.PermissionsString[] = [];
     const missingPermsUser: string[] = [];
-    if (requireEmbedCommands.includes(cmd) && !helper.tools.checks.botHasPerms(message ?? interaction, ['EmbedLinks'])) {
+    if (requireEmbedCommands.includes(cmd) && !helper.checks.botHasPerms(message ?? interaction, ['EmbedLinks'])) {
         missingPermsBot.push('EmbedLinks');
     }
-    if (requireReactions.includes(cmd) && !helper.tools.checks.botHasPerms(message ?? interaction, ['AddReactions'])) {
+    if (requireReactions.includes(cmd) && !helper.checks.botHasPerms(message ?? interaction, ['AddReactions'])) {
         missingPermsBot.push('AddReactions');
     }
-    if (requireMsgManage.includes(cmd) && !helper.tools.checks.botHasPerms(message ?? interaction, ['ManageMessages'])) {
+    if (requireMsgManage.includes(cmd) && !helper.checks.botHasPerms(message ?? interaction, ['ManageMessages'])) {
         missingPermsBot.push('ManageMessages');
     }
-    if (botRequireAdmin.includes(cmd) && !helper.tools.checks.botHasPerms(message ?? interaction, ['Administrator'])) {
+    if (botRequireAdmin.includes(cmd) && !helper.checks.botHasPerms(message ?? interaction, ['Administrator'])) {
         missingPermsBot.push('Administrator');
     }
-    if (userRequireAdminOrOwner.includes(cmd) && !(helper.tools.checks.isAdmin(message?.author?.id ?? interaction.member.user.id, message?.guildId ?? interaction?.guildId) || helper.tools.checks.isOwner(message?.author?.id ?? interaction.member.user.id))) {
+    if (userRequireAdminOrOwner.includes(cmd) && !(helper.checks.isAdmin(message?.author?.id ?? interaction.member.user.id, message?.guildId ?? interaction?.guildId) || helper.checks.isOwner(message?.author?.id ?? interaction.member.user.id))) {
         missingPermsUser.push('Administrator');
     }
-    if (userRequireOwner.includes(cmd) && !helper.tools.checks.isOwner(message?.author?.id ?? interaction.member.user.id)) {
+    if (userRequireOwner.includes(cmd) && !helper.checks.isOwner(message?.author?.id ?? interaction.member.user.id)) {
         missingPermsUser.push('Owner');
     }
 
     if (missingPermsBot.length > 0 && !(message ?? interaction).channel.isDMBased) {
-        helper.tools.commands.sendMessage({
+        helper.commandTools.sendMessage({
             type: "message",
             message,
             interaction,
@@ -176,7 +175,7 @@ function commandCheck(cmd: string, message: Discord.Message, interaction: Discor
         return false;
     }
     if (missingPermsUser.length > 0) {
-        helper.tools.commands.sendMessage({
+        helper.commandTools.sendMessage({
             type: "message",
             message,
             interaction,
@@ -189,7 +188,7 @@ function commandCheck(cmd: string, message: Discord.Message, interaction: Discor
     }
 
     if (disabled.includes(cmd)) {
-        helper.tools.commands.sendMessage({
+        helper.commandTools.sendMessage({
             type: "message",
             message,
             interaction,
@@ -201,7 +200,7 @@ function commandCheck(cmd: string, message: Discord.Message, interaction: Discor
         return false;
     }
     if (['hug', 'kiss', 'lick', 'pet', 'punch', 'slap',].includes(cmd) && helper.vars.config.tenorKey == 'INVALID_ID') {
-        helper.tools.commands.sendMessage({
+        helper.commandTools.sendMessage({
             type: "message",
             message,
             interaction,
@@ -242,72 +241,69 @@ function commandSelect(cmd: string, args: string[]) {
     switch (cmd) {
         // gen
         case 'changelog': case 'clog': case 'changes':
-            command = new helper.commands.gen.Changelog();
+            command = new helper.cmd_gen.Changelog();
             break;
         case 'versions':
             args.unshift('versions');
-            command = new helper.commands.gen.Changelog();
+            command = new helper.cmd_gen.Changelog();
             break;
         case 'list':
             args.unshift('list');
         case 'help': case 'commands': case 'command': case 'h':
-            command = new helper.commands.gen.Help();
+            command = new helper.cmd_gen.Help();
             break;
         case 'info': case 'i':
-            command = new helper.commands.gen.Info();
+            command = new helper.cmd_gen.Info();
             break;
         case 'invite':
-            command = new helper.commands.gen.Invite();
+            command = new helper.cmd_gen.Invite();
             break;
         case 'ping':
-            command = new helper.commands.gen.Ping();
+            command = new helper.cmd_gen.Ping();
             break;
         case 'remind': case 'reminder':
-            command = new helper.commands.gen.Remind();
+            command = new helper.cmd_gen.Remind();
             break;
         case 'stats':
-            command = new helper.commands.gen.Stats();
+            command = new helper.cmd_gen.Stats();
             break;
 
         // osu (profiles)
         case 'badges':
-            command = new helper.commands.osu.profiles.Badges();
+            command = new helper.cmd_osu_profiles.Badges();
             break;
         case 'bws': case 'badgeweightsystem': case 'badgeweight': case 'badgeweightseed': case 'badgerank':
-            command = new helper.commands.osu.profiles.BadgeWeightSeed();
-            break;
-        case 'lb':
-            command = new helper.commands.osu.profiles.Leaderboard();
+            command = new helper.cmd_osu_profiles.BadgeWeightSeed();
             break;
         case 'osu': case 'profile': case 'o': case 'user':
-            command = new helper.commands.osu.profiles.Profile();
+            command = new helper.cmd_osu_profiles.Profile();
             break;
         case 'taiko': case 'drums': {
             overrides = {
                 mode: 'taiko'
             };
-            command = new helper.commands.osu.profiles.Profile();
+            command = new helper.cmd_osu_profiles.Profile();
         }
             break;
         case 'fruits': case 'ctb': case 'catch': {
             overrides = {
                 mode: 'fruits'
             };
-            command = new helper.commands.osu.profiles.Profile();
+            command = new helper.cmd_osu_profiles.Profile();
         }
             break;
         case 'mania': {
             overrides = {
                 mode: 'mania'
             };
-            command = new helper.commands.osu.profiles.Profile();
+            command = new helper.cmd_osu_profiles.Profile();
         }
             break;
-        case 'ranking': case 'rankings':
-            command = new helper.commands.osu.profiles.Ranking();
+        case 'ranking': case 'rankings': case 'lb': case 'leaderboard':
+            command = new helper.cmd_osu_profiles.Ranking();
             break;
         case 'recentactivity': case 'recentact': case 'rsact':
-            command = new helper.commands.osu.profiles.RecentActivity();
+            command = new helper.cmd_osu_profiles.RecentActivity();
             break;
 
         // osu (maps)
@@ -317,96 +313,96 @@ function commandSelect(cmd: string, args: string[]) {
             };
         }
         case 'map': case 'm':
-            command = new helper.commands.osu.maps.Map();
+            command = new helper.cmd_osu_maps.Map();
             break;
         case 'maprandom': case 'f2': case 'maprand': case 'randommap': case 'randmap':
-            command = new helper.commands.osu.maps.RandomMap();
+            command = new helper.cmd_osu_maps.RandomMap();
             break;
         case 'recommendmap': case 'recmap': case 'maprec': case 'mapsuggest': case 'suggestmap': case 'maprecommend':
-            command = new helper.commands.osu.maps.RecommendMap();
+            command = new helper.cmd_osu_maps.RecommendMap();
             break;
         case 'userbeatmaps': case 'ub': case 'userb': case 'ubm': case 'um': case 'usermaps':
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
             break;
         case 'ranked': {
             overrides = {
                 ex: 'ranked'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'favourite': case 'favourites': {
             overrides = {
                 ex: 'favourite'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'graveyard': case 'unranked': {
             overrides = {
                 ex: 'graveyard'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'loved': {
             overrides = {
                 ex: 'loved'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'most_played': case 'mostplayed': case 'mp': {
             overrides = {
                 ex: 'most_played'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'pending': case 'wip': {
             overrides = {
                 ex: 'pending'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'nominated': case 'bn': {
             overrides = {
                 ex: 'nominated'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         case 'guest': case 'gd': {
             overrides = {
                 ex: 'guest'
             };
-            command = new helper.commands.osu.maps.UserBeatmaps();
+            command = new helper.cmd_osu_maps.UserBeatmaps();
         }
             break;
         // // osu (scores)
         case 'firsts': case 'firstplaceranks': case 'fpr': case 'fp': case '#1s': case 'first': case '#1': case '1s':
-            command = new helper.commands.osu.scores.Firsts();
+            command = new helper.cmd_osu_scores.Firsts();
             break;
-        case 'leaderboard': case 'maplb': case 'mapleaderboard': case 'ml':
-            command = new helper.commands.osu.scores.MapLeaderboard();
+        case 'maplb': case 'mapleaderboard': case 'ml':
+            command = new helper.cmd_osu_scores.MapLeaderboard();
             break;
         case 'nochokes': case 'nc': {
             overrides = {
                 miss: true
             };
-            command = new helper.commands.osu.scores.NoChokes();
+            command = new helper.cmd_osu_scores.NoChokes();
         }
             break;
         case 'osutop': case 'top': case 't': case 'ot': case 'toposu': case 'topo':
-            command = new helper.commands.osu.scores.OsuTop();
+            command = new helper.cmd_osu_scores.OsuTop();
             break;
         case 'taikotop': case 'toptaiko': case 'tt': case 'topt':
             {
                 overrides = {
                     mode: 'taiko'
                 };
-                command = new helper.commands.osu.scores.OsuTop();
+                command = new helper.cmd_osu_scores.OsuTop();
             }
             break;
         case 'ctbtop': case 'fruitstop': case 'catchtop': case 'topctb': case 'topfruits': case 'topcatch': case 'tctb': case 'tf': case 'topf': case 'topc':
@@ -414,7 +410,7 @@ function commandSelect(cmd: string, args: string[]) {
                 overrides = {
                     mode: 'fruits'
                 };
-                command = new helper.commands.osu.scores.OsuTop();
+                command = new helper.cmd_osu_scores.OsuTop();
             }
             break;
         case 'maniatop': case 'topmania': case 'tm': case 'topm':
@@ -422,34 +418,34 @@ function commandSelect(cmd: string, args: string[]) {
                 overrides = {
                     mode: 'mania'
                 };
-                command = new helper.commands.osu.scores.OsuTop();
+                command = new helper.cmd_osu_scores.OsuTop();
             }
             break;
         case 'pinned': case 'pins':
-            command = new helper.commands.osu.scores.Pinned();
+            command = new helper.cmd_osu_scores.Pinned();
             break;
         case 'recent': case 'rs': case 'recentscore': case 'r':
-            command = new helper.commands.osu.scores.Recent();
+            command = new helper.cmd_osu_scores.Recent();
             break;
         case 'recenttaiko': case 'rt': {
             overrides = {
                 mode: 'taiko'
             };
-            command = new helper.commands.osu.scores.Recent();
+            command = new helper.cmd_osu_scores.Recent();
         }
             break;
         case 'recentfruits': case 'rf': case 'rctb': {
             overrides = {
                 mode: 'fruits'
             };
-            command = new helper.commands.osu.scores.Recent();
+            command = new helper.cmd_osu_scores.Recent();
         }
             break;
         case 'recentmania': case 'rm': {
             overrides = {
                 mode: 'mania'
             };
-            command = new helper.commands.osu.scores.Recent();
+            command = new helper.cmd_osu_scores.Recent();
         }
             break;
         case 'recentbest': case 'rsbest': case 'rb': {
@@ -457,7 +453,7 @@ function commandSelect(cmd: string, args: string[]) {
 
                 sort: 'pp'
             };
-            command = new helper.commands.osu.scores.RecentList();
+            command = new helper.cmd_osu_scores.RecentList();
         }
             break;
         case 'recentlist': case 'rl': case 'rslist': {
@@ -465,7 +461,7 @@ function commandSelect(cmd: string, args: string[]) {
 
                 sort: 'recent'
             };
-            command = new helper.commands.osu.scores.RecentList();
+            command = new helper.cmd_osu_scores.RecentList();
         }
             break;
         case 'recentlisttaiko': case 'rlt': {
@@ -474,7 +470,7 @@ function commandSelect(cmd: string, args: string[]) {
                 mode: 'taiko',
                 sort: 'recent'
             };
-            command = new helper.commands.osu.scores.RecentList();
+            command = new helper.cmd_osu_scores.RecentList();
         }
             break;
         case 'recentlistfruits': case 'rlf': case 'rlctb': case 'rlc': {
@@ -483,7 +479,7 @@ function commandSelect(cmd: string, args: string[]) {
                 mode: 'fruits',
                 sort: 'recent'
             };
-            command = new helper.commands.osu.scores.RecentList();
+            command = new helper.cmd_osu_scores.RecentList();
         }
             break;
         case 'recentlistmania': case 'rlm': {
@@ -492,34 +488,34 @@ function commandSelect(cmd: string, args: string[]) {
                 mode: 'mania',
                 sort: 'recent'
             };
-            command = new helper.commands.osu.scores.RecentList();
+            command = new helper.cmd_osu_scores.RecentList();
         }
             break;
         case 'scoreparse': case 'score': case 'sp':
-            command = new helper.commands.osu.scores.ScoreParse();
+            command = new helper.cmd_osu_scores.ScoreParse();
             break;
         case 'scores': case 'c': case 'mapscores':
-            command = new helper.commands.osu.scores.MapScores();
+            command = new helper.cmd_osu_scores.MapScores();
             break;
         case 'scorestats': case 'ss':
-            command = new helper.commands.osu.scores.ScoreStats();
+            command = new helper.cmd_osu_scores.ScoreStats();
             break;
         case 'simplay': case 'simulate': case 'sim':
-            command = new helper.commands.osu.scores.Simulate();
+            command = new helper.cmd_osu_scores.Simulate();
             break;
 
         // // osu (track)
         case 'trackadd': case 'track': case 'ta':
-            command = new helper.commands.osu.track.TrackAdd();
+            command = new helper.cmd_osu_track.TrackAdd();
             break;
         case 'trackremove': case 'trackrm': case 'tr': case 'untrack':
-            command = new helper.commands.osu.track.TrackRemove();
+            command = new helper.cmd_osu_track.TrackRemove();
             break;
         case 'trackchannel': case 'tc':
-            command = new helper.commands.osu.track.TrackChannel();
+            command = new helper.cmd_osu_track.TrackChannel();
             break;
         case 'tracklist': case 'tl':
-            command = new helper.commands.osu.track.TrackList();
+            command = new helper.cmd_osu_track.TrackList();
             break;
 
         // // osu (other)
@@ -529,121 +525,124 @@ function commandSelect(cmd: string, args: string[]) {
             };
         }
         case 'compare':
-            command = new helper.commands.osu.other.Compare();
+            command = new helper.cmd_osu_other.Compare();
             break;
         case 'osuset': case 'setuser': case 'set':
-            command = new helper.commands.osu.other.Set();
+            command = new helper.cmd_osu_other.Set();
             break;
         case 'setmode': {
             overrides = {
                 type: 'mode'
             };
-            command = new helper.commands.osu.other.Set();
+            command = new helper.cmd_osu_other.Set();
         }
             break;
         case 'setskin': {
             overrides = {
                 type: 'skin'
             };
-            command = new helper.commands.osu.other.Set();
+            command = new helper.cmd_osu_other.Set();
         }
             break;
         case 'pp': {
             overrides = {
                 type: 'pp',
             };
-            command = new helper.commands.osu.other.RankPP();
+            command = new helper.cmd_osu_other.RankPP();
         }
             break;
         case 'rank': {
             overrides = {
                 type: 'rank',
             };
-            command = new helper.commands.osu.other.RankPP();
+            command = new helper.cmd_osu_other.RankPP();
         }
             break;
         case 'saved':
-            command = new helper.commands.osu.other.Saved();
+            command = new helper.cmd_osu_other.Saved();
+            break;
+        case 'serverleaderboard': case 'serverlb': case 'slb':
+            command = new helper.cmd_osu_other.ServerLeaderboard();
             break;
         case 'whatif': case 'wi':
-            command = new helper.commands.osu.other.WhatIf();
+            command = new helper.cmd_osu_other.WhatIf();
             break;
 
         // // admin
         case 'checkperms': case 'fetchperms': case 'checkpermissions': case 'permissions': case 'perms':
-            command = new helper.commands.admin.CheckPerms();
+            command = new helper.cmd_admin.CheckPerms();
             break;
         case 'crash':
-            command = new helper.commands.admin.Crash();
+            command = new helper.cmd_admin.Crash();
             break;
         case 'clear':
-            command = new helper.commands.admin.Clear();
+            command = new helper.cmd_admin.Clear();
             break;
         case 'debug':
-            command = new helper.commands.admin.Debug();
+            command = new helper.cmd_admin.Debug();
             break;
         case 'find': case 'get':
-            command = new helper.commands.admin.Find();
+            command = new helper.cmd_admin.Find();
             break;
         case 'leaveguild': case 'leave':
-            command = new helper.commands.admin.LeaveGuild();
+            command = new helper.cmd_admin.LeaveGuild();
             break;
         case 'prefix':
-            command = new helper.commands.admin.Prefix();
+            command = new helper.cmd_admin.Prefix();
             break;
         case 'servers':
-            command = new helper.commands.admin.Servers();
+            command = new helper.cmd_admin.Servers();
             break;
 
 
         // // misc
         case '8ball': case 'ask':
-            command = new helper.commands.fun._8Ball();
+            command = new helper.cmd_fun._8Ball();
             break;
         case 'coin': case 'coinflip': case 'flip':
-            command = new helper.commands.fun.CoinFlip();
+            command = new helper.cmd_fun.CoinFlip();
             break;
         case 'hug':
             overrides = {
                 ex: 'hug'
             };
-            command = new helper.commands.fun.Gif();
+            command = new helper.cmd_fun.Gif();
             break;
         case 'kiss':
             overrides = {
                 ex: 'kiss'
             };
-            command = new helper.commands.fun.Gif();
+            command = new helper.cmd_fun.Gif();
             break;
         case 'lick':
             overrides = {
                 ex: 'lick'
             };
-            command = new helper.commands.fun.Gif();
+            command = new helper.cmd_fun.Gif();
             break;
         case 'pet':
             overrides = {
                 ex: 'pet'
             };
-            command = new helper.commands.fun.Gif();
+            command = new helper.cmd_fun.Gif();
             break;
         case 'punch':
             overrides = {
                 ex: 'punch'
             };
-            command = new helper.commands.fun.Gif();
+            command = new helper.cmd_fun.Gif();
             break;
         case 'slap':
             overrides = {
                 ex: 'slap'
             };
-            command = new helper.commands.fun.Gif();
+            command = new helper.cmd_fun.Gif();
             break;
         case 'janken': case 'paperscissorsrock': case 'rockpaperscissors': case 'rps': case 'psr':
-            command = new helper.commands.fun.Janken();
+            command = new helper.cmd_fun.Janken();
             break;
         case 'roll': case 'rng': case 'randomnumber': case 'randomnumbergenerator': case 'pickanumber': case 'pickanum':
-            command = new helper.commands.fun.Roll();
+            command = new helper.cmd_fun.Roll();
             break;
         default:
             command = null;
@@ -668,7 +667,7 @@ function runCommand(cmd: string, message: Discord.Message, interaction: Discord.
                 interaction,
                 args,
                 date: new Date(),
-                id: helper.tools.commands.getCmdId(),
+                id: helper.commandTools.getCmdId(),
                 overrides,
                 canReply,
                 type,

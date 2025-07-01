@@ -1,21 +1,17 @@
 // database and caching
 import fs from 'fs';
 import * as moment from 'moment';
-import * as rosu from 'rosu-pp-js';
-import Sequelize from 'sequelize';
+import * as osumodcalc from 'osumodcalculator';
 import * as stats from 'simple-statistics';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import * as apitypes from '../types/osuapi.js';
-import * as tooltypes from '../types/tools.js';
+import * as helper from '../helper';
 
-export async function updateUserStats(user: apitypes.User, mode: string) {
+export async function updateUserStats(user: helper.osuapi.types_v2.User, mode: string) {
     const allUsers = await helper.vars.userdata.findAll();
 
     let findname;
     allUsers.find((u) => u._model == null);
     try {
-        findname = allUsers.find((u: any) => (u as tooltypes.dbUser).osuname.toLowerCase() == user.username.toLowerCase());
+        findname = allUsers.find((u: any) => (u as helper.tooltypes.dbUser).osuname.toLowerCase() == user.username.toLowerCase());
     } catch (error) {
 
     }
@@ -158,16 +154,16 @@ const cacheById = [
  * @param id command id. if storing a map use the map id/md5 or user id if storing a user
  * @param name 
  */
-export function storeFile(data: any, id: string | number, name: string, mode?: apitypes.GameMode, type?: string) {
-    mode = helper.tools.other.modeValidator(mode);
+export function storeFile(data: any, id: string | number, name: string, mode?: helper.osuapi.types_v2.GameMode, type?: string) {
+    mode = helper.other.modeValidator(mode);
     try {
-        let path = `${helper.vars.path.main}/cache/commandData/`;
+        let path = `${helper.path.main}/cache/commandData/`;
         if (cacheById.some(x => name.includes(x))) {
             switch (true) {
                 case (name.includes('mapdata')): {
-                    const datamap: apitypes.Beatmap = (data as tooltypes.apiReturn).apiData as any;
+                    data = data as helper.osuapi.types_v2.Beatmap;
                     let status = '';
-                    switch (datamap.status) {
+                    switch (data.status) {
                         case 'ranked':
                             status = 'Ranked';
                             break;
@@ -187,9 +183,9 @@ export function storeFile(data: any, id: string | number, name: string, mode?: a
                     path += `${name.toLowerCase()}${status}${id}.json`;
                 } break;
                 case (name.includes('bmsdata')): {
-                    const datamap: apitypes.Beatmapset = (data as tooltypes.apiReturn).apiData as any;
+                    data = data as helper.osuapi.types_v2.Beatmapset;
                     let status = '';
-                    switch (datamap.status) {
+                    switch (data.status) {
                         case 'ranked':
                             status = 'Ranked';
                             break;
@@ -225,7 +221,7 @@ export function storeFile(data: any, id: string | number, name: string, mode?: a
         fs.writeFileSync(path, JSON.stringify(data, null, 2));
         return true;
     } catch (error) {
-        helper.tools.log.stdout(error);
+        helper.log.stdout(error);
         return error;
     }
 }
@@ -236,8 +232,8 @@ export function storeFile(data: any, id: string | number, name: string, mode?: a
  * @param name 
  * @returns 
  */
-export function findFile(id: string | number, name: string, mode?: apitypes.GameMode, type?: string) {
-    const path = `${helper.vars.path.cache}/commandData/`;
+export function findFile(id: string | number, name: string, mode?: helper.osuapi.types_v2.GameMode, type?: string) {
+    const path = `${helper.path.cache}/commandData/`;
     if (cacheById.some(x => name.includes(x))) {
         if (fs.existsSync(path + `${name.toLowerCase()}${id}.json`)) {
             return JSON.parse(fs.readFileSync(path + `${name.toLowerCase()}${id}.json`, 'utf-8'));
@@ -291,22 +287,22 @@ export function findFile(id: string | number, name: string, mode?: apitypes.Game
 export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) {
     try {
         const init = JSON.parse(
-            fs.readFileSync(`${helper.vars.path.cache}/previous/${type}${serverId}.json`, 'utf-8')) as {
+            fs.readFileSync(`${helper.path.cache}/previous/${type}${serverId}.json`, 'utf-8')) as {
                 id: string | false,
-                apiData: apitypes.Score,
-                mods: string,
+                apiData: helper.osuapi.types_v2.Score,
+                mods: helper.osuapi.types_v2.Mod[],
                 default: boolean,
-                mode: apitypes.GameMode,
+                mode: helper.osuapi.types_v2.GameMode,
                 last_access: string,
             };
         return init;
     } catch (error) {
         const data: {
             id: string | false,
-            apiData: apitypes.Score,
-            mods: string;
+            apiData: helper.osuapi.types_v2.Score,
+            mods: helper.osuapi.types_v2.Mod[];
             default: boolean,
-            mode: apitypes.GameMode,
+            mode: helper.osuapi.types_v2.GameMode,
             last_access: string,
         } = {
             id: false,
@@ -316,37 +312,37 @@ export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) 
             mode: 'osu',
             last_access: moment.default.utc().format("YYYY-MM-DD HH:mm:ss.SSS")
         };
-        fs.writeFileSync(`${helper.vars.path.cache}/previous/${type}${serverId}.json`, JSON.stringify(data, null, 2));
+        fs.writeFileSync(`${helper.path.cache}/previous/${type}${serverId}.json`, JSON.stringify(data, null, 2));
         return data;
     }
 }
 export function writePreviousId(type: 'map' | 'user' | 'score', serverId: string, data: {
     id: string,
-    apiData: apitypes.Score,
-    mods: string,
-    mode?: apitypes.GameMode,
+    apiData: helper.osuapi.types_v2.Score,
+    mods: helper.osuapi.types_v2.Mod[],
+    mode?: helper.osuapi.types_v2.GameMode,
     default?: boolean;
 }) {
     if (!data.mods || data.mods.length == 0) {
-        data.mods = 'NM';
+        data.mods = [];
     }
     data['default'] = false;
     data['last_access'] = moment.default.utc().format("YYYY-MM-DD HH:mm:ss.SSS");
 
-    fs.writeFileSync(`${helper.vars.path.cache}/previous/${type}${serverId}.json`, JSON.stringify(data, null, 2));
+    fs.writeFileSync(`${helper.path.cache}/previous/${type}${serverId}.json`, JSON.stringify(data, null, 2));
     return;
 }
 
 export function debug(data: any, type: string, name: string, serverId: string, params: string) {
     const pars = params.replaceAll(',', '=');
-    if (!fs.existsSync(`${helper.vars.path.cache}/debug/${type}`)) {
-        fs.mkdirSync(`${helper.vars.path.cache}/debug/${type}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug/${type}`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug/${type}`);
     }
-    if (!fs.existsSync(`${helper.vars.path.cache}/debug/${type}/${name}/`)) {
-        fs.mkdirSync(`${helper.vars.path.cache}/debug/${type}/${name}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug/${type}/${name}/`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug/${type}/${name}`);
     }
     try {
-        fs.writeFileSync(`${helper.vars.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
+        fs.writeFileSync(`${helper.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
         console.log('Error writing debug file');
         console.log(error);
@@ -358,24 +354,17 @@ export function randomMap(type?: 'Ranked' | 'Loved' | 'Approved' | 'Qualified' |
     let returnId = 4204;
     let errormsg = null;
     //check if cache exists
-    const cache = fs.existsSync(`${helper.vars.path.cache}/commandData`);
+    const cache = fs.existsSync(`${helper.path.cache}/commandData`);
     if (cache) {
-        let mapsExist = fs.readdirSync(`${helper.vars.path.cache}/commandData`).filter(x => x.includes('mapdata'));
-        const maps: tooltypes.apiReturn[] = [];
+        let maps: helper.osuapi.types_v2.Beatmap[] = getStoredMaps();
         if (type) {
-            mapsExist = mapsExist.filter(x => x.includes(type));
+            maps = maps.filter(x => x.status == type.toLowerCase());
         }
 
-        for (let i = 0; i < mapsExist.length; i++) {
-            if (mapsExist[i].includes('.json')) {
-                const dataAsStr = fs.readFileSync(`${helper.vars.path.cache}/commandData/${mapsExist[i]}`, 'utf-8');
-                maps.push(JSON.parse(dataAsStr) as tooltypes.apiReturn);
-            }
-        }
         if (maps.length > 0) {
             try {
                 const curmap = maps[Math.floor(Math.random() * maps.length)];
-                returnId = curmap?.apiData?.id ?? 4204;
+                returnId = curmap?.id ?? 4204;
             } catch (error) {
                 errormsg = `There was an error while trying to parse the map ID`;
             }
@@ -392,15 +381,15 @@ export function randomMap(type?: 'Ranked' | 'Loved' | 'Approved' | 'Qualified' |
 }
 
 export function getStoredMaps() {
-    const cache = fs.existsSync(`${helper.vars.path.cache}/commandData`);
+    const cache = fs.existsSync(`${helper.path.cache}/commandData`);
     if (cache) {
-        const mapsExist = fs.readdirSync(`${helper.vars.path.cache}/commandData`).filter(x => x.includes('mapdata'));
-        const maps: tooltypes.apiReturn[] = [];
+        const mapsExist = fs.readdirSync(`${helper.path.cache}/commandData`).filter(x => x.includes('mapdata'));
+        const maps: helper.osuapi.types_v2.Beatmap[] = [];
 
         for (const data of mapsExist) {
             if (data.includes('.json')) {
-                const dataAsStr = fs.readFileSync(`${helper.vars.path.cache}/commandData/${data}`, 'utf-8');
-                maps.push(JSON.parse(dataAsStr) as tooltypes.apiReturn);
+                const dataAsStr = fs.readFileSync(`${helper.path.cache}/commandData/${data}`, 'utf-8');
+                maps.push(JSON.parse(dataAsStr) as helper.osuapi.types_v2.Beatmap);
             }
         }
         return maps;
@@ -408,7 +397,7 @@ export function getStoredMaps() {
     return [];
 }
 
-export function recommendMap(baseRating: number, retrieve: 'closest' | 'random', mode: apitypes.GameMode, maxRange?: number) {
+export function recommendMap(baseRating: number, retrieve: 'closest' | 'random', mode: helper.osuapi.types_v2.GameMode, maxRange?: number) {
     const maps = getStoredMaps();
     const obj = {
         hasErr: false,
@@ -426,7 +415,7 @@ export function recommendMap(baseRating: number, retrieve: 'closest' | 'random',
         obj['err'] = 'Maximum range is invalid';
     }
     //sort maps by closest to given base rating
-    const sorted = (maps.map(x => x.apiData) as apitypes.Beatmap[])
+    const sorted = maps.slice()
         .filter(x => x.mode == (mode ?? 'osu'))
         .sort((a, b) =>
             Math.abs(baseRating - a.difficulty_rating)
@@ -457,10 +446,10 @@ export function recommendMap(baseRating: number, retrieve: 'closest' | 'random',
 }
 
 
-export async function userStatsCache(user: apitypes.UserStatistics[] | apitypes.User[], mode: apitypes.GameMode, type: 'Stat' | 'User') {
+export async function userStatsCache(user: helper.osuapi.types_v2.UserStatistics[] | helper.osuapi.types_v2.User[], mode: helper.osuapi.types_v2.GameMode, type: 'Stat' | 'User') {
     switch (type) {
         case 'Stat': {
-            user = user as apitypes.UserStatistics[];
+            user = user as helper.osuapi.types_v2.UserStatistics[];
             for (let i = 0; i < user.length; i++) {
                 const curuser = user[i];
                 if (!(curuser?.pp || !curuser?.global_rank)) {
@@ -499,7 +488,7 @@ export async function userStatsCache(user: apitypes.UserStatistics[] | apitypes.
             }
         } break;
         case 'User': {
-            user = user as apitypes.User[];
+            user = user as helper.osuapi.types_v2.User[];
             for (let i = 0; i < user.length; i++) {
                 const curuser = user[i];
                 if (!(
@@ -547,7 +536,7 @@ export async function userStatsCache(user: apitypes.UserStatistics[] | apitypes.
     }
 }
 
-export async function userStatsCacheFix(mode: apitypes.GameMode) {
+export async function userStatsCacheFix(mode: helper.osuapi.types_v2.GameMode) {
     const users = await helper.vars.statsCache.findAll();
     const actualusers: {
         pp: string,
@@ -586,7 +575,7 @@ export async function userStatsCacheFix(mode: apitypes.GameMode) {
     }
 }
 
-export async function getRankPerformance(type: 'pp->rank' | 'rank->pp', value: number, mode: apitypes.GameMode): Promise<{
+export async function getRankPerformance(type: 'pp->rank' | 'rank->pp', value: number, mode: helper.osuapi.types_v2.GameMode): Promise<{
     value: number,
     isEstimated: boolean,
 }> {
@@ -610,17 +599,17 @@ export async function getRankPerformance(type: 'pp->rank' | 'rank->pp', value: n
         switch (type) {
             case 'pp->rank': {
                 //pp within 10
-                return (helper.tools.calculate.isWithinPercentage(+x.pp, +x.pp * 0.000001, +value) || helper.tools.calculate.isWithinValue(+x.pp, 1, +value)) ?? false;
+                return (helper.calculate.isWithinPercentage(+x.pp, +x.pp * 0.000001, +value) || helper.calculate.isWithinValue(+x.pp, 1, +value)) ?? false;
             } break;
             case 'rank->pp': {
                 //rank within 1%
-                return helper.tools.calculate.isWithinPercentage(+x.rank, 1, +value) ?? false;
+                return helper.calculate.isWithinPercentage(+x.rank, 1, +value) ?? false;
             } break;
         }
     });
     if (tempChecking.length > 0) {
-        const rankData = helper.tools.calculate.stats(tempChecking.map(x => x.rank));
-        const ppData = helper.tools.calculate.stats(tempChecking.map(x => x.pp));
+        const rankData = helper.calculate.stats(tempChecking.map(x => x.rank));
+        const ppData = helper.calculate.stats(tempChecking.map(x => x.pp));
         switch (type) {
             case 'pp->rank': {
                 return { value: rankData.median ?? rankData.mean, isEstimated: false };

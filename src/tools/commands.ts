@@ -1,9 +1,7 @@
 import * as Discord from 'discord.js';
 import fs from 'fs';
 import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import * as apitypes from '../types/osuapi.js';
+import * as helper from '../helper';
 
 export async function sendMessage(input: {
     type: 'message' | 'interaction' | 'link' | 'button' | "other",
@@ -209,7 +207,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
 
     const object: {
         set: number,
-        mode: apitypes.GameMode,
+        mode: helper.osuapi.types_v2.GameMode,
         map: number,
     } = {
         set: null,
@@ -234,9 +232,9 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
         case url.includes('?m='): {
             const modeTemp = url.split('?m=')[1];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as apitypes.GameMode;
+                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
             } else {
-                object.mode = osumodcalc.ModeIntToName(+modeTemp);
+                object.mode = osumodcalc.mode.toName(+modeTemp);
             }
             if (url.includes('/b/')) {
                 object.map = +url.split('?m=')[0].split('/b/')[1];
@@ -255,9 +253,9 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             object.set = +url.split('beatmapsets/')[1].split('#')[0];
             const modeTemp = url.split('#')[1].split('/')[0];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as apitypes.GameMode;
+                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
             } else {
-                object.mode = osumodcalc.ModeIntToName(+modeTemp);
+                object.mode = osumodcalc.mode.toName(+modeTemp);
             }
             object.map = +url.split('#')[1].split('/')[1];
         } break;
@@ -265,9 +263,9 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             object.set = +url.split('/s/')[1].split('#')[0];
             const modeTemp = url.split('#')[1].split('/')[0];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as apitypes.GameMode;
+                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
             } else {
-                object.mode = osumodcalc.ModeIntToName(+modeTemp);
+                object.mode = osumodcalc.mode.toName(+modeTemp);
             }
             object.map = +url.split('#')[1].split('/')[1];
         } break;
@@ -282,8 +280,8 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             break;
     }
     // if (callIfMapIdNull && object.map == null && object.set) {
-    //     const bmsdataReq = await helper.tools.api.getMapset(object.set, []);
-    //     object.map = (bmsdataReq.apiData as apitypes.Beatmapset)?.beatmaps?.[0]?.id ?? null;
+    //     const bmsdataReq = await helper.api.getMapset(object.set, []);
+    //     object.map = (bmsdataReq.apiData as helper.osuapi.types_v2.Beatmapset)?.beatmaps?.[0]?.id ?? null;
     // }
     return object;
 }
@@ -319,10 +317,10 @@ export function fetchUser(args: string[]) {
     }
     const object: {
         id: string,
-        mode: apitypes.GameMode,
+        mode: helper.osuapi.types_v2.GameMode,
         args: string[];
     } = {
-        id: null,
+        id: '',
         mode: null,
         args
     };
@@ -335,7 +333,7 @@ export function fetchUser(args: string[]) {
      * {username}
      * -u
      */
-    const userArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.user, args, true, 'string', true, false);
+    const userArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.user, args, true, 'string', true, false);
     switch (true) {
         case userArgFinder.found:
             if (userArgFinder.found) {
@@ -351,7 +349,7 @@ export function fetchUser(args: string[]) {
                     object.id = url.split('/users/')[1];
                     if (url.split('/users/')[1].includes('/')) {
                         object.id = url.split('/users/')[1].split('/')[0];
-                        object.mode = (url.split('/users/')[1].split('/')[1]) as apitypes.GameMode;
+                        object.mode = (url.split('/users/')[1].split('/')[1]) as helper.osuapi.types_v2.GameMode;
                     }
                     break;
             }
@@ -363,7 +361,7 @@ export function fetchUser(args: string[]) {
             object.id = url;
             break;
     }
-    if (object.id.trim() == "") {
+    if (object?.id?.trim() == "") {
         object.id = null;
     }
     return object;
@@ -450,7 +448,7 @@ export function scoreIdFromLink(url: string) {
     }
     const object: {
         id: string,
-        mode: apitypes.GameMode,
+        mode: helper.osuapi.types_v2.GameMode,
     } = {
         id: null,
         mode: null,
@@ -462,7 +460,7 @@ export function scoreIdFromLink(url: string) {
     object.id = url.split('/scores/')[1];
     if (url.split('/scores/')[1].includes('/')) {
         object.id = url.split('/scores/')[1].split('/')[1];
-        object.mode = helper.tools.other.modeValidator(url.split('/scores/')[1].split('/')[0]);
+        object.mode = helper.other.modeValidator(url.split('/scores/')[1].split('/')[0]);
     }
     if (object.id.trim() == "") {
         object.id = null;
@@ -474,7 +472,7 @@ export function scoreIdFromLink(url: string) {
  * @param noLinks ignore "button" and "link" command types
  * logs error, sends error to command user then promptly aborts the command
  */
-export async function errorAndAbort(input: bottypes.commandInput, commandName: string, interactionEdit: boolean, err: string, noLinks: boolean) {
+export async function errorAndAbort(input: helper.bottypes.commandInput, commandName: string, interactionEdit: boolean, err: string, noLinks: boolean) {
     if (!err) {
         err = 'undefined error';
     }
@@ -524,16 +522,16 @@ export type params = {
     user?: string,
     page?: number,
     maxPage?: number,
-    mode?: apitypes.GameMode,
+    mode?: helper.osuapi.types_v2.GameMode,
     userId?: string,
     mapId?: number,
     spotlight?: string | number,
     detailed?: number,
     filter?: string,
     list?: boolean, //recent
-    fails?: number, //recent
+    fails?: 1 | 0, //recent
     nochokes?: boolean, //top
-    rankingtype?: apitypes.RankingType, //ranking
+    rankingtype?: helper.osuapi.types_v2.RankingType, //ranking
     country?: string, //ranking
     //scorelist AND ubm
     parse?: boolean,
@@ -544,10 +542,10 @@ export type params = {
     reverse?: boolean,
     filterMapper?: string,
     filterMods?: string,
-    filterRank?: apitypes.Rank,
-    modsInclude?: string,
-    modsExact?: string,
-    modsExclude?: string,
+    filterRank?: helper.osuapi.types_v2.Rank,
+    modsInclude?: osumodcalc.types.Mod[],
+    modsExact?: (osumodcalc.types.Mod | "NONE")[],
+    modsExclude?: osumodcalc.types.Mod[],
     filterPp?: string,
     filterScore?: string,
     filterAcc?: string,
@@ -555,7 +553,7 @@ export type params = {
     filterMiss?: string,
     filterBpm?: string,
 
-    sort?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | bottypes.ubmSort,
+    sort?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | helper.bottypes.ubmSort,
 
     //map
     overrideSpeed?: number,
@@ -564,8 +562,8 @@ export type params = {
     maptitleq?: string,
 
     //ubm
-    sortMap?: bottypes.ubmSort,
-    mapType?: bottypes.ubmFilter,
+    sortMap?: helper.bottypes.ubmSort,
+    mapType?: helper.bottypes.ubmFilter,
     //compare
     searchIdFirst?: string,
     searchIdSecond?: string,
@@ -575,8 +573,8 @@ export type params = {
 };
 
 export function getButtonArgs(commandId: string | number) {
-    if (fs.existsSync(`${helper.vars.path.main}/cache/params/${commandId}.json`)) {
-        const x = fs.readFileSync(`${helper.vars.path.main}/cache/params/${commandId}.json`, 'utf-8');
+    if (fs.existsSync(`${helper.path.main}/cache/params/${commandId}.json`)) {
+        const x = fs.readFileSync(`${helper.path.main}/cache/params/${commandId}.json`, 'utf-8');
         return JSON.parse(x) as params;
     }
     return {
@@ -588,10 +586,10 @@ export function storeButtonArgs(commandId: string | number, params: params) {
     if (params?.page < 1) {
         params.page = 1;
     }
-    fs.writeFileSync(`${helper.vars.path.main}/cache/params/${commandId}.json`, JSON.stringify(params, null, 2));
+    fs.writeFileSync(`${helper.path.main}/cache/params/${commandId}.json`, JSON.stringify(params, null, 2));
 }
 
-export function buttonPage(page: number, max: number, button: bottypes.buttonType) {
+export function buttonPage(page: number, max: number, button: helper.bottypes.buttonType) {
     switch (button) {
         case 'BigLeftArrow':
             page = 1;
@@ -609,7 +607,7 @@ export function buttonPage(page: number, max: number, button: bottypes.buttonTyp
     return page;
 }
 
-export function buttonDetail(level: number, button: bottypes.buttonType) {
+export function buttonDetail(level: number, button: helper.bottypes.buttonType) {
     switch (button) {
         case 'Detail0':
             level = 0;
@@ -628,25 +626,25 @@ export async function pageButtons(command: string, commanduser: Discord.User | D
     const pgbuttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder()
         .addComponents(
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-BigLeftArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.first).setDisabled(false),
+                .setCustomId(`${helper.versions.releaseDate}-BigLeftArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.first).setDisabled(false),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-LeftArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.previous),
+                .setCustomId(`${helper.versions.releaseDate}-LeftArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.previous),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Search-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.search),
+                .setCustomId(`${helper.versions.releaseDate}-Search-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.search),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-RightArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.next),
+                .setCustomId(`${helper.versions.releaseDate}-RightArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.next),
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-BigRightArrow-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.page.last),
+                .setCustomId(`${helper.versions.releaseDate}-BigRightArrow-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.page.last),
         );
     return pgbuttons;
 }
@@ -663,9 +661,9 @@ export async function buttonsAddDetails(command: string, commanduser: Discord.Us
         case 0: {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.main.detailMore),
+                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.main.detailMore),
             );
         }
             break;
@@ -673,13 +671,13 @@ export async function buttonsAddDetails(command: string, commanduser: Discord.Us
             const temp: Discord.RestOrArray<Discord.AnyComponentBuilder> = [];
 
             const set0 = new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Detail0-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.main.detailLess);
+                .setCustomId(`${helper.versions.releaseDate}-Detail0-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.main.detailLess);
             const set2 = new Discord.ButtonBuilder()
-                .setCustomId(`${helper.vars.versions.releaseDate}-Detail2-${command}-${commanduser.id}-${commandId}`)
-                .setStyle(helper.vars.buttons.type.current)
-                .setEmoji(helper.vars.buttons.label.main.detailMore);
+                .setCustomId(`${helper.versions.releaseDate}-Detail2-${command}-${commanduser.id}-${commandId}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.main.detailMore);
 
             if (disabled) {
                 if (disabled.compact == false) {
@@ -708,9 +706,9 @@ export async function buttonsAddDetails(command: string, commanduser: Discord.Us
         case 2: {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.main.detailLess),
+                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${command}-${commanduser.id}-${commandId}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.main.detailLess),
             );
         }
             break;
@@ -733,475 +731,8 @@ export function cleanArgs(args: string[]) {
     return newArgs;
 }
 
-export async function parseArgs_scoreList_message(input: bottypes.commandInput) {
-    let commanduser: Discord.User | Discord.APIUser;
-
-    let user;
-    let page = 0;
-
-    let scoredetailed: number = 1;
-
-    let sort: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" = null;
-    let reverse = false;
-    let mode: apitypes.GameMode = 'osu';
-    let modsInclude = null;
-    let modsExact = null;
-    let modsExclude = null;
-    let filteredMapper = null;
-    let filterTitle = null;
-    let filterArtist = null;
-    let filterDifficulty = null;
-
-    let parseScore = false;
-    let parseId = null;
-
-    let pp = null;
-    let score = null;
-    let acc = null;
-    let combo = null;
-    let miss = null;
-    let bpm = null;
-
-
-    let filterRank: apitypes.Rank = null;
-
-    const searchid = input.message.mentions.users.size > 0 ? input.message.mentions.users.first().id : input.message.author.id;
-    if (input.args.includes('-parse')) {
-        parseScore = true;
-        const temp = parseArg(input.args, '-parse', 'number', 1, null, true);
-        parseId = temp.value;
-        input.args = temp.newArgs;
-    }
-
-    const pageArgFinder = matchArgMultiple(helper.vars.argflags.pages, input.args, true, 'number', false, true);
-    if (pageArgFinder.found) {
-        page = pageArgFinder.output;
-        input.args = pageArgFinder.args;
-    }
-    const detailArgFinder = matchArgMultiple(helper.vars.argflags.details, input.args, false, null, false, false);
-    if (detailArgFinder.found) {
-        scoredetailed = 2;
-        input.args = detailArgFinder.args;
-    }
-    const lessDetailArgFinder = matchArgMultiple(helper.vars.argflags.compress, input.args, false, null, false, false);
-    if (lessDetailArgFinder.found) {
-        scoredetailed = 0;
-        input.args = lessDetailArgFinder.args;
-    }
-    {
-        const temp = await parseArgsMode(input);
-        input.args = temp.args;
-        mode = temp.mode;
-    }
-    const reverseArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['rev', 'reverse',]), input.args, false, null, false, false);
-    if (reverseArgFinder.found) {
-        reverse = true;
-        input.args = reverseArgFinder.args;
-    }
-    if (input.args.includes('-mods')) {
-        const temp = parseArg(input.args, '-mods', 'string', modsInclude, false);
-        modsInclude = temp.value;
-        input.args = temp.newArgs;
-    }
-    const mxmodArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['mx', 'modx',]), input.args, true, 'string', false, false);
-    if (mxmodArgFinder.found) {
-        modsExact = mxmodArgFinder.output;
-        input.args = mxmodArgFinder.args;
-    }
-    if (input.args.includes('-exmod')) {
-        const temp = parseArg(input.args, '-exmod', 'string', modsExclude, false);
-        modsExclude = temp.value;
-        input.args = temp.newArgs;
-    }
-    if (input.args.includes('-me')) {
-        const temp = parseArg(input.args, '-me', 'string', modsExclude, false);
-        modsExclude = temp.value;
-        input.args = temp.newArgs;
-    }
-    const exmodArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['me', 'exmod',]), input.args, true, 'string', false, false);
-    if (exmodArgFinder.found) {
-        modsExclude = exmodArgFinder.output;
-        input.args = exmodArgFinder.args;
-    }
-
-    if (input.args.includes('-sort')) {
-        const temp = parseArg(input.args, '-sort', 'string', sort, false);
-        sort = temp.value;
-        input.args = temp.newArgs;
-    }
-    const recentArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['r', 'recent',]), input.args, false, null, false, false);
-    if (recentArgFinder.found) {
-        sort = 'recent';
-        input.args = recentArgFinder.args;
-    }
-    if (input.args.includes('-performance')) {
-        sort = 'pp';
-        input.args.splice(input.args.indexOf('-performance'), 1);
-    }
-    if (input.args.includes('-pp')) {
-        const temp = parseArg(input.args, '-pp', 'string', pp, false);
-        pp = temp.value;
-        input.args = temp.newArgs;
-    }
-    if (input.args.includes('-score')) {
-        const temp = parseArg(input.args, '-score', 'string', score, false);
-        score = temp.value;
-        input.args = temp.newArgs;
-    }
-    if (input.args.includes('-acc')) {
-        const temp = parseArg(input.args, '-acc', 'string', acc, false);
-        acc = temp.value;
-        input.args = temp.newArgs;
-    }
-    const filterComboArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['combo', 'maxcombo']), input.args, true, 'string', false, true);
-    if (filterComboArgFinder.found) {
-        combo = filterComboArgFinder.output;
-        input.args = filterComboArgFinder.args;
-    }
-    const filterMissArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['miss', 'misses']), input.args, true, 'string', false, true);
-    if (filterMissArgFinder.found) {
-        miss = filterMissArgFinder.output;
-        input.args = filterMissArgFinder.args;
-    }
-    const fcArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['fc', 'fullcombo',]), input.args, false, null, false, false);
-    if (fcArgFinder.found) {
-        miss = '0';
-        input.args = fcArgFinder.args;
-    }
-    const filterRankArgFinder = matchArgMultiple(helper.vars.argflags.toFlag(['rank', 'grade', 'letter']), input.args, true, 'string', false, false);
-    if (filterRankArgFinder.found) {
-        filterRank = filterRankArgFinder.output;
-        input.args = filterRankArgFinder.args;
-    }
-    if (input.args.includes('-bpm')) {
-        const temp = parseArg(input.args, '-bpm', 'string', bpm, false);
-        bpm = temp.value;
-        input.args = temp.newArgs;
-    }
-
-    const titleArgFinder = matchArgMultiple(helper.vars.argflags.filterTitle, input.args, true, 'string', true, false);
-    if (titleArgFinder.found) {
-        filterTitle = titleArgFinder.output;
-        input.args = titleArgFinder.args;
-    }
-    const mapperArgFinder = matchArgMultiple(helper.vars.argflags.filterCreator, input.args, true, 'string', true, false);
-    if (mapperArgFinder.found) {
-        filteredMapper = mapperArgFinder.output;
-        input.args = mapperArgFinder.args;
-    }
-    const artistArgFinder = matchArgMultiple(helper.vars.argflags.filterArtist, input.args, true, 'string', true, false);
-    if (artistArgFinder.found) {
-        filterArtist = artistArgFinder.output;
-        input.args = artistArgFinder.args;
-    }
-    const versionArgFinder = matchArgMultiple(helper.vars.argflags.filterVersion, input.args, true, 'string', true, false);
-    if (versionArgFinder.found) {
-        filterDifficulty = versionArgFinder.output;
-        input.args = filterDifficulty.args;
-    }
-    input.args = cleanArgs(input.args);
-    if (input.args.join(' ').includes('+')) {
-        modsInclude = input.args.join(' ').split('+')[1];
-        modsInclude.includes(' ') ? modsInclude = modsInclude.split(' ')[0] : null;
-        input.args = input.args.join(' ').replace('+', '').replace(modsInclude, '').split(' ');
-    }
-    const usertemp = fetchUser(input.args);
-    user = usertemp.id;
-    if (usertemp.mode && !mode) {
-        mode = usertemp.mode;
-    }
-    if (!user || user.includes(searchid)) {
-        user = null;
-    }
-    return {
-        user, searchid, page, scoredetailed,
-        sort, reverse, mode,
-        filteredMapper, filterTitle, filterArtist, filterDifficulty, filterRank,
-        parseScore, parseId,
-        modsInclude, modsExact, modsExclude,
-        pp, score, acc, combo, miss,
-        bpm
-    };
-}
-
-export async function parseArgs_scoreList_interaction(input: bottypes.commandInput) {
-    let interaction = input.interaction as Discord.ChatInputCommandInteraction;
-
-    const searchid = interaction?.member?.user ?? interaction?.user.id;
-
-    const user = interaction.options.getString('user') ?? undefined;
-    const page = interaction.options.getInteger('page') ?? 0;
-    const scoredetailed = interaction.options.getBoolean('detailed') ? 1 : 0;
-    const sort = interaction.options.getString('sort') as "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss";
-    const reverse = interaction.options.getBoolean('reverse') ?? false;
-    const mode = (interaction.options.getString('mode') ?? 'osu') as apitypes.GameMode;
-    const filteredMapper = interaction.options.getString('mapper') ?? null;
-    const filterTitle = interaction.options.getString('filter') ?? null;
-    const parseId = interaction.options.getInteger('parse') ?? null;
-    const parseScore = parseId != null ? true : false;
-    const modsInclude = interaction.options.getString('mods') ?? null;
-    const modsExact = interaction.options.getString('modsExact') ?? null;
-    const modsExclude = interaction.options.getString('modsExclude') ?? null;
-    const filterRank = interaction.options.getString('filterRank') ? osumodcalc.checkGrade(interaction.options.getString('filterRank')) : null;
-    const pp = interaction.options.getString('pp') ?? null;
-    const score = interaction.options.getString('score') ?? null;
-    const acc = interaction.options.getString('acc') ?? null;
-    const combo = interaction.options.getString('combo') ?? null;
-    const miss = interaction.options.getString('miss') ?? null;
-    const bpm = interaction.options.getString('bpm') ?? null;
-    return {
-        user, searchid, page, scoredetailed,
-        sort, reverse, mode,
-        filteredMapper, modsInclude, filterTitle, filterRank,
-        modsExact, modsExclude,
-        parseScore, parseId,
-        pp, score, acc, combo, miss, bpm,
-    };
-}
-
-export async function parseArgs_scoreList_button(input: bottypes.commandInput) {
-    let scoredetailed: number = 1;
-    if (!input.message.embeds[0]) {
-        return;
-    }
-
-    const temp = getButtonArgs(input.id);
-    const user = temp?.user;
-    const searchid = temp?.searchid;
-    let page = temp?.page;
-    const mode = temp?.mode;
-    const filteredMapper = temp?.filterMapper;
-    const modsInclude = temp?.modsInclude;
-    const modsExact = temp?.modsExact;
-    const modsExclude = temp?.modsExclude;
-    const filterTitle = temp?.filterTitle;
-    const filterRank = temp?.filterRank;
-    const parseId = null;
-    const parseScore = null;
-    const pp = temp?.filterPp;
-    const score = temp?.filterScore;
-    const acc = temp?.filterAcc;
-    const combo = temp?.filterCombo;
-    const miss = temp?.filterMiss;
-    const bpm = temp?.filterBpm;
-    const sort = temp?.sort;
-    const reverse = temp?.reverse;
-
-    switch (input.buttonType) {
-        case 'BigLeftArrow':
-            page = 1;
-            break;
-        case 'LeftArrow':
-            page -= 1;
-            break;
-        case 'RightArrow':
-            page += 1;
-            break;
-        case 'BigRightArrow':
-            page = temp?.maxPage ?? page;
-            break;
-    }
-
-    switch (input.buttonType) {
-        case 'Detail0':
-            scoredetailed = 0;
-            break;
-        case 'Detail1':
-            scoredetailed = 1;
-            break;
-        case 'Detail2':
-            scoredetailed = 2;
-            break;
-        default:
-            if (input.message.embeds[0].footer.text.includes('LE')) {
-                scoredetailed = 2;
-            }
-            if (input.message.embeds[0].footer.text.includes('LC')) {
-                scoredetailed = 0;
-            }
-            break;
-    }
-
-    return {
-        user, searchid, page, scoredetailed,
-        sort, reverse, mode,
-        filteredMapper, modsInclude, filterTitle, filterRank,
-        parseScore, parseId,
-        modsExact, modsExclude, pp, score, acc, combo, miss, bpm
-    };
-}
-
-export async function parseArgs_scoreList(input: bottypes.commandInput) {
-    let commanduser: Discord.User | Discord.APIUser;
-
-    let user;
-    let searchid;
-    let page = 0;
-
-    let scoredetailed: number = 1;
-
-    let sort: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" = null;
-    let reverse = false;
-    let mode: apitypes.GameMode = 'osu';
-
-    let filterTitle = null;
-    let filterArtist = null;
-    let filterDifficulty = null;
-    let filteredMapper = null;
-    let filterRank: apitypes.Rank = null;
-
-    let parseScore = false;
-    let parseId = null;
-
-
-    let modsInclude = null;
-    let modsExact = null;
-    let modsExclude = null;
-
-    let pp = null;
-    let score = null;
-    let acc = null;
-    let combo = null;
-    let miss = null;
-    let bpm = null;
-    const error = false;
-
-    switch (input.type) {
-        case 'message': {
-            commanduser = input.message.author;
-            searchid = input.message.mentions.users.size > 0 ? input.message.mentions.users.first().id : input.message.author.id;
-            const temp = await parseArgs_scoreList_message(input);
-            user = temp.user;
-            searchid = temp.searchid;
-            page = temp.page;
-            scoredetailed = temp.scoredetailed;
-            sort = temp.sort;
-            reverse = temp.reverse;
-            mode = temp.mode;
-            filteredMapper = temp.filteredMapper;
-            modsInclude = temp.modsInclude;
-            filterTitle = temp.filterTitle;
-            filterArtist = temp.filterArtist;
-            filterDifficulty = temp.filterDifficulty;
-            parseScore = temp.parseScore;
-            parseId = temp.parseId;
-            filterRank = temp.filterRank;
-            modsExact = temp.modsExact;
-            modsExclude = temp.modsExclude;
-            pp = temp.pp;
-            score = temp.score;
-            acc = temp.acc;
-            combo = temp.combo;
-            miss = temp.miss;
-            bpm = temp.bpm;
-        }
-            break;
-        case 'interaction': {
-            let interaction = input.interaction as Discord.ChatInputCommandInteraction;
-            commanduser = interaction?.member?.user ?? interaction?.user;
-            const temp = await parseArgs_scoreList_interaction(input);
-            user = temp.user;
-            searchid = temp.searchid;
-            page = temp.page;
-            scoredetailed = temp.scoredetailed;
-            sort = temp.sort;
-            reverse = temp.reverse;
-            mode = temp.mode;
-            filteredMapper = temp.filteredMapper;
-            modsInclude = temp.modsInclude;
-            filterTitle = temp.filterTitle;
-            parseScore = temp.parseScore;
-            parseId = temp.parseId;
-            filterRank = temp.filterRank;
-            modsExact = temp.modsExact;
-            modsExclude = temp.modsExclude;
-            pp = temp.pp;
-            score = temp.score;
-            acc = temp.acc;
-            combo = temp.combo;
-            miss = temp.miss;
-            bpm = temp.bpm;
-        }
-            break;
-        case 'button': {
-            if (!input.message.embeds[0]) return;
-            let interaction = (input.interaction as Discord.ButtonInteraction);
-            commanduser = input.interaction?.member?.user ?? input.interaction?.user;
-            let scoredetailed: number = 1;
-            const temp = getButtonArgs(input.id);
-            user = temp?.user;
-            searchid = temp?.searchid;
-            page = temp?.page;
-            mode = temp?.mode;
-            filteredMapper = temp?.filterMapper;
-            modsInclude = temp?.modsInclude;
-            modsExact = temp?.modsExact;
-            modsExclude = temp?.modsExclude;
-            filterTitle = temp?.filterTitle;
-            filterRank = temp?.filterRank;
-            parseId = null;
-            parseScore = null;
-            pp = temp?.filterPp;
-            score = temp?.filterScore;
-            acc = temp?.filterAcc;
-            combo = temp?.filterCombo;
-            miss = temp?.filterMiss;
-            bpm = temp?.filterBpm;
-            sort = temp?.sort as any;
-            reverse = temp?.reverse;
-
-            switch (input.buttonType) {
-                case 'BigLeftArrow':
-                    page = 1;
-                    break;
-                case 'LeftArrow':
-                    page -= 1;
-                    break;
-                case 'RightArrow':
-                    page += 1;
-                    break;
-                case 'BigRightArrow':
-                    page = temp?.maxPage ?? page;
-                    break;
-            }
-
-            switch (input.buttonType) {
-                case 'Detail0':
-                    scoredetailed = 0;
-                    break;
-                case 'Detail1':
-                    scoredetailed = 1;
-                    break;
-                case 'Detail2':
-                    scoredetailed = 2;
-                    break;
-                default:
-                    if (input.message.embeds[0].footer.text.includes('LE')) {
-                        scoredetailed = 2;
-                    }
-                    if (input.message.embeds[0].footer.text.includes('LC')) {
-                        scoredetailed = 0;
-                    }
-                    break;
-            }
-        }
-            break;
-    }
-
-    return {
-        commanduser,
-        user, searchid, page, scoredetailed,
-        sort, reverse, mode,
-        filteredMapper, filterTitle, filterArtist, filterDifficulty, filterRank,
-        parseScore, parseId,
-        modsInclude, modsExact, modsExclude,
-        pp, score, acc, combo, miss,
-        bpm, error
-    };
-}
-
-export async function parseArgsMode(input: bottypes.commandInput) {
-    let mode: apitypes.GameMode;
+export async function parseArgsMode(input: helper.bottypes.commandInput) {
+    let mode: helper.osuapi.types_v2.GameMode;
     const otemp = matchArgMultiple(['-o', '-osu'], input.args, false, null, false, false);
     if (otemp.found) {
         mode = 'osu';
@@ -1244,20 +775,20 @@ export function startType(object: Discord.Message | Discord.Interaction) {
     }
 }
 
-export async function missingPrevID_map(input: bottypes.commandInput, name: string) {
+export async function missingPrevID_map(input: helper.bottypes.commandInput, name: string) {
     if (input.type != 'button' && input.type != 'link') {
         await sendMessage({
             type: input.type,
             message: input.message,
             interaction: input.interaction,
             args: {
-                content: helper.vars.errors.uErr.osu.map.m_msp,
+                content: helper.errors.uErr.osu.map.m_msp,
                 edit: true
             }
         }, input.canReply);
     }
-    helper.tools.log.commandErr(
-        helper.vars.errors.uErr.osu.map.m_msp,
+    helper.log.commandErr(
+        helper.errors.uErr.osu.map.m_msp,
         input.id,
         name,
         input.message,
@@ -1316,16 +847,16 @@ export function disableAllButtons(msg: Discord.Message) {
     });
 }
 
-export function getCommand(query: string): bottypes.commandInfo {
-    return helper.vars.commandData.cmds.find(
-        x => x.aliases.concat([x.name]).includes(query)
+export function getCommand(query: string): helper.bottypes.commandInfo {
+    return helper.commandData.cmds.find(
+        x => x.aliases.concat([x.name]).map(x=>x.toLowerCase()).includes(query.toLowerCase())
     );
 
 
 }
 
-export function getCommands(query?: string): bottypes.commandInfo[] {
-    return helper.vars.commandData.cmds.filter(
+export function getCommands(query?: string): helper.bottypes.commandInfo[] {
+    return helper.commandData.cmds.filter(
         x => x.category.includes(query)
-    ) ?? helper.vars.commandData.cmds;
+    ) ?? helper.commandData.cmds;
 }

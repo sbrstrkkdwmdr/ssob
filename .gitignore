@@ -3,3 +3,4 @@ dist
 config
 !config/TEMPLATECONFIG.json
 database.sqlite
+osuauth.json

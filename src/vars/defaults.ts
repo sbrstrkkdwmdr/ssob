@@ -1,4 +1,4 @@
-import * as bottypes from '../types/bot.js';
+import * as bottypes from '../types/bot';
 
 export const defaultGuildSettings = {
     guildid: null,

@@ -1,10 +1,7 @@
 import Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import * as apitypes from '../types/osuapi.js';
-import * as tooltypes from '../types/tools.js';
-import { OsuCommand } from './command.js';
+import { bws } from 'osumodcalculator/dist/extra';
+import * as helper from '../helper';
+import { OsuCommand } from './command';
 
 export class Badges extends OsuCommand {
     declare protected params: {
@@ -22,9 +19,9 @@ export class Badges extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.tools.commands.fetchUser(this.input.args);
+        const usertemp = helper.commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -58,7 +55,7 @@ export class Badges extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: apitypes.User;
+        let osudata: helper.osuapi.types_v2.UserExtended;
 
         try {
             const t = await this.getProfile(this.params.user, 'osu');
@@ -70,20 +67,20 @@ export class Badges extends OsuCommand {
         const cmdbuttons = new Discord.ActionRowBuilder()
             .addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.user),
+                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
             );
 
         const badgecount = osudata?.badges?.length ?? 0;
 
         const embed = new Discord.EmbedBuilder()
             .setTitle(`${osudata.username}s Badges`)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.vars.defaults.images.any.url}`)
+            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setDescription(
                 'Current number of badges: ' + badgecount
             );
-        helper.tools.formatter.userAuthor(osudata, embed);
+        helper.formatter.userAuthor(osudata, embed);
 
         const fields: Discord.EmbedField[] = [];
 
@@ -127,9 +124,9 @@ export class BadgeWeightSeed extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.tools.commands.fetchUser(this.input.args);
+        const usertemp = helper.commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -163,7 +160,7 @@ export class BadgeWeightSeed extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: apitypes.User;
+        let osudata: helper.osuapi.types_v2.UserExtended;
 
         try {
             const t = await this.getProfile(this.params.user, 'osu');
@@ -175,269 +172,63 @@ export class BadgeWeightSeed extends OsuCommand {
         const cmdbuttons = new Discord.ActionRowBuilder()
             .addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.user),
+                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
             );
 
-        const badgecount = osudata?.badges?.length ?? 0;
+        let res = 'User\'s weighted rank cannot be calculated';
+        if (osudata?.statistics?.global_rank) {
+            res = this.response(osudata?.statistics?.global_rank, osudata?.badges?.length ?? 0);
+        } else if (osudata?.statistics?.pp) {
+            const estRank = await helper.data.getRankPerformance('pp->rank', osudata?.statistics?.pp ?? 0, 'osu');
+            res = '***Using an estimated rank***\n\n' + this.response(estRank.value, osudata?.badges?.length ?? 0);
+        }
 
         const embed = new Discord.EmbedBuilder()
             .setTitle(`Badge weighting for ${osudata.username}`)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.vars.defaults.images.any.url}`)
-            .setDescription(
-                'Current number of badges: ' + badgecount
-            )
-            .addFields([
-                {
-                    name: `${badgecount == 1 ? badgecount + ' badge' : badgecount + ' badges'}`,
-                    value: `${Math.floor(this.bwsF(badgecount, osudata))}`,
-                    inline: true
-                },
-                {
-                    name: `${badgecount + 1 == 1 ? badgecount + 1 + ' badge' : badgecount + 1 + ' badges'}`,
-                    value: `${Math.floor(this.bwsF(badgecount + 1, osudata))}`,
-                    inline: true
-                },
-                {
-                    name: `${badgecount + 2} badges`,
-                    value: `${Math.floor(this.bwsF(badgecount + 2, osudata))}`,
-                    inline: true
-                },
-            ]);
-        helper.tools.formatter.userAuthor(osudata, embed);
+            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
+            .setDescription(res)
+            .setFooter({ text: 'Values are rounded' });
+
+        helper.formatter.userAuthor(osudata, embed);
 
         this.ctn.embeds = [embed];
         this.ctn.components = [cmdbuttons];
         this.send();
     }
 
-    bwsF(badgenum: number, osudata: apitypes.User) {
-        return badgenum > 0 ?
-            osudata.statistics.global_rank ** (0.9937 ** (badgenum ** 2)) :
-            osudata.statistics.global_rank;
-    }
-}
+    response(rank: number, badgecount: number = 0) {
+        let n = rank ?? 1;
+        let bd = 0;
+        while (Math.round(n) > 1) {
+            bd++;
+            n = bws(bd, rank);
+        }
+        let extraFields = '\n\n---Rank estimates---';
+        let i = 0;
+        let br = badgecount;
+        while (i < 10) {
+            let temp = Math.round(bws(br, rank));
+            extraFields += '\n' + br + ' badges: ' + temp;
+            if (temp == 1) break;
+            br++;
+            i++;
+        }
+        if (extraFields == '\n\n---Rank estimates---') extraFields = '';
 
-export class Leaderboard extends OsuCommand {
-    declare protected params: {
-        page: number;
-        mode: apitypes.GameMode;
-        id: string;
-    };
-    constructor() {
-        super();
-        this.name = 'Leaderboard';
-        this.params = {
-            page: 0,
-            mode: 'osu',
-            id: null,
-        };
-    }
-    async setParamsMsg() {
-        {
-            const temp = await helper.tools.commands.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
-        }
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
-        this.params.id = this.input.args[0];
-    }
-    async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
-        this.params.id = interaction.options.getString('id');
-        const gamemode = interaction.options.getString('mode');
-        if (!gamemode || gamemode == 'osu' || gamemode == 'o' || gamemode == '0' || gamemode == 'standard' || gamemode == 'std') {
-            this.params.mode = 'osu';
-        }
-        if (gamemode == 'taiko' || gamemode == 't' || gamemode == '1' || gamemode == 'drums') {
-            this.params.mode = 'taiko';
-        }
-        if (gamemode == 'fruits' || gamemode == 'c' || gamemode == '2' || gamemode == 'catch' || gamemode == 'ctb') {
-            this.params.mode = 'fruits';
-        }
-        if (gamemode == 'mania' || gamemode == 'm' || gamemode == '3' || gamemode == 'piano') {
-            this.params.mode = 'mania';
-        }
-    }
-    async setParamsBtn() {
-        if (!this.input.message.embeds[0]) return;
-        const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        this.params.id = this.input.message.embeds[0].author.name;
-        this.params.mode = this.input.message.embeds[0].footer.text.split(' | ')[0] as apitypes.GameMode;
-
-        this.params.page = 0;
-        if (this.input.buttonType == 'BigLeftArrow') {
-            this.params.page = 1;
-        }
-        const pageFinder = this.input.message.embeds[0].footer.text.split(' | ')[1].split('Page ')[1];
-        switch (this.input.buttonType) {
-            case 'LeftArrow':
-                this.params.page = +pageFinder.split('/')[0] - 1;
-                break;
-            case 'RightArrow':
-                this.params.page = +pageFinder.split('/')[0] + 1;
-                break;
-            case 'BigRightArrow':
-                this.params.page = +pageFinder.split('/')[1];
-                break;
-        }
-
-        if (this.params.page < 2) {
-            this.params.page == 1;
-        }
-    }
-    async execute() {
-        await this.setParams();
-        this.logInput();
-        // do stuff
-        const pgbuttons: Discord.ActionRowBuilder = await helper.tools.commands.pageButtons(this.name, this.commanduser, this.input.id);
-
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
-
-        if (this.params.page < 2 || typeof this.params.page != 'number') {
-            this.params.page = 1;
-        }
-        this.params.page--;
-        let global = false;
-        let guild = this.input.message.guild ?? this.input.interaction.guild;
-        if (this.params.id == 'global') {
-            global = true;
-        }
-        if (typeof + this.params.id == 'number') {
-            const tempguild = helper.vars.client.guilds.cache.get(this.params.id);
-            if (tempguild) {
-                const isThere = tempguild.members.cache.has(this.commanduser.id);
-                guild = isThere ? tempguild : guild;
-            }
-        }
-
-        const name = global ? "Global SSoB leaderboard" :
-            `Server leaderboard for ${guild?.name ?? "null"}`;
-
-        const serverlb = new Discord.EmbedBuilder()
-            .setAuthor({ name: `${this.params.id ?? guild.id}` })
-            .setColor(helper.vars.colours.embedColour.userlist.dec)
-            .setTitle(name);
-        const userids = await helper.vars.userdata.findAll();
-        const useridsarraylen = await helper.vars.userdata.count();
-        let rtxt = `\n`;
-        const rarr = [];
-        let cache: Discord.Collection<string, Discord.GuildMember> | Discord.Collection<string, Discord.User>;
-
-        if (global) {
-            cache = helper.vars.client.users.cache;
-        } else {
-            cache = guild.members.cache;
-        }
-        for (let i = 0; i < useridsarraylen; i++) {
-            const user: tooltypes.dbUser = userids[i].dataValues as any;
-            if (global) {
-                (cache as Discord.Collection<string, Discord.User>).forEach(member => {
-                    if (`${member.id}` == `${user.userid}` && user != null) {
-                        this.addUser({ id: member.id, name: member.username }, user);
-                    }
-                });
-            } else {
-                (cache as Discord.Collection<string, Discord.GuildMember>).forEach(member => {
-                    if (`${member.id}` == `${user.userid}` && user != null) {
-                        this.addUser({ id: member.user.id, name: member.displayName }, user);
-                    }
-                });
-            }
-        }
-
-        const another = rarr.slice().sort((b, a) => b.rank - a.rank); //for some reason this doesn't sort even tho it does in testing
-        rtxt = `\`Rank    Discord           osu!              Rank       Acc      pp       `;
-        const pageOffset = this.params.page * 10;
-        for (let i = 0; i < rarr.length && i < 10; i++) {
-            const cur = another[i + pageOffset];
-            if (!cur) break;
-            const pad = i + 1 >= 10 ?
-                i + 1 >= 100 ?
-                    3
-                    : 4
-                : 5;
-            rtxt += `\n#${i + 1 + pageOffset + ')'.padEnd(pad, ' ')} ${cur.discname}   ${cur.osuname}   ${cur.rank.toString().padEnd(10 - 2, ' ').substring(0, 8)}   ${cur.acc}%   ${cur.pp}  `;
-        }
-
-        rtxt += `\n\``;
-        serverlb.setDescription(rtxt);
-        serverlb.setFooter({ text: this.params.mode + ` | Page ${this.params.page + 1}/${Math.ceil(rarr.length / 10)}` });
-        // const endofcommand = new Date().getTime();
-        // const timeelapsed = endofcommand - input.currentDate.getTime();
-
-        if (this.params.page < 1) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-        }
-        if (this.params.page + 1 >= Math.ceil(rarr.length / 10)) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
-
-        this.ctn.embeds = [serverlb];
-        this.ctn.components = [pgbuttons];
-
-        this.send();
-    }
-    rarr: {
-        discname: string;
-        osuname: string;
-        rank: string;
-        acc: string;
-        pp: string;
-    }[];
-    addUser(member: { id: string, name: string; }, user: tooltypes.dbUser) {
-        if (`${member.id}` == `${user.userid}`) {
-            if (user != null) {
-                let acc: string | number;
-                let pp: string | number;
-                acc = user[`${this.params.mode}acc`];
-                if (isNaN(+acc) || acc == null) {
-                    return;
-                } else {
-                    acc = user.osuacc.toFixed(2);
-                }
-                pp = user[`${this.params.mode}pp`];
-                if (isNaN(+pp) || pp == null) {
-                    return;
-                } else {
-                    pp = Math.floor(user.osupp);
-                }
-                const rank = user[`${this.params.mode}rank`];
-                if (isNaN(+rank) || rank == null) {
-                    return;
-                }
-                this.rarr.push(
-                    {
-                        discname:
-                            ((member.name.replace(/\W/g, '')).padEnd(17 - 2, ' ').length) > 15 ? member.name.replace(/[^a-z0-9]/gi, '').substring(0, 12) + '...' : member.name.replace(/[^a-z0-9]/gi, '').padEnd(17 - 2, ' '),
-                        osuname:
-                            (user.osuname.padEnd(17 - 2, ' ')).length > 15 ? user.osuname.substring(0, 12) + '...' : user.osuname.padEnd(17 - 2, ' '),
-                        rank:
-                            `${rank}`.padEnd(10 - 2, ' ').substring(0, 8),
-                        acc:
-                            `${acc}`.substring(0, 5),
-                        pp:
-                            `${pp}pp`.padEnd(9 - 2, ' '),
-                    }
-                );
-            }
-        }
+        return 'Current rank: ' + rank +
+            '\nCurrent number of badges: ' + badgecount +
+            '\nCurrent weighted rank: ' + Math.round(bws(badgecount, rank)) +
+            '\nBadges needed for #1: ' + bd + extraFields;
     }
 }
 
 export class Ranking extends OsuCommand {
     declare protected params: {
         country: string;
-        mode: apitypes.GameMode;
-        type: apitypes.RankingType;
+        mode: helper.osuapi.types_v2.GameMode;
+        type: helper.osuapi.types_v2.RankingType;
         page: number;
         spotlight: number;
         parse: boolean;
@@ -458,49 +249,49 @@ export class Ranking extends OsuCommand {
 
     }
     async setParamsMsg() {
-        const pageArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.pages, this.input.args, true, 'number', false, true);
+        const pageArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
         if (pageArgFinder.found) {
             this.params.page = pageArgFinder.output;
             this.input.args = pageArgFinder.args;
         }
         {
-            const temp = await helper.tools.commands.parseArgsMode(this.input);
+            const temp = await helper.commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
         if (this.input.args.includes('-parse')) {
             this.params.parse = true;
-            const temp = helper.tools.commands.parseArg(this.input.args, '-parse', 'number', 1, null, true);
+            const temp = helper.commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
             this.params.parseId = temp.value;
             this.input.args = temp.newArgs;
         }
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
 
         this.input.args[0] && this.input.args[0].length == 2 ? this.params.country = this.input.args[0].toUpperCase() : this.params.country = 'ALL';
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
         this.params.country = interaction.options.getString('country') ?? 'ALL';
-        this.params.mode = (interaction.options.getString('mode') ?? 'osu') as apitypes.GameMode;
-        this.params.type = (interaction.options.getString('type') ?? 'performance') as apitypes.RankingType;
+        this.params.mode = (interaction.options.getString('mode') ?? 'osu') as helper.osuapi.types_v2.GameMode;
+        this.params.type = (interaction.options.getString('type') ?? 'performance') as helper.osuapi.types_v2.RankingType;
         this.params.page = interaction.options.getInteger('page') ?? 0;
         this.params.spotlight = interaction.options.getInteger('spotlight') ?? undefined;
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
         const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        const temp = helper.tools.commands.getButtonArgs(this.input.id);
+        const temp = helper.commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
-                content: helper.vars.errors.paramFileMissing,
+                content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
                 allowedMentions: { repliedUser: false }
             });
-            helper.tools.commands.disableAllButtons(this.input.message);
+            helper.commandTools.disableAllButtons(this.input.message);
             return;
         }
-        this.params.page = helper.tools.commands.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
+        this.params.page = helper.commandTools.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
         this.params.country = temp.country;
         this.params.mode = temp.mode;
         this.params.type = temp.rankingtype;
@@ -519,18 +310,18 @@ export class Ranking extends OsuCommand {
         this.logInput();
         this.getOverrides();
         // do stuff
-        this.params.mode = helper.tools.other.modeValidator(this.params.mode);
-        const pgbuttons: Discord.ActionRowBuilder = await helper.tools.commands.pageButtons(this.name, this.commanduser, this.input.id);
+        this.params.mode = helper.other.modeValidator(this.params.mode);
+        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
             this.params.page = 1;
         }
         this.params.page--;
 
-        const extras = [];
+        const extras = {};
         if (this.params.country != 'ALL') {
             // validate country
-            if (!helper.tools.other.validCountryCodeA2(this.params.country)) {
+            if (!helper.other.validCountryCodeA2(this.params.country)) {
                 this.voidcontent();
                 this.ctn.content = `Invalid country code. Must be a valid [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes) code.`;
                 this.ctn.edit = true;
@@ -538,44 +329,42 @@ export class Ranking extends OsuCommand {
                 return;
             }
             if (this.params.type == 'performance') {
-                extras.push(`country=${this.params.country}`);
+                extras['country'] = this.params.country;
             }
         }
         if (this.params.type == 'charts' && !isNaN(+this.params.spotlight)) {
-            extras.push(`spotlight=${this.params.spotlight}`);
-
+            extras['spotlight'] = this.params.spotlight;
         }
 
-        let rankingdataReq: tooltypes.apiReturn<apitypes.Rankings>;
-        if (helper.tools.data.findFile(this.input.id, 'rankingdata') &&
+        let rankingdata: helper.osuapi.types_v2.Rankings;
+        if (helper.data.findFile(this.input.id, 'rankingdata') &&
             this.input.type == 'button' &&
-            !('error' in helper.tools.data.findFile(this.input.id, 'rankingdata')) &&
+            !('error' in helper.data.findFile(this.input.id, 'rankingdata')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            rankingdataReq = helper.tools.data.findFile(this.input.id, 'rankingdata');
+            rankingdata = helper.data.findFile(this.input.id, 'rankingdata');
         } else {
-            rankingdataReq = await helper.tools.api.getRankings(this.params.mode, this.params.type, extras);
+            rankingdata = await helper.osuapi.v2.rankings.ranking({
+                mode: this.params.mode,
+                type: this.params.type,
+                ...extras
+            });
         }
-        helper.tools.data.storeFile(rankingdataReq, this.input.id, 'rankingdata');
 
-        const rankingdata: apitypes.Rankings = rankingdataReq.apiData;
-        if (rankingdataReq?.error) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.rankings, false);
-            return;
-        }
+        helper.data.storeFile(rankingdata, this.input.id, 'rankingdata');
 
         if (rankingdata?.hasOwnProperty('error')) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.rankings, true);
+            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.rankings, true);
             return;
         }
 
 
         try {
-            helper.tools.data.debug(rankingdataReq, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rankingData');
+            helper.data.debug(rankingdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rankingData');
         } catch (e) {
             return;
         }
-        if (rankingdata.ranking.length == 0) {
+        if (!(rankingdata?.ranking?.length > 0)) {
             this.voidcontent();
             this.ctn.content = `No data found`;
             this.ctn.edit = true;
@@ -589,7 +378,7 @@ export class Ranking extends OsuCommand {
         }
 
         if (this.input.buttonType == null) {
-            helper.tools.data.userStatsCache(rankingdata.ranking, helper.tools.other.modeValidator(this.params.mode), 'Stat');
+            helper.data.userStatsCache(rankingdata.ranking, helper.other.modeValidator(this.params.mode), 'Stat');
         }
 
         if (this.params.parse) {
@@ -608,7 +397,7 @@ export class Ranking extends OsuCommand {
                 commandAs: this.input.type
             };
             if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await helper.tools.commands.errorAndAbort(this.input, 'osu', true, `${helper.vars.errors.uErr.osu.score.nf} at index ${pid}`, true);
+                await helper.commandTools.errorAndAbort(this.input, 'osu', true, `${helper.errors.uErr.osu.score.nf} at index ${pid}`, true);
                 return;
             }
             this.input.type = 'other';
@@ -622,41 +411,20 @@ export class Ranking extends OsuCommand {
             .setFooter({
                 text: `${this.params.page + 1}/${Math.ceil(rankingdata.ranking.length / 5)}`
             }).setTitle(this.params.country != 'ALL' ?
-                `${this.params.mode == 'osu' ? 'osu!' : helper.tools.formatter.toCapital(this.params.mode)} ${helper.tools.formatter.toCapital(this.params.type)} Rankings for ${this.params.country}` :
-                `Global ${this.params.mode == 'osu' ? 'osu!' : helper.tools.formatter.toCapital(this.params.mode)} ${helper.tools.formatter.toCapital(this.params.type)} Ranking`)
-            .setColor(helper.vars.colours.embedColour.userlist.dec)
+                `${this.params.mode == 'osu' ? 'osu!' : helper.formatter.toCapital(this.params.mode)} ${helper.formatter.toCapital(this.params.type)} Rankings for ${this.params.country}` :
+                `Global ${this.params.mode == 'osu' ? 'osu!' : helper.formatter.toCapital(this.params.mode)} ${helper.formatter.toCapital(this.params.type)} Ranking`)
+            .setColor(helper.colours.embedColour.userlist.dec)
             .setDescription(`${ifchart}\n`);
         this.params.country != 'ALL' ?
-            embed.setThumbnail(`https://osuhelper.vars.argflags.omkserver.nl${this.params.country}`)
+            embed.setThumbnail(`https://osuhelper.argflags.omkserver.nl${this.params.country}`)
             : '';
+
+        this.formatUL(embed, rankingdata);
 
         if (this.params.page > Math.ceil(rankingdata.ranking.length / 5)) {
             this.params.page = Math.ceil(rankingdata.ranking.length / 5);
         }
-        helper.tools.calculate.numberShorthand;
-        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.ranking.length; i++) {
-            const curuser = rankingdata.ranking[i + (this.params.page * 5)];
-            if (!curuser) break;
-            embed.addFields(
-                [
-                    {
-                        name: `${i + 1 + (this.params.page * 5)}`,
-                        value:
-                            `:flag_${curuser.user.country_code.toLowerCase()}: [${curuser.user.username}](https://osu.ppy.sh/users/${curuser.user.id}/${this.params.mode})
-    #${curuser.global_rank == null ?
-                                '---' :
-                                helper.tools.calculate.separateNum(curuser.global_rank)
-                            }
-    Score: ${curuser.total_score == null ? '---' : helper.tools.calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : helper.tools.calculate.numberShorthand(curuser.ranked_score)} ranked)
-    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : helper.tools.calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : helper.tools.calculate.separateNum(curuser.play_count)} plays
-    `
-                        ,
-                        inline: false
-                    }
-                ]
-            );
-        }
-        helper.tools.commands.storeButtonArgs(this.input.id, {
+        helper.commandTools.storeButtonArgs(this.input.id, {
             page: this.params.page + 1,
             maxPage: Math.ceil(rankingdata.ranking.length / 5),
             country: this.params.country,
@@ -678,12 +446,40 @@ export class Ranking extends OsuCommand {
         this.ctn.components = [pgbuttons];
         this.send();
     }
+
+    formatUL(embed: Discord.EmbedBuilder, rankingdata: helper.osuapi.types_v2.Rankings) {
+        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.ranking.length; i++) {
+            const curuser = rankingdata.ranking[i + (this.params.page * 5)];
+            if (!curuser) break;
+            let num = i + 1 + (this.params.page * 5);
+            let parseGlobalRank =
+                num == curuser?.global_rank ?
+                    '' :
+                    curuser.global_rank == null ?
+                        '' :
+                        '(#' + helper.calculate.separateNum(curuser.global_rank) + ' Global)';
+            embed.addFields(
+                [
+                    {
+                        name: `#${num} ${parseGlobalRank}`,
+                        value:
+                            `:flag_${curuser.user.country_code.toLowerCase()}: [${curuser.user.username}](https://osu.ppy.sh/users/${curuser.user.id}/${this.params.mode})
+    Score: ${curuser.total_score == null ? '---' : helper.calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : helper.calculate.numberShorthand(curuser.ranked_score)} ranked)
+    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : helper.calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : helper.calculate.separateNum(curuser.play_count)} plays
+    `
+                        ,
+                        inline: false
+                    }
+                ]
+            );
+        }
+    }
 }
 
 export class Profile extends OsuCommand {
     declare protected params: {
         user: string;
-        mode: apitypes.GameMode;
+        mode: helper.osuapi.types_v2.GameMode;
         graphonly: boolean;
         detailed: number;
         searchid: string;
@@ -701,25 +497,25 @@ export class Profile extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const detailArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.details, this.input.args, false, null, false, false);
+        const detailArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
         if (detailArgFinder.found) {
             this.params.detailed = 2;
             this.input.args = detailArgFinder.args;
         }
-        const graphArgFinder = helper.tools.commands.matchArgMultiple(['-g', '-graph',], this.input.args, false, null, false, false);
+        const graphArgFinder = helper.commandTools.matchArgMultiple(['-g', '-graph',], this.input.args, false, null, false, false);
         if (graphArgFinder.found) {
             this.params.graphonly = true;
             this.input.args = graphArgFinder.args;
         }
         {
-            const temp = await helper.tools.commands.parseArgsMode(this.input);
+            const temp = await helper.commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.tools.commands.fetchUser(this.input.args);
+        const usertemp = helper.commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (usertemp.mode && !this.params.mode) {
@@ -735,7 +531,7 @@ export class Profile extends OsuCommand {
 
         this.params.user = interaction.options.getString('user');
         this.params.detailed = interaction.options.getBoolean('detailed') ? 2 : 1;
-        this.params.mode = interaction.options.getString('mode') as apitypes.GameMode;
+        this.params.mode = interaction.options.getString('mode') as helper.osuapi.types_v2.GameMode;
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
@@ -743,7 +539,7 @@ export class Profile extends OsuCommand {
         this.params.searchid = this.commanduser.id;
 
         this.params.user = this.input.message.embeds[0].url.split('users/')[1].split('/')[0];
-        this.params.mode = this.input.message.embeds[0].url.split('users/')[1].split('/')[1] as apitypes.GameMode;
+        this.params.mode = this.input.message.embeds[0].url.split('users/')[1].split('/')[1] as helper.osuapi.types_v2.GameMode;
 
         switch (this.input.buttonType) {
             case 'Detail1':
@@ -776,7 +572,7 @@ export class Profile extends OsuCommand {
         }
     }
     async setParamsLink() {
-        const usertemp = helper.tools.commands.fetchUser([this.input.message.content]);
+        const usertemp = helper.commandTools.fetchUser([this.input.message.content]);
         this.params.user = usertemp.id;
         if (usertemp.mode && !this.params.mode) {
             this.params.mode = usertemp.mode;
@@ -795,7 +591,7 @@ export class Profile extends OsuCommand {
         }
         if (this.input.overrides.commanduser) {
             this.commanduser = this.input.overrides.commanduser;
-            this.ctn.content = `Requested by <@${this.commanduser.id}>`;
+            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
         }
     }
     async execute() {
@@ -808,26 +604,26 @@ export class Profile extends OsuCommand {
         if (this.params.graphonly != true) {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Graph-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.graph),
+                    .setCustomId(`${helper.versions.releaseDate}-Graph-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.graph),
             );
             switch (this.params.detailed) {
                 case 1: {
                     buttons.addComponents(
                         new Discord.ButtonBuilder()
-                            .setCustomId(`${helper.vars.versions.releaseDate}-Detail2-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                            .setStyle(helper.vars.buttons.type.current)
-                            .setEmoji(helper.vars.buttons.label.main.detailMore),
+                            .setCustomId(`${helper.versions.releaseDate}-Detail2-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                            .setStyle(helper.buttons.type.current)
+                            .setEmoji(helper.buttons.label.main.detailMore),
                     );
                 }
                     break;
                 case 2: {
                     buttons.addComponents(
                         new Discord.ButtonBuilder()
-                            .setCustomId(`${helper.vars.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                            .setStyle(helper.vars.buttons.type.current)
-                            .setEmoji(helper.vars.buttons.label.main.detailLess),
+                            .setCustomId(`${helper.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                            .setStyle(helper.buttons.type.current)
+                            .setEmoji(helper.buttons.label.main.detailLess),
                     );
                 }
                     break;
@@ -835,9 +631,9 @@ export class Profile extends OsuCommand {
         } else {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.user),
+                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
             );
         }
 
@@ -847,7 +643,7 @@ export class Profile extends OsuCommand {
             this.params.mode = t.mode;
         }
 
-        this.params.mode = this.params.mode ? helper.tools.other.modeValidator(this.params.mode) : null;
+        this.params.mode = this.params.mode ? helper.other.modeValidator(this.params.mode) : null;
         if (this.input.type == 'interaction') {
             this.ctn.content = 'Loading...';
             this.send();
@@ -855,7 +651,7 @@ export class Profile extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: apitypes.User;
+        let osudata: helper.osuapi.types_v2.UserExtended;
 
         try {
             const t = await this.getProfile(this.params.user, this.params.mode);
@@ -883,8 +679,8 @@ export class Profile extends OsuCommand {
 
         if (this.input.type != 'button' || this.input.buttonType == 'Refresh') {
             try {
-                helper.tools.data.updateUserStats(osudata, osudata.playmode,);
-                helper.tools.data.userStatsCache([osudata], helper.tools.other.modeValidator(this.params.mode), 'User');
+                helper.data.updateUserStats(osudata, osudata.playmode,);
+                helper.data.userStatsCache([osudata], helper.other.modeValidator(this.params.mode), 'User');
             } catch (error) {
             }
         }
@@ -894,24 +690,24 @@ export class Profile extends OsuCommand {
 
         const playerrank =
             osudata.statistics?.global_rank ?
-                helper.tools.calculate.separateNum(osudata.statistics.global_rank) :
+                helper.calculate.separateNum(osudata.statistics.global_rank) :
                 '---';
 
         const countryrank =
             osudata.statistics?.country_rank ?
-                helper.tools.calculate.separateNum(osudata.statistics.country_rank) :
+                helper.calculate.separateNum(osudata.statistics.country_rank) :
                 '---';
 
         const rankglobal = ` #${playerrank} (#${countryrank} ${osudata.country_code} :flag_${osudata.country_code.toLowerCase()}:)`;
 
         const peakRank = osudata?.rank_highest?.rank ?
-            `\n**Peak Rank**: #${helper.tools.calculate.separateNum(osudata.rank_highest.rank)} (<t:${new Date(osudata.rank_highest.updated_at).getTime() / 1000}:R>)` :
+            `\n**Peak Rank**: #${helper.calculate.separateNum(osudata.rank_highest.rank)} (<t:${new Date(osudata.rank_highest.updated_at).getTime() / 1000}:R>)` :
             '';
         const onlinestatus = osudata.is_online ?
-            `**${helper.vars.emojis.onlinestatus.online} Online**` :
+            `**${helper.emojis.onlinestatus.online} Online**` :
             (new Date(osudata.last_visit)).getTime() != 0 ?
-                `**${helper.vars.emojis.onlinestatus.offline} Offline** | Last online <t:${(new Date(osudata.last_visit)).getTime() / 1000}:R>`
-                : `**${helper.vars.emojis.onlinestatus.offline} Offline**`;
+                `**${helper.emojis.onlinestatus.offline} Offline** | Last online <t:${(new Date(osudata.last_visit)).getTime() / 1000}:R>`
+                : `**${helper.emojis.onlinestatus.offline} Offline**`;
 
         const prevnames = osudata.previous_usernames.length > 0 ?
             '**Previous Usernames:** ' + osudata.previous_usernames.join(', ') :
@@ -919,7 +715,7 @@ export class Profile extends OsuCommand {
 
         const playcount = osustats.play_count == null ?
             '---' :
-            helper.tools.calculate.separateNum(osustats.play_count);
+            helper.calculate.separateNum(osustats.play_count);
 
         const lvl = osustats.level.current != null ?
             osustats.level.progress != null && osustats.level.progress > 0 ?
@@ -932,35 +728,35 @@ export class Profile extends OsuCommand {
             case 0:
                 break;
             case 1: default:
-                supporter = helper.vars.emojis.supporter.first;
+                supporter = helper.emojis.supporter.first;
                 break;
             case 2:
-                supporter = helper.vars.emojis.supporter.second;
+                supporter = helper.emojis.supporter.second;
                 break;
             case 3:
-                supporter = helper.vars.emojis.supporter.third;
+                supporter = helper.emojis.supporter.third;
                 break;
         }
 
         const gradeCounts =
-            `${helper.vars.emojis.grades.XH}${grades.ssh} ${helper.vars.emojis.grades.X}${grades.ss} ${helper.vars.emojis.grades.SH}${grades.sh} ${helper.vars.emojis.grades.S}${grades.s} ${helper.vars.emojis.grades.A}${grades.a}`;
+            `${helper.emojis.grades.XH}${grades.ssh} ${helper.emojis.grades.X}${grades.ss} ${helper.emojis.grades.SH}${grades.sh} ${helper.emojis.grades.S}${grades.s} ${helper.emojis.grades.A}${grades.a}`;
         // `XH${grades.ssh} X}{grades.ss} SH${grades.sh} S}{grades.s} A}{grades.a}`;
 
         const osuEmbed = new Discord.EmbedBuilder()
-            .setColor(helper.vars.colours.embedColour.user.dec)
+            .setColor(helper.colours.embedColour.user.dec)
             .setTitle(`${osudata.username}'s ${this.params.mode ?? 'osu!'} profile`)
             .setURL(`https://osu.ppy.sh/users/${osudata.id}/${this.params.mode ?? ''}`)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.vars.defaults.images.any.url}`);
+            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`);
         if (this.params.graphonly) {
             const graphembeds = await this.getGraphs(osudata);
             this.ctn.embeds = graphembeds;
         } else {
             if (this.params.detailed == 2) {
                 const loading = new Discord.EmbedBuilder()
-                    .setColor(helper.vars.colours.embedColour.user.dec)
+                    .setColor(helper.colours.embedColour.user.dec)
                     .setTitle(`${osudata.username}'s ${this.params.mode ?? 'osu!'} profile`)
                     .setURL(`https://osu.ppy.sh/users/${osudata.id}/${this.params.mode ?? ''}`)
-                    .setThumbnail(`${osudata?.avatar_url ?? helper.vars.defaults.images.any.url}`)
+                    .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
                     .setDescription(`Loading...`);
 
                 if (this.input.type != 'button') {
@@ -976,16 +772,11 @@ export class Profile extends OsuCommand {
                 }
                 const graphembeds = await this.getGraphs(osudata);
 
-                const mostplayeddataReq: tooltypes.apiReturn<apitypes.BeatmapPlayCountArr> = await helper.tools.api.getUserMostPlayed(osudata.id, []);
-                const mostplayeddata: apitypes.BeatmapPlayCountArr = mostplayeddataReq.apiData;
-                if (mostplayeddataReq?.error) {
-                    await helper.tools.commands.errorAndAbort(this.input, 'osu', true, helper.vars.errors.uErr.osu.map.group_nf.replace('[TYPE]', 'most played'), false);
-                    return;
-                }
-                helper.tools.data.debug(mostplayeddataReq, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
+                const mostplayeddata: helper.osuapi.types_v2.BeatmapPlayCountArr = await helper.osuapi.v2.users.mostPlayed({ user_id: osudata.id });
+                helper.data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
 
                 if (mostplayeddata?.hasOwnProperty('error')) {
-                    await helper.tools.commands.errorAndAbort(this.input, 'osu', true, helper.vars.errors.uErr.osu.profile.mostplayed, true);
+                    await helper.commandTools.errorAndAbort(this.input, 'osu', true, helper.errors.uErr.osu.profile.mostplayed, true);
                     return;
                 }
                 const secperplay = osudata?.statistics.play_time / parseFloat(playcount.replaceAll(',', ''));
@@ -996,7 +787,7 @@ export class Profile extends OsuCommand {
                     mostplaytxt += `\`${(bmpc.count.toString() + ' plays').padEnd(15, ' ')}\` | [${bmpc.beatmapset.title}[${bmpc.beatmap.version}]](https://osu.ppy.sh/b/${bmpc.beatmap_id})\n`;
                 }
 
-                const dailies = (osustats.play_count / (helper.tools.calculate.convert('month', 'day', osudata.monthly_playcounts.length).outvalue)).toFixed(2);
+                const dailies = (osustats.play_count / (osudata.monthly_playcounts.length * 30.4375)).toFixed(2);
                 const monthlies =
                     (osustats.play_count / osudata.monthly_playcounts.length).toFixed(2);
                 // osudata.monthly_playcounts.map(x => x.count).reduce((a, b) => b + a)
@@ -1009,11 +800,11 @@ export class Profile extends OsuCommand {
     **Accuracy:** ${(osustats.hit_accuracy != null ? osustats.hit_accuracy : 0).toFixed(2)}%
     **Play Count:** ${playcount}
     **Level:** ${lvl}
-    **Total Play Time:** ${helper.tools.calculate.secondsToTime(osudata?.statistics.play_time)} (${helper.tools.calculate.secondsToTime(osudata?.statistics.play_time, true,)})`,
+    **Total Play Time:** ${helper.calculate.secondsToTime(osudata?.statistics.play_time)} (${helper.calculate.secondsToTime(osudata?.statistics.play_time, true,)})`,
                         inline: true
                     },
                     {
-                        name: helper.vars.defaults.invisbleChar,
+                        name: helper.defaults.invisbleChar,
                         value:
                             `**Player joined** <t:${new Date(osudata.join_date).getTime() / 1000}:R>                        
     ${gradeCounts}
@@ -1021,7 +812,7 @@ export class Profile extends OsuCommand {
     **Followers:** ${osudata.follower_count}
     ${prevnames}
     ${supporter} ${onlinestatus}
-    **Avg time per play:** ${helper.tools.calculate.secondsToTime(secperplay)}
+    **Avg time per play:** ${helper.calculate.secondsToTime(secperplay)}
     **Avg daily playcount:** ${dailies}
     **Avg monthly playcount:** ${monthlies}
     `,
@@ -1048,22 +839,22 @@ export class Profile extends OsuCommand {
     **Player joined** <t:${new Date(osudata.join_date).getTime() / 1000}:R>
     **Followers:** ${osudata.follower_count}
     ${prevnames}
-    **Total Play Time:** ${helper.tools.calculate.secondsToTime(osudata?.statistics.play_time, true)}
+    **Total Play Time:** ${helper.calculate.secondsToTime(osudata?.statistics.play_time, true)}
     ${supporter} ${onlinestatus}
             `);
                 this.ctn.embeds = [osuEmbed];
             }
         }
-        helper.tools.data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${osudata.id}`, apiData: null, mods: null });
+        helper.data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${osudata.id}`, apiData: null, mods: null });
         this.ctn.components = [buttons];
         this.send();
     }
 
-    async getGraphs(osudata: apitypes.User) {
+    async getGraphs(osudata: helper.osuapi.types_v2.User) {
         let chartplay;
         let chartrank;
 
-        let nulltext = helper.vars.defaults.invisbleChar;
+        let nulltext = helper.defaults.invisbleChar;
 
         if (
             (!osudata.monthly_playcounts ||
@@ -1071,21 +862,21 @@ export class Profile extends OsuCommand {
             (!osudata.rank_history ||
                 osudata.rank_history.length == 0)) {
             nulltext = 'Error - Missing data';
-            chartplay = helper.vars.defaults.images.any.url;
+            chartplay = helper.defaults.images.any.url;
             chartrank = chartplay;
         } else {
             const dataplay = ('start,' + osudata.monthly_playcounts.map(x => x.start_date).join(',')).split(',');
             const datarank = ('start,' + osudata.rank_history.data.map(x => x).join(',')).split(',');
 
             const play =
-                await helper.tools.other.graph(dataplay, osudata.monthly_playcounts.map(x => x.count), 'Playcount', {
+                await helper.other.graph(dataplay, osudata.monthly_playcounts.map(x => x.count), 'Playcount', {
                     startzero: true,
                     fill: true,
                     displayLegend: true,
                     pointSize: 0,
                 });
             const rank =
-                await helper.tools.other.graph(datarank, osudata.rank_history.data, 'Rank', {
+                await helper.other.graph(datarank, osudata.rank_history.data, 'Rank', {
                     startzero: false,
                     fill: false,
                     displayLegend: true,
@@ -1131,15 +922,15 @@ export class RecentActivity extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const pageArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.pages, this.input.args, true, 'number', false, true);
+        const pageArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
         if (pageArgFinder.found) {
             this.params.page = pageArgFinder.output;
             this.input.args = pageArgFinder.args;
         }
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.tools.commands.fetchUser(this.input.args);
+        const usertemp = helper.commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -1184,7 +975,7 @@ export class RecentActivity extends OsuCommand {
         this.logInput();
         this.getOverrides();
         // do stuff
-        const pgbuttons: Discord.ActionRowBuilder = await helper.tools.commands.pageButtons(this.name, this.commanduser, this.input.id);
+        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder();
         {
@@ -1203,73 +994,61 @@ export class RecentActivity extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudataReq: tooltypes.apiReturn<apitypes.User>;
+        let osudata: helper.osuapi.types_v2.UserExtended;
 
-        if (helper.tools.data.findFile(this.params.user, 'osudata', 'osu') &&
-            !('error' in helper.tools.data.findFile(this.params.user, 'osudata', 'osu')) &&
+        if (helper.data.findFile(this.params.user, 'osudata', 'osu') &&
+            !('error' in helper.data.findFile(this.params.user, 'osudata', 'osu')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            osudataReq = helper.tools.data.findFile(this.params.user, 'osudata', 'osu');
+            osudata = helper.data.findFile(this.params.user, 'osudata', 'osu');
         } else {
-            osudataReq = await helper.tools.api.getUser(this.params.user, 'osu', []);
-
+            osudata = await helper.osuapi.v2.users.profile({ name: this.params.user, mode: 'osu' });
         }
 
-        const osudata: apitypes.User = osudataReq.apiData;
-        if (osudataReq?.error) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.profile.user.replace('[ID]', this.params.user), false);
-            return;
-        }
-
-        helper.tools.data.debug(osudataReq, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
+        helper.data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.noUser(this.params.user), true);
+            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.noUser(this.params.user), true);
             return;
         }
 
-        helper.tools.data.storeFile(osudataReq, osudata.id, 'osudata', 'osu');
-        helper.tools.data.storeFile(osudataReq, this.params.user, 'osudata', 'osu');
+        helper.data.storeFile(osudata, osudata.id, 'osudata', 'osu');
+        helper.data.storeFile(osudata, this.params.user, 'osudata', 'osu');
 
         if (this.input.type != 'button' || this.input.buttonType == 'Refresh') {
             try {
-                helper.tools.data.updateUserStats(osudata, osudata.playmode,);
-                helper.tools.data.userStatsCache([osudata], 'osu', 'User');
+                helper.data.updateUserStats(osudata, osudata.playmode);
+                helper.data.userStatsCache([osudata], 'osu', 'User');
             } catch (error) {
             }
         }
         buttons
             .addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.user),
+                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
             );
 
-        let recentActivityReq: tooltypes.apiReturn<apitypes.Event[]>;
+        let rsactData: helper.osuapi.types_v2.Event[];
 
-        if (helper.tools.data.findFile(this.input.id, 'rsactdata') &&
-            !('error' in helper.tools.data.findFile(this.input.id, 'rsactdata')) &&
+        if (helper.data.findFile(this.input.id, 'rsactdata') &&
+            !('error' in helper.data.findFile(this.input.id, 'rsactdata')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            recentActivityReq = helper.tools.data.findFile(this.input.id, 'rsactdata');
+            rsactData = helper.data.findFile(this.input.id, 'rsactdata');
         } else {
-            recentActivityReq = await helper.tools.api.getUserActivity(osudata.id, []);
+            rsactData = await helper.osuapi.v2.users.recentActivity({ user_id: osudata.id });
         }
 
-        const rsactData: apitypes.Event[] & apitypes.Error = recentActivityReq.apiData;
-        if (recentActivityReq?.error) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.rsact, false);
-            return;
-        }
-        helper.tools.data.debug(recentActivityReq, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
+        helper.data.debug(rsactData, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
 
         if (rsactData?.hasOwnProperty('error')) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.profile.rsact, true);
+            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.profile.rsact, true);
             return;
         }
 
-        helper.tools.data.storeFile(recentActivityReq, this.input.id, 'rsactData', 'osu');
+        helper.data.storeFile(rsactData, this.input.id, 'rsactData', 'osu');
 
         const pageLength = 10;
 
@@ -1288,10 +1067,10 @@ export class RecentActivity extends OsuCommand {
         const curEmbed = new Discord.EmbedBuilder()
             .setTitle(`Recent Activity for ${osudata.username}`)
             .setURL(`https://osu.ppy.sh/users/${osudata.id}/${osudata.playmode}#recent`)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.vars.defaults.images.any.url}`)
+            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setDescription(`Page: ${this.params.page + 1}/${Math.ceil(rsactData.length / pageLength)}`);
 
-        helper.tools.formatter.userAuthor(osudata, curEmbed);
+        helper.formatter.userAuthor(osudata, curEmbed);
 
         let actText = '';
 
@@ -1304,58 +1083,58 @@ export class RecentActivity extends OsuCommand {
             };
             switch (curEv.type) {
                 case 'achievement': {
-                    const temp = curEv as apitypes.EventAchievement;
+                    const temp = curEv as helper.osuapi.types_v2.EventAchievement;
                     obj.desc = `Unlocked the **${temp.achievement.name}** medal! <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetApprove': {
-                    const temp = curEv as apitypes.EventBeatmapsetApprove;
+                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetApprove;
                     obj.desc = `Approved **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapPlaycount': {
-                    const temp = curEv as apitypes.EventBeatmapPlaycount;
+                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapPlaycount;
                     obj.desc =
                         `Achieved ${temp.count} plays on [\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url}) <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetDelete': {
-                    const temp = curEv as apitypes.EventBeatmapsetDelete;
+                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetDelete;
                     obj.desc = `Deleted **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetRevive': {
-                    const temp = curEv as apitypes.EventBeatmapsetRevive;
+                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetRevive;
                     obj.desc = `Revived **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetUpdate': {
-                    const temp = curEv as apitypes.EventBeatmapsetUpdate;
+                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetUpdate;
                     obj.desc = `Updated **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetUpload': {
-                    const temp = curEv as apitypes.EventBeatmapsetUpload;
+                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetUpload;
                     obj.desc = `Submitted **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'rank': {
-                    const temp = (curEv as apitypes.EventRank);
+                    const temp = (curEv as helper.osuapi.types_v2.EventRank);
                     obj.desc =
-                        `Achieved rank **#${temp.rank}** on [\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url}) (${helper.vars.emojis.gamemodes[temp.mode]}) <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
+                        `Achieved rank **#${temp.rank}** on [\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url}) (${helper.emojis.gamemodes[temp.mode]}) <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 }
                     break;
                 case 'rankLost': {
-                    const temp = curEv as apitypes.EventRankLost;
+                    const temp = curEv as helper.osuapi.types_v2.EventRankLost;
                     obj.desc = `Lost #1 on **[\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'userSupportAgain': {
-                    const temp = curEv as apitypes.EventUserSupportAgain;
+                    const temp = curEv as helper.osuapi.types_v2.EventUserSupportAgain;
                     obj.desc = `Purchased supporter <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'userSupportFirst': {
-                    const temp = curEv as apitypes.EventUserSupportFirst;
+                    const temp = curEv as helper.osuapi.types_v2.EventUserSupportFirst;
                     obj.desc = `Purchased supporter for the first time <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'userSupportGift': {
-                    const temp = curEv as apitypes.EventUserSupportGift;
+                    const temp = curEv as helper.osuapi.types_v2.EventUserSupportGift;
                     obj.desc = `Was gifted supporter <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'usernameChange': {
-                    const temp = curEv as apitypes.EventUsernameChange;
+                    const temp = curEv as helper.osuapi.types_v2.EventUsernameChange;
                     obj.desc = `Changed their username from ${temp.user.previousUsername} to ${temp.user.username} <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
             }
