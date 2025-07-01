@@ -10,6 +10,8 @@
 
 -   simulate having under-estimated values
 -   `MapLeaderboard` not using `this.#name` when creating buttons
+-   numbers over 1e9 not formatting into <foo\*1000>M instead of <foo>B
+-   `Help` fetching commands by their name instead of alias returning null (case-sensitivty issues)
 
 ### Changed
 

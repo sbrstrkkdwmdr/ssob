@@ -849,7 +849,7 @@ export function disableAllButtons(msg: Discord.Message) {
 
 export function getCommand(query: string): helper.bottypes.commandInfo {
     return helper.commandData.cmds.find(
-        x => x.aliases.concat([x.name]).includes(query)
+        x => x.aliases.concat([x.name]).map(x=>x.toLowerCase()).includes(query.toLowerCase())
     );
 
 
