@@ -12,14 +12,15 @@
 -   `MapLeaderboard` not using `this.#name` when creating buttons
 -   numbers over 1e9 not formatting into <foo\*1000>M instead of <foo>B
 -   `Help` fetching commands by their name instead of alias returning null (case-sensitivty issues)
-- `Compare` code blocks not being the whole line
-- `fetchUser()` sometimes causing crashes
-- `UserBeatmaps` not switching properly if started on page 1
+-   `Compare` code blocks not being the whole line
+-   `fetchUser()` sometimes causing crashes
+-   `UserBeatmaps` not switching properly if started on page 1
+-   `ServerLeaderboard` using undefined mode
 
 ### Changed
 
 -   rename `Leaderboard` to `ServerLeaderboard`
--   edit `ServerLeaderboard` aliases (['serverlb', 'serverleaderboard'])
+-   edit `ServerLeaderboard` aliases (['serverlb', 'serverleaderboard', 'slb'])
 -   update osumodcalculator to 2.0.3
 -   use mod acronyms instead of int in rosu-pp
 -   use array of mods instead of strings
@@ -27,10 +28,12 @@
 -   edit helper module
 -   edit tsconfig
 -   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }` but just `<res>`
-- fetching scores with customised mods also applies the customisations to subsequent commands 
+-   fetching scores with customised mods also applies the customisations to subsequent commands
 -   `BadgeWeightSeed` reformat embed
 -   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
-- `MapScores` add `-b` and `-map` params to specify map (map url still works)
+-   `MapScores` add `-b` and `-map` params to specify map (map url still works)
+-   move `ServerLeaderboard` to `osu_other` (same as in command data)
+- `ServerLeaderboard` slightly change spacing
 
 ### Added
 

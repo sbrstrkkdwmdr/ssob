@@ -275,9 +275,6 @@ function commandSelect(cmd: string, args: string[]) {
         case 'bws': case 'badgeweightsystem': case 'badgeweight': case 'badgeweightseed': case 'badgerank':
             command = new helper.cmd_osu_profiles.BadgeWeightSeed();
             break;
-        case 'serverleaderboard': case 'serverlb':
-            command = new helper.cmd_osu_profiles.ServerLeaderboard();
-            break;
         case 'osu': case 'profile': case 'o': case 'user':
             command = new helper.cmd_osu_profiles.Profile();
             break;
@@ -563,6 +560,9 @@ function commandSelect(cmd: string, args: string[]) {
             break;
         case 'saved':
             command = new helper.cmd_osu_other.Saved();
+            break;
+        case 'serverleaderboard': case 'serverlb': case 'slb':
+            command = new helper.cmd_osu_other.ServerLeaderboard();
             break;
         case 'whatif': case 'wi':
             command = new helper.cmd_osu_other.WhatIf();

@@ -219,7 +219,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
             foundCommand = true;
             break;
         case 'leaderboard':
-            command = new helper.cmd_osu_profiles.ServerLeaderboard();
+            command = new helper.cmd_osu_other.ServerLeaderboard();
             foundCommand = true;
             break;
         case 'map':
