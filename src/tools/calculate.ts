@@ -11,6 +11,7 @@ export function numberShorthand(input: number) {
     switch (true) {
         case value >= 1e9:
             output = value / 1e9 + 'B';
+            break;
         case value >= 1e8:
         case value >= 1e7:
         case value >= 1e6:

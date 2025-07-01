@@ -558,12 +558,13 @@ export class Ranking extends OsuCommand {
         ) {
             rankingdata = helper.data.findFile(this.input.id, 'rankingdata');
         } else {
-            helper.osuapi.v2.rankings.ranking({
+            rankingdata = await helper.osuapi.v2.rankings.ranking({
                 mode: this.params.mode,
                 type: this.params.type,
                 ...extras
             });
         }
+
         helper.data.storeFile(rankingdata, this.input.id, 'rankingdata');
 
         if (rankingdata?.hasOwnProperty('error')) {
@@ -577,7 +578,7 @@ export class Ranking extends OsuCommand {
         } catch (e) {
             return;
         }
-        if (rankingdata.ranking.length == 0) {
+        if (!(rankingdata?.ranking?.length > 0)) {
             this.voidcontent();
             this.ctn.content = `No data found`;
             this.ctn.edit = true;
@@ -632,31 +633,10 @@ export class Ranking extends OsuCommand {
             embed.setThumbnail(`https://osuhelper.argflags.omkserver.nl${this.params.country}`)
             : '';
 
+        this.formatUL(embed, rankingdata);
+
         if (this.params.page > Math.ceil(rankingdata.ranking.length / 5)) {
             this.params.page = Math.ceil(rankingdata.ranking.length / 5);
-        }
-        helper.calculate.numberShorthand;
-        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.ranking.length; i++) {
-            const curuser = rankingdata.ranking[i + (this.params.page * 5)];
-            if (!curuser) break;
-            embed.addFields(
-                [
-                    {
-                        name: `${i + 1 + (this.params.page * 5)}`,
-                        value:
-                            `:flag_${curuser.user.country_code.toLowerCase()}: [${curuser.user.username}](https://osu.ppy.sh/users/${curuser.user.id}/${this.params.mode})
-    #${curuser.global_rank == null ?
-                                '---' :
-                                helper.calculate.separateNum(curuser.global_rank)
-                            }
-    Score: ${curuser.total_score == null ? '---' : helper.calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : helper.calculate.numberShorthand(curuser.ranked_score)} ranked)
-    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : helper.calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : helper.calculate.separateNum(curuser.play_count)} plays
-    `
-                        ,
-                        inline: false
-                    }
-                ]
-            );
         }
         helper.commandTools.storeButtonArgs(this.input.id, {
             page: this.params.page + 1,
@@ -679,6 +659,34 @@ export class Ranking extends OsuCommand {
         this.ctn.embeds = [embed];
         this.ctn.components = [pgbuttons];
         this.send();
+    }
+
+    formatUL(embed: Discord.EmbedBuilder, rankingdata: helper.osuapi.types_v2.Rankings) {
+        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.ranking.length; i++) {
+            const curuser = rankingdata.ranking[i + (this.params.page * 5)];
+            if (!curuser) break;
+            let num = i + 1 + (this.params.page * 5);
+            let parseGlobalRank =
+                num == curuser?.global_rank ?
+                    '' :
+                    curuser.global_rank == null ?
+                        '' :
+                        '(#' + helper.calculate.separateNum(curuser.global_rank) + ' Global)';
+            embed.addFields(
+                [
+                    {
+                        name: `#${num} ${parseGlobalRank}`,
+                        value:
+                            `:flag_${curuser.user.country_code.toLowerCase()}: [${curuser.user.username}](https://osu.ppy.sh/users/${curuser.user.id}/${this.params.mode})
+    Score: ${curuser.total_score == null ? '---' : helper.calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : helper.calculate.numberShorthand(curuser.ranked_score)} ranked)
+    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : helper.calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : helper.calculate.separateNum(curuser.play_count)} plays
+    `
+                        ,
+                        inline: false
+                    }
+                ]
+            );
+        }
     }
 }
 
