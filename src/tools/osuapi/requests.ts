@@ -6,6 +6,7 @@ import * as helper from './helper';
 import { Dict } from './types';
 
 export function oAuth(): apitypes.OAuth {
+    helper.log('Finding cached OAuth');
     const str = fs.readFileSync(`./osuauth.json`, 'utf-8');
     helper.credentials.auth = JSON.parse(str) as apitypes.OAuth;
     helper.credentials.lastAuthUpdate = new Date();
@@ -81,7 +82,8 @@ export async function checkAuth() {
     helper.log('Verifying OAuth');
     let getting = true;
     if (helper.credentials.auth) {
-        if (helper.credentials.auth.expires_in ?? 0 <= helper.credentials.lastAuthUpdate.getTime()) {
+        if (helper.credentials?.auth?.expires_in ?? 0 <= helper.credentials.lastAuthUpdate.getTime()) {
+            helper.log('OAuth expired!');
             await PostOAuth();
         }
         getting = false;
@@ -89,13 +91,16 @@ export async function checkAuth() {
     try {
         oAuth();
     } catch (error) {
+        helper.log('Error fetching cached OAuth');
+        helper.log(error);
         await PostOAuth();
         getting = false;
     }
     if (fs.existsSync(`./osuauth.json`)) {
         const stat = fs.statSync(`./osuauth.json`);
-        if ((helper.credentials.auth?.expires_in ?? 0 <= stat.mtimeMs) && getting) {
-            await PostOAuth();
+        if ((helper.credentials.auth?.expires_in ?? 0) <= stat.mtime.getSeconds() && getting) {
+            helper.log('OAuth expired!');
+            // await PostOAuth();
         }
     } else if (getting) {
         await PostOAuth();
@@ -145,7 +150,7 @@ export async function get_v2(url: string, params: Dict, tries: number = 0) {
     if (data?.authentication) {
         helper.log('Authentication error...\nUpdating authentication and retrying...');
         try {
-            await PostOAuth();
+            checkAuth();
         } catch (error) {
             console.log(error);
             return {
@@ -203,7 +208,7 @@ export async function post_v2(url: string, params: Dict, body: Dict, tries: numb
     if (data?.authentication) {
         helper.log('Authentication error...\nUpdating authentication and retrying...');
         try {
-            await PostOAuth();
+            checkAuth();
         } catch (error) {
             console.log(error);
             return {
@@ -212,7 +217,6 @@ export async function post_v2(url: string, params: Dict, body: Dict, tries: numb
         }
         return post_v2(url, params, body, tries + 1);
     }
-    console.log(data)
     return data;
 }
 

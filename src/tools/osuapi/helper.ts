@@ -1,5 +1,6 @@
 import axios from 'axios';
 import fs from 'fs';
+import { format } from 'util';
 import * as apitypes from './apitypes';
 import { Dict } from './types';
 
@@ -64,8 +65,14 @@ function setParams_all(input: Dict, params: Dict) {
 
 export function log(data: any) {
     if (logCalls) {
-        console.log(data);
+        const rn = new Date();
+        const str = `[${rn.getUTCFullYear()}-${twoDigits(rn.getUTCMonth())}-${twoDigits(rn.getUTCDate())} ${twoDigits(rn.getUTCHours())}:${twoDigits(rn.getUTCMinutes())}:${twoDigits(rn.getUTCSeconds())}] `;
+        console.log(str + format(data));
     }
+}
+
+function twoDigits(number: number) {
+    return number < 10 ? '0' + number : number + '';
 }
 
 export * as requests from './requests';
