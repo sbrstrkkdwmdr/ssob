@@ -1554,14 +1554,14 @@ export class MapLeaderboard extends OsuCommand {
         this.logInput();
         // do stuff
         const buttons = new Discord.ActionRowBuilder();
-        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons('maplb', this.commanduser, this.input.id);
+        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         if (!this.params.mapid) {
             const temp = helper.data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
             this.params.mapid = +temp?.id;
         }
         if (this.params.mapid == 0) {
-            helper.commandTools.missingPrevID_map(this.input, 'maplb');
+            helper.commandTools.missingPrevID_map(this.input, this.name);
             return;
         }
         if (this.input.type == 'interaction') {
@@ -1694,7 +1694,7 @@ export class MapLeaderboard extends OsuCommand {
             {
                 id: `${mapdata.id}`,
                 apiData: null,
-                mods: this.params.mapmods.map(x => { return { acronym: x }; })
+                mods: this.params?.mapmods?.map(x => { return { acronym: x }; }) ?? []
             }
         );
 
@@ -1819,7 +1819,7 @@ export class ReplayParse extends SingleScoreCommand {
                 small_tick_hit: 0, // count 50
                 legacy_combo_increase: 0, // max stats
             },
-            mods: tmods.map(x => { return { acronym: x }; }),
+            mods: tmods?.map(x => { return { acronym: x }; }) ?? [],
             passed: score.info.passed,
             playlist_item_id: 0,
             preserve: false,
