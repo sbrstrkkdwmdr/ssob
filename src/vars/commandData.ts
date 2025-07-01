@@ -2,7 +2,7 @@ import * as helper from '../helper';
 
 import * as buttonsObjs from './buttons';
 
-const mods = 'See [here](https://sbrstrkkdwmdr.github.io/projects/ssob_docs/types.html#mods)';
+const mods = 'See [here](https://sbrstrkkdwmdr.me/projects/ssob_docs/helper.bottypes#mods)';
 const scoreListString =
     `Mods can be specified with +[mods], -mx [exact mods] or -me [exclude mods]
 The arguments \`pp\`, \`score\`, \`acc\`, \`bpm\` and \`miss\` use the following format:
@@ -70,7 +70,8 @@ const userAdmin: helper.bottypes.commandInfoOption = {
 };
 
 const scoreListArgs = '[user] [page] [mode] [mapper] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]';
-const mapformat = ['foo',
+const mapformat = [
+    'foo',
     'osu.ppy.sh/b/foo',
     'osu.ppy.sh/s/SETID',
     'osu.ppy.sh/beatmaps/foo',
@@ -302,7 +303,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'Return just that specific value',
-                options: ['uptime', 'version', 'server', 'website', 'timezone', 'source'],
+                options: ['uptime', 'version', 'server', 'website', 'source'],
                 format: ['foo'],
                 defaultValue: 'null',
             },
@@ -507,7 +508,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
         description: 'Shows the osu! rankings of a server.',
         usage: 'serverleaderboard [id] [mode]',
         category: 'osu_other',
-        aliases: [],
+        aliases: ['serverlb', 'slb'],
         args: [
             {
                 name: 'id',
@@ -845,7 +846,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
     {
         name: 'Set',
         description: 'Sets your osu! username/mode/skin or any setting.',
-        usage: 'set <username> [mode] [skin] [timezone] [location]',
+        usage: 'set <username> [mode] [skin]',
         category: 'osu_other',
         examples: [
             {
@@ -869,7 +870,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 description: 'Sets your skin to rafis'
             },
         ],
-        aliases: ['setuser', 'set', 'setmode', 'setskin', 'settime', 'setweather', 'setlocation'],
+        aliases: ['setuser', 'set', 'setmode', 'setskin',],
         args: [
             {
                 name: 'username',
@@ -888,14 +889,6 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 format: ['-skin foo'],
                 defaultValue: 'osu! default 2014',
             },
-            {
-                name: 'location',
-                type: 'string',
-                required: false,
-                description: 'The location to set',
-                format: ['-location foo'],
-                defaultValue: 'null',
-            }
         ]
     },
     {
@@ -1226,7 +1219,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
     {
         name: 'MapScores',
         description: 'Shows the scores of a user on a beatmap.\n' + scoreListString,
-        usage: 'mapscores [user] [id] [page] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]',
+        usage: 'mapscores [user] [map id] [page] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]',
         category: 'osu_scores',
         examples: [
             {
@@ -1254,11 +1247,11 @@ export const cmds: helper.bottypes.commandInfo[] = [
         args:
             scoreListCommandOptions.concat([
                 {
-                    name: 'id',
+                    name: 'map id',
                     type: 'integer/map link',
                     required: false,
                     description: 'The map ID to search for',
-                    format: mapformat,
+                    format: mapformat.concat('-b foo', '-map foo'),
                     defaultValue: 'the most recent map in the guild',
                 },
             ])
@@ -1731,7 +1724,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 name: 'arg',
                 type: 'integer/string',
                 required: false,
-                description: 'the types of files to clear (read the options section)',
+                description: 'the helper.bottypes of files to clear (read the options section)',
                 options: ['normal', 'all (only cmd data)', 'trueall', 'map', 'users', 'previous', 'pmaps', 'pscores', 'pusers', 'errors', 'graph'],
                 format: ['foo',],
                 defaultValue: 'temporary files only',
