@@ -1,6 +1,6 @@
-import * as bottypes from '../types/bot.js';
+import * as helper from '../helper';
 
-import * as buttonsObjs from './buttons.js';
+import * as buttonsObjs from './buttons';
 
 const mods = 'See [here](https://sbrstrkkdwmdr.github.io/projects/ssob_docs/types.html#mods)';
 const scoreListString =
@@ -27,7 +27,7 @@ const range = (key: string): string[] => {
  * [] is optional
  */
 
-const user: bottypes.commandInfoOption = {
+const user: helper.bottypes.commandInfoOption = {
     name: 'user',
     type: 'string/integer/user mention',
     required: false,
@@ -35,7 +35,7 @@ const user: bottypes.commandInfoOption = {
     format: ['foo', '@foo', '-u foo', '-user foo', '-uid foo', 'osu.ppy.sh/u/foo', 'osu.ppy.sh/users/foo'],
     defaultValue: 'The user who ran the command',
 };
-const mode: bottypes.commandInfoOption = {
+const mode: helper.bottypes.commandInfoOption = {
     name: 'mode',
     type: 'string',
     required: false,
@@ -44,7 +44,7 @@ const mode: bottypes.commandInfoOption = {
     format: ['-foo'],
     defaultValue: 'osu',
 };
-const page: bottypes.commandInfoOption = {
+const page: helper.bottypes.commandInfoOption = {
     name: 'page',
     type: 'integer',
     required: false,
@@ -52,7 +52,7 @@ const page: bottypes.commandInfoOption = {
     format: ['-p foo', '-page foo'],
     defaultValue: '1',
 };
-const userTrack: bottypes.commandInfoOption = {
+const userTrack: helper.bottypes.commandInfoOption = {
     name: 'user',
     type: 'string',
     required: true,
@@ -60,7 +60,7 @@ const userTrack: bottypes.commandInfoOption = {
     format: user.format,
     defaultValue: 'N/A',
 };
-const userAdmin: bottypes.commandInfoOption = {
+const userAdmin: helper.bottypes.commandInfoOption = {
     name: 'user',
     type: 'integer/user mention',
     required: false,
@@ -77,7 +77,7 @@ const mapformat = ['foo',
     'osu.ppy.sh/beatmapsets/SETID',
     'osu.ppy.sh/beatmapsets/SETID#MODE/foo'
 ];
-const scoreListCommandOptions: bottypes.commandInfoOption[] = [
+const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
     user, mode,
     {
         name: 'sort',
@@ -214,7 +214,7 @@ const scoreListCommandOptions: bottypes.commandInfoOption[] = [
 ];
 
 
-export const cmds: bottypes.commandInfo[] = [
+export const cmds: helper.bottypes.commandInfo[] = [
     {
         name: 'Changelog',
         description: 'Displays the changes for the current version or version requested.',
@@ -869,7 +869,7 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'Sets your skin to rafis'
             },
         ],
-        aliases: ['setuser', 'set', 'setmode', 'setskin', 'settime', 'settz', 'setweather', 'setlocation'],
+        aliases: ['setuser', 'set', 'setmode', 'setskin', 'settime', 'setweather', 'setlocation'],
         args: [
             {
                 name: 'username',
@@ -887,14 +887,6 @@ export const cmds: bottypes.commandInfo[] = [
                 description: 'The skin to set',
                 format: ['-skin foo'],
                 defaultValue: 'osu! default 2014',
-            },
-            {
-                name: 'timezone',
-                type: 'string',
-                required: false,
-                description: 'The timezone to set',
-                format: ['-tz foo'],
-                defaultValue: 'null',
             },
             {
                 name: 'location',

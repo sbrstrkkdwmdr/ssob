@@ -4,16 +4,14 @@ import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import fs from 'fs';
 import Sequelize from 'sequelize';
 
-import * as buttonHandler from './buttonHandler.js';
-import * as commandHandler from './commandHandler.js';
-import * as helper from './helper.js';
-import * as linkHandler from './linkHandler.js';
-import { loops } from './loops.js';
-import * as slashcmds from './slashCommands.js';
-import * as bottypes from './types/bot.js';
-import * as apitypes from './types/osuapi.js';
-import * as tooltypes from './types/tools.js';
+import * as buttonHandler from './buttonHandler';
+import * as commandHandler from './commandHandler';
+import * as helper from './helper';
+import * as linkHandler from './linkHandler';
+import { loops } from './loops';
+import * as slashcmds from './slashCommands';
 
+console.log('Initialising client...');
 const client = new Client({
     intents: [
         GatewayIntentBits.DirectMessages,
@@ -41,6 +39,7 @@ const client = new Client({
 
 helper.vars.client = client;
 
+console.log('Initialising sequelize...');
 const sequelize = new Sequelize.Sequelize('database', 'username', 'password', {
     host: 'localhost',
     dialect: 'sqlite',
@@ -48,6 +47,7 @@ const sequelize = new Sequelize.Sequelize('database', 'username', 'password', {
     storage: 'database.sqlite',
 });
 
+console.log('Initialising userdata...');
 const userdata = sequelize.define('userdata', {
     userid: {
         type: Sequelize.STRING,
@@ -83,6 +83,7 @@ const userdata = sequelize.define('userdata', {
     }
 });
 
+console.log('Initialising guildSettings...');
 const guildSettings = sequelize.define('guildSettings', {
     guildid: {
         type: Sequelize.TEXT,
@@ -107,6 +108,7 @@ const guildSettings = sequelize.define('guildSettings', {
     }
 });
 
+console.log('Initialising trackDb...');
 const trackDb = sequelize.define('trackUsers', {
     osuid: {
         type: Sequelize.STRING,
@@ -129,6 +131,7 @@ const trackDb = sequelize.define('trackUsers', {
     },
 });
 
+console.log('Initialising statsCache...');
 const statsCache = sequelize.define('statsCache', {
     osuid: {
         type: Sequelize.STRING,
@@ -158,6 +161,10 @@ helper.vars.guildSettings = guildSettings;
 helper.vars.trackDb = trackDb;
 helper.vars.statsCache = statsCache;
 
+console.log('Initialising osu!api...');
+helper.osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.clientSecret);
+helper.osuapi.logCalls(true);
+
 client.once('ready', () => {
     const currentDate = new Date();
     helper.vars.userdata.sync();
@@ -173,14 +180,14 @@ Boot time:        ${timetostart}ms
 Time:             ${currentDate.toLocaleString()}
 Time (ISO):       ${currentDate.toISOString()}
 Time (epoch, ms): ${currentDate.getTime()}
-Client:           ${client.user.tag} 
-Client ID:        ${client.user.id}
+Client:           ${client.user?.tag} 
+Client ID:        ${client.user?.id}
 ====================================================
 `);
 
-    if (!fs.existsSync(`${helper.vars.path.precomp}/config/osuauth.json`)) {
-        helper.tools.log.stdout(`Creating ${helper.vars.path.precomp}/config/osuauth.json`);
-        fs.writeFileSync(`${helper.vars.path.precomp}/config/osuauth.json`,
+    if (!fs.existsSync(`${helper.path.precomp}/config/osuauth.json`)) {
+        helper.log.stdout(`Creating ${helper.path.precomp}/config/osuauth.json`);
+        fs.writeFileSync(`${helper.path.precomp}/config/osuauth.json`,
             '{"token_type": "Bearer", "expires_in": 1, "access_token": "blahblahblah"}', 'utf-8');
     }
 
@@ -215,15 +222,15 @@ Client ID:        ${client.user.id}
         'logs/general.log',
     ];
     makeDir.forEach(dir => {
-        if (!fs.existsSync(`${helper.vars.path.main}/` + dir)) {
-            console.log(`Creating ${helper.vars.path.main}/${dir}`);
-            fs.mkdirSync(`${helper.vars.path.main}/` + dir);
+        if (!fs.existsSync(`${helper.path.main}/` + dir)) {
+            console.log(`Creating ${helper.path.main}/${dir}`);
+            fs.mkdirSync(`${helper.path.main}/` + dir);
         }
     });
     makeFiles.forEach(file => {
-        if (!fs.existsSync(`${helper.vars.path.main}/` + file)) {
-            console.log(`Creating ${helper.vars.path.main}/${file}`);
-            fs.writeFileSync(`${helper.vars.path.main}/` + file, '');
+        if (!fs.existsSync(`${helper.path.main}/` + file)) {
+            console.log(`Creating ${helper.path.main}/${file}`);
+            fs.writeFileSync(`${helper.path.main}/` + file, '');
         }
     });
     client.on('messageCreate', async (message) => {
@@ -231,7 +238,7 @@ Client ID:        ${client.user.id}
         linkHandler.onMessage(message); //{}
 
         //if message mentions bot and no other args given, return prefix
-        let settings: tooltypes.guildSettings;
+        let settings: helper.tooltypes.guildSettings;
         if (message.mentions.users.size > 0) {
             if (message.mentions.users.first().id == helper.vars.client.user.id && message.content.replaceAll(' ', '').length == (`<@${helper.vars.client.user.id}>`).length) {
                 let serverPrefix = 'null';
@@ -267,6 +274,6 @@ Client ID:        ${client.user.id}
 client.login(helper.vars.config.token);
 
 process.on('warning', e => {
-    helper.tools.log.stdout(e.stack);
+    helper.log.stdout(e.stack);
     console.warn(e.stack);
 });

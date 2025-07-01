@@ -2,7 +2,7 @@ import Discord from 'discord.js';
 import fs from 'fs';
 import moment from 'moment';
 import util from 'util';
-import * as helper from '../helper.js';
+import * as helper from '../helper';
 export function out(text: string, path: string, fileOnly?: boolean) {
     text = appendTime(text);
     if (helper.vars.config.logs.file) {
@@ -30,7 +30,7 @@ function appendTime(str: string) {
 // use this as you would with console.log()
 export function stdout(message?: any, ...optionalParams: any[]) {
     const text = optionalParams ? util.format(message) : util.format(message, optionalParams ?? null);
-    out(text, `${helper.vars.path.logs}/console.log`);
+    out(text, `${helper.path.logs}/console.log`);
 }
 
 export function commandOptions(
@@ -61,7 +61,7 @@ Channel ID:   ${message?.channelId ?? interaction?.channelId}`;
     }
     txt += '\n====================================================';
     out(txt,
-        `${helper.vars.path.logs}/${(message?.guildId ?? interaction?.guildId) ? 'cmd/' + (message?.guildId ?? interaction?.guildId) + '.log' : 'commands.log'}`, true);
+        `${helper.path.logs}/${(message?.guildId ?? interaction?.guildId) ? 'cmd/' + (message?.guildId ?? interaction?.guildId) + '.log' : 'commands.log'}`, true);
 }
 
 export function commandErr(input: string, id: string | number,
@@ -79,7 +79,7 @@ ID:           ${id}
 ----------------------------------------------------
 ${input}
 ====================================================`;
-    out(output, `${helper.vars.path.logs}/${(message?.guildId ?? interaction?.guildId) ? 'cmd/' + (message?.guildId ?? interaction?.guildId) + '.log' : 'commands.log'}`, true);
+    out(output, `${helper.path.logs}/${(message?.guildId ?? interaction?.guildId) ? 'cmd/' + (message?.guildId ?? interaction?.guildId) + '.log' : 'commands.log'}`, true);
 }
 
 /**

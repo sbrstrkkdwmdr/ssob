@@ -2,8 +2,7 @@
 import axios from 'axios';
 import Discord from 'discord.js';
 import fs from 'fs';
-import * as helper from './helper.js';
-import * as apitypes from './types/osuapi.js';
+import * as helper from './helper';
 export function loops() {
     setInterval(() => {
         clearMapFiles();
@@ -23,17 +22,18 @@ export function loops() {
     clearCommandCache();
     getOnlineChangelog();
 
+    
     // status switcher
-    const activities = [];
+    const activities:Discord.ActivitiesOptions[] = [];
 
     function getMap() {
-        const filesPathing = `${helper.vars.path.cache}/commandData`;
+        const filesPathing = `${helper.path.cache}/commandData`;
         const maps = fs.readdirSync(`${filesPathing}`).filter(x => x.includes('mapdata'));
         if (maps.length == 0) {
             return false;
         }
         const mapFile = maps[Math.floor(Math.random() * maps.length)];
-        const map = (JSON.parse(fs.readFileSync(`${filesPathing}/${mapFile}`, 'utf-8'))).apiData as apitypes.Beatmap;
+        const map = (JSON.parse(fs.readFileSync(`${filesPathing}/${mapFile}`, 'utf-8'))) as helper.osuapi.types_v2.Beatmap;
         return map;
     }
     function setActivity() {
@@ -48,7 +48,7 @@ export function loops() {
             fr = 2;
         }
 
-        helper.vars.client.user.setPresence({
+        helper.vars.client.user?.setPresence({
             activities: [{
                 name: `${string} | ${helper.vars.config.prefix}help`,
                 type: fr,
@@ -57,7 +57,7 @@ export function loops() {
             status: 'dnd',
             afk: false
         });
-        return (map as apitypes.Beatmap).total_length;
+        return (map as helper.osuapi.types_v2.Beatmap).total_length;
     }
     const activityChristmas = [
         {
@@ -135,7 +135,7 @@ export function loops() {
             activityarr = activities;
         }
         if (specialDay == true) {
-            helper.vars.client.user.setPresence({
+            helper.vars.client.user?.setPresence({
                 activities: [activityarr[Math.floor(Math.random() * activityarr.length)]],
                 status: 'dnd',
                 afk: false
@@ -165,16 +165,16 @@ export function loops() {
     ];
 
     function clearMapFiles() {
-        const files = fs.readdirSync(`${helper.vars.path.files}/maps`);
+        const files = fs.readdirSync(`${helper.path.files}/maps`);
         for (const file of files) {
-            fs.stat(`${helper.vars.path.files}/maps` + file, (err, stat) => {
+            fs.stat(`${helper.path.files}/maps` + file, (err, stat) => {
                 if (err) {
                     return;
                 } else {
                     if (file.includes('undefined')) {
                         if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 12)) {
-                            fs.unlinkSync(`${helper.vars.path.files}/maps/` + file);
-                            helper.tools.log.stdout(`Deleted file ${helper.vars.path.files}/maps/` + file,);
+                            fs.unlinkSync(`${helper.path.files}/maps/` + file);
+                            helper.log.stdout(`Deleted file ${helper.path.files}/maps/` + file,);
                             // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                         }
                     }
@@ -188,19 +188,19 @@ export function loops() {
     async function getOnlineChangelog() {
         await axios.get(`https://raw.githubusercontent.com/sbrstrkkdwmdr/ssob/dev/changelog.md`)
             .then(data => {
-                fs.writeFileSync(`${helper.vars.path.cache}/changelog.md`, data.data);
+                fs.writeFileSync(`${helper.path.cache}/changelog.md`, data.data);
             })
             .catch(error => {
-                helper.tools.log.stdout('ERROR FETCHING GIT');
-                helper.tools.log.out(`${helper.vars.path.logs}/err.log`, JSON.stringify(error));
+                helper.log.stdout('ERROR FETCHING GIT');
+                helper.log.out(`${helper.path.logs}/err.log`, JSON.stringify(error));
             });
     }
     function clearCommandCache() {
-        const files = fs.readdirSync(`${helper.vars.path.cache}/commandData`);
+        const files = fs.readdirSync(`${helper.path.cache}/commandData`);
         for (const file of files) {
-            fs.stat(`${helper.vars.path.cache}/commandData/` + file, (err, stat) => {
+            fs.stat(`${helper.path.cache}/commandData/` + file, (err, stat) => {
                 if (err) {
-                    helper.tools.log.stdout(err);
+                    helper.log.stdout(err);
                     return;
                 } else {
                     if (permanentCache.some(x => file.startsWith(x))) {
@@ -208,27 +208,27 @@ export function loops() {
 
                         if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 24 * 28) && files.filter(x => permanentCache.some(x => file.startsWith(x))).length >= 100) {
                             //kill after 4 weeks
-                            fs.unlinkSync(`${helper.vars.path.cache}/commandData/` + file);
-                            helper.tools.log.stdout(`Deleted file ${helper.vars.path.cache}/commandData/` + file,);
+                            fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
+                            helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                         }
                     }
                     else if (cacheById.some(x => file.startsWith(x))) {
                         if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 24)) {
-                            fs.unlinkSync(`${helper.vars.path.cache}/commandData/` + file);
-                            helper.tools.log.stdout(`Deleted file ${helper.vars.path.cache}/commandData/` + file,);
+                            fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
+                            helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                             // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                         }
                     } else if (file.includes('weatherdata')) {
                         if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 15)) {
-                            fs.unlinkSync(`${helper.vars.path.cache}/commandData/` + file);
-                            helper.tools.log.stdout(`Deleted file ${helper.vars.path.cache}/commandData/` + file,);
+                            fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
+                            helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                             // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                         }
                     }
                     else {
                         if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 3)) {
-                            fs.unlinkSync(`${helper.vars.path.cache}/commandData/` + file);
-                            helper.tools.log.stdout(`Deleted file ${helper.vars.path.cache}/commandData/` + file,);
+                            fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
+                            helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                             // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                         }
                     }
@@ -238,12 +238,12 @@ export function loops() {
         }
     }
     function clearParseArgs() {
-        const files = fs.readdirSync(`${helper.vars.path.cache}/params`);
+        const files = fs.readdirSync(`${helper.path.cache}/params`);
         for (const file of files) {
-            fs.stat(`${helper.vars.path.cache}/params/` + file, (err, stat) => {
+            fs.stat(`${helper.path.cache}/params/` + file, (err, stat) => {
                 if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 24)) {
-                    fs.unlinkSync(`${helper.vars.path.cache}/params/` + file);
-                    helper.tools.log.stdout(`Deleted file ${helper.vars.path.cache}/params/` + file,);
+                    fs.unlinkSync(`${helper.path.cache}/params/` + file);
+                    helper.log.stdout(`Deleted file ${helper.path.cache}/params/` + file,);
                     // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                 }
             });
@@ -276,10 +276,10 @@ export function loops() {
     }
     function a() {
         try {
-            helper.tools.track.trackUsers(totalTime);
+            helper.track.trackUsers(totalTime);
         } catch (err) {
-            helper.tools.log.stdout(err);
-            helper.tools.log.stdout('temporarily disabling tracking for an hour');
+            helper.log.stdout(err);
+            helper.log.stdout('temporarily disabling tracking for an hour');
             enableTrack = false;
             setTimeout(() => {
                 enableTrack = true;

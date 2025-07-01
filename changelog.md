@@ -8,7 +8,10 @@
 
 ### Fixed
 
-- simulate having under-estimated values
+-   simulate having under-estimated values
+-   `MapLeaderboard` not using `this.#name` when creating buttons
+-   numbers over 1e9 not formatting into <foo\*1000>M instead of <foo>B
+-   `Help` fetching commands by their name instead of alias returning null (case-sensitivty issues)
 
 ### Changed
 
@@ -17,16 +20,30 @@
 -   update osumodcalculator to 2.0.3
 -   use mod acronyms instead of int in rosu-pp
 -   use array of mods instead of strings
+-   switch to using [toa](https://github.com/sbrstrkkdwmdr/toa) for osu! api calls
+-   edit helper module
+-   edit tsconfig
+-   api responses are no longer formatted as `{ timeTaken:number, apiData:<res> }`
+-   `BadgeWeightSeed` reformat embed
+-   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
 
 ### Added
 
--   add `lb` and `leaderboard` aliases to `Rankings`
+-   `Rankings` add `lb` and `leaderboard` aliases
+-   `BadgeWeightSeed` add "Current weighted rank"
+-   `BadgeWeightSeed` add "Badges needed for #1"
 
 ### Removed
 
 -   remove `leaderboard` alias from maplb
 -   `Convert` in command data
 -   unused API stuff
+-   unused files from old versions
+-   `tz` arg in `Info`
+
+### BREAKING
+
+-   The way cache is stored has been changed slightly. Cache prior to this version should be cleared
 
 ## [5.1.1] - 2025-06-12
 

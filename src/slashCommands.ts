@@ -1,6 +1,6 @@
 // initialise client commands
 import * as Discord from 'discord.js';
-import * as helper from './helper.js';
+import * as helper from './helper';
 
 export async function main() {
     const docommands: boolean = true;
@@ -35,14 +35,14 @@ function run() {
                     description: 'What to convert the value from',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                    choices: helper.vars.commandopts.conversionopts
+                    choices: helper.commandopts.conversionopts
                 },
                 {
                     name: 'to',
                     description: 'What to convert the value to',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.conversionopts
+                    choices: helper.commandopts.conversionopts
                 },
                 {
                     name: 'number',
@@ -75,7 +75,7 @@ function run() {
                     description: 'The parameters for the search',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                    choices: helper.vars.commandopts.mathcmdopts
+                    choices: helper.commandopts.mathcmdopts
                 },
                 {
                     name: 'num1',
@@ -208,7 +208,7 @@ function run() {
                     description: 'The gamemode to use',
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 }
             ]
         },
@@ -234,7 +234,7 @@ function run() {
                     description: 'The gamemode to use',
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 }
             ]
         },
@@ -242,7 +242,7 @@ function run() {
             name: 'firsts',
             description: 'Displays the user\'s #1 scores',
             dmPermission: true,
-            options: helper.vars.commandopts.playArrayOpts
+            options: helper.commandopts.playArrayOpts
         },
         {
             name: 'lb',
@@ -260,7 +260,7 @@ function run() {
                     description: 'The mode to display the plays of',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 },
             ]
         },
@@ -350,7 +350,7 @@ function run() {
             name: 'nochokes',
             description: 'Displays the user\'s top scores without misses',
             dmPermission: true,
-            options: helper.vars.commandopts.osutopOpts
+            options: helper.commandopts.osutopOpts
         },
         {
             name: 'osu',
@@ -374,7 +374,7 @@ function run() {
                     description: 'The mode to display the profile in',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 }
             ]
         },
@@ -394,7 +394,7 @@ function run() {
                     description: 'The mode to set the profile to',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts,
+                    choices: helper.commandopts.modeopts,
                 },
                 {
                     name: 'skin',
@@ -409,13 +409,13 @@ function run() {
             name: 'osutop',
             description: 'Displays the top plays of the user',
             dmPermission: true,
-            options: helper.vars.commandopts.osutopOpts
+            options: helper.commandopts.osutopOpts
         },
         {
             name: 'pinned',
             description: 'Displays the user\'s pinned scores',
             dmPermission: true,
-            options: helper.vars.commandopts.playArrayOpts
+            options: helper.commandopts.playArrayOpts
         },
         {
             name: 'pp',
@@ -434,7 +434,7 @@ function run() {
                     description: 'The mode to estimate the rank in',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 },
             ]
         },
@@ -455,7 +455,7 @@ function run() {
                     description: 'The mode to estimate the pp in',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 }
             ]
         },
@@ -476,7 +476,7 @@ function run() {
                     description: 'The mode to display the leaderboards in',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 },
                 {
                     name: 'page',
@@ -509,7 +509,7 @@ function run() {
             name: 'recent',
             description: 'Displays the user\'s most recent score',
             dmPermission: true,
-            options: helper.vars.commandopts.rsopts
+            options: helper.commandopts.rsopts
         },
         {
             name: 'recentactivity',
@@ -534,7 +534,7 @@ function run() {
             name: 'scores',
             description: 'Displays the user\'s scores for a set map',
             dmPermission: true,
-            options: helper.vars.commandopts.useridsortopts
+            options: helper.commandopts.useridsortopts
         },
         {
             name: 'scorestats',
@@ -725,7 +725,7 @@ function run() {
                     description: 'The mode to use',
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.vars.commandopts.modeopts
+                    choices: helper.commandopts.modeopts
                 }
             ]
         },

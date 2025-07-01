@@ -1,4 +1,4 @@
-import * as helper from '../helper.js';
+import * as helper from '../helper';
 
 /**
  * 
@@ -167,5 +167,5 @@ export { decToHex, decToRgb, hexToDec, hexToRgb, hsvToRgb, rgbToDec, rgbToHex, r
  * [nm
  */
 export function codeBlockColourText(str: string, colour: string, type: 'background' | 'text') {
-    return `\`\`\`ansi\n[${helper.vars.colours.codeBlockColour[type][colour]}m${str}\n\`\`\``;
+    return `\`\`\`ansi\n[${helper.colours.codeBlockColour[type][colour]}m${str}\n\`\`\``;
 }

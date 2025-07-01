@@ -1,11 +1,8 @@
 import Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
 import * as rosu from 'rosu-pp-js';
-import * as helper from '../helper.js';
-import * as bottypes from '../types/bot.js';
-import * as apitypes from '../types/osuapi.js';
-import * as tooltypes from '../types/tools.js';
-import { OsuCommand } from './command.js';
+import * as helper from '../helper';
+import { OsuCommand } from './command';
 
 export class Map extends OsuCommand {
     declare protected params: {
@@ -23,8 +20,9 @@ export class Map extends OsuCommand {
         customOD: 'current' | number;
         customHP: 'current' | number;
         showBg: boolean;
-        forceMode: apitypes.GameMode;
+        forceMode: helper.osuapi.types_v2.GameMode;
     };
+    #apiMods: osumodcalc.types.ApiMod[];
     constructor() {
         super();
         this.name = 'Map';
@@ -47,45 +45,45 @@ export class Map extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        const detailArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.details, this.input.args, false, null, false, false);
+        const detailArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
         if (detailArgFinder.found) {
             this.params.detailed = 2;
             this.input.args = detailArgFinder.args;
         }
         if (this.input.args.includes('-bpm')) {
-            const temp = helper.tools.commands.parseArg(this.input.args, '-bpm', 'number', this.params.overrideBpm);
+            const temp = helper.commandTools.parseArg(this.input.args, '-bpm', 'number', this.params.overrideBpm);
             this.params.overrideBpm = temp.value;
             this.input.args = temp.newArgs;
         }
         if (this.input.args.includes('-speed')) {
-            const temp = helper.tools.commands.parseArg(this.input.args, '-speed', 'number', this.params.overrideSpeed);
+            const temp = helper.commandTools.parseArg(this.input.args, '-speed', 'number', this.params.overrideSpeed);
             this.params.overrideSpeed = temp.value;
             this.input.args = temp.newArgs;
         }
 
         if (this.input.args.includes('-cs')) {
-            const temp = helper.tools.commands.parseArg(this.input.args, '-cs', 'number', this.params.customCS);
+            const temp = helper.commandTools.parseArg(this.input.args, '-cs', 'number', this.params.customCS);
             this.params.customCS = temp.value;
             this.input.args = temp.newArgs;
         }
         if (this.input.args.includes('-ar')) {
-            const temp = helper.tools.commands.parseArg(this.input.args, '-ar', 'number', this.params.customAR);
+            const temp = helper.commandTools.parseArg(this.input.args, '-ar', 'number', this.params.customAR);
             this.params.customAR = temp.value;
             this.input.args = temp.newArgs;
         }
-        const customODArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.toFlag(['od', 'accuracy',]), this.input.args, true, 'number', false, false);
+        const customODArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.toFlag(['od', 'accuracy',]), this.input.args, true, 'number', false, false);
         if (customODArgFinder.found) {
             this.params.customOD = customODArgFinder.output;
             this.input.args = customODArgFinder.args;
         }
-        const customHPArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.toFlag(['hp', 'drain', 'health']), this.input.args, true, 'number', false, false);
+        const customHPArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.toFlag(['hp', 'drain', 'health']), this.input.args, true, 'number', false, false);
         if (customHPArgFinder.found) {
             this.params.customHP = customHPArgFinder.output;
             this.input.args = customHPArgFinder.args;
         }
 
         if (this.input.args.includes('-?')) {
-            const temp = helper.tools.commands.parseArg(this.input.args, '-?', 'string', this.params.maptitleq, true);
+            const temp = helper.commandTools.parseArg(this.input.args, '-?', 'string', this.params.maptitleq, true);
             this.params.maptitleq = temp.value;
             this.input.args = temp.newArgs;
         }
@@ -100,13 +98,13 @@ export class Map extends OsuCommand {
         if (this.input.args.includes('-bg')) {
             this.params.showBg = true;
         }
-        const isppCalcArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.toFlag(['pp', 'calc', 'performance']), this.input.args, false, null, false, false);
+        const isppCalcArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.toFlag(['pp', 'calc', 'performance']), this.input.args, false, null, false, false);
         if (isppCalcArgFinder.found) {
             this.params.isppCalc = true;
             this.input.args = isppCalcArgFinder.args;
         }
 
-        const modeTemp = await helper.tools.commands.parseArgsMode(this.input);
+        const modeTemp = await helper.commandTools.parseArgsMode(this.input);
         this.params.forceMode = modeTemp.mode;
         this.input.args = modeTemp.args;
 
@@ -119,12 +117,13 @@ export class Map extends OsuCommand {
             }
             if (temp) {
                 this.params.mapmods = osumodcalc.mod.fromString(temp);
+                this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
             }
             this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
         }
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
-        const mapTemp = await helper.tools.commands.mapIdFromLink(this.input.args.join(' '), true);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
+        const mapTemp = await helper.commandTools.mapIdFromLink(this.input.args.join(' '), true);
         this.params.mapid = mapTemp.map;
         mapTemp.mode ? this.params.forceMode = mapTemp.mode : null;
     }
@@ -132,6 +131,7 @@ export class Map extends OsuCommand {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
         this.params.mapid = interaction.options.getInteger('id');
         this.params.mapmods = osumodcalc.mod.fromString(interaction.options.getString('mods').toUpperCase());
+        this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
         this.params.detailed = interaction.options.getBoolean('detailed') ? 2 : 1;
         this.params.maptitleq = interaction.options.getString('query');
         interaction.options.getNumber('bpm') ? this.params.overrideBpm = interaction.options.getNumber('bpm') : null;
@@ -141,23 +141,24 @@ export class Map extends OsuCommand {
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
         const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        const temp = helper.tools.commands.getButtonArgs(this.input.id);
+        const temp = helper.commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
-                content: helper.vars.errors.paramFileMissing,
+                content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
                 allowedMentions: { repliedUser: false }
             });
-            helper.tools.commands.disableAllButtons(this.input.message);
+            helper.commandTools.disableAllButtons(this.input.message);
             return;
         }
         this.params.mapid = temp.mapId;
         this.params.forceMode = temp.mode;
         this.params.mapmods = temp.modsInclude;
+        this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
         this.params.overrideBpm = temp.overrideBpm;
         this.params.overrideSpeed = temp.overrideSpeed;
         this.params.isppCalc = temp.ppCalc;
-        this.params.detailed = helper.tools.commands.buttonDetail(temp.detailed, this.input.buttonType);
+        this.params.detailed = helper.commandTools.buttonDetail(temp.detailed, this.input.buttonType);
     }
     async setParamsLink() {
         const messagenohttp = this.input.message.content.replace('https://', '').replace('http://', '').replace('www.', '');
@@ -170,6 +171,7 @@ export class Map extends OsuCommand {
             }
             if (temp) {
                 this.params.mapmods = osumodcalc.mod.fromString(temp);
+                this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
             }
         }
         if (this.input.args[0] && this.input.args[0].startsWith('query')) {
@@ -180,12 +182,12 @@ export class Map extends OsuCommand {
                     messagenohttp.split('q=')[1].split('&')[0] :
                     messagenohttp.split('q=')[1];
         } else {
-            const mapTemp = await helper.tools.commands.mapIdFromLink(messagenohttp, true,);
+            const mapTemp = await helper.commandTools.mapIdFromLink(messagenohttp, true,);
             this.params.mapid = mapTemp.map;
             this.params.forceMode = mapTemp.mode ?? this.params.forceMode;
             if (!(mapTemp.map || mapTemp.set)) {
                 this.voidcontent();
-                this.ctn.content = helper.vars.errors.uErr.osu.map.url;
+                this.ctn.content = helper.errors.uErr.osu.map.url;
                 await this.send();
                 return;
             }
@@ -219,6 +221,7 @@ export class Map extends OsuCommand {
         }
         if (this.input.overrides?.filterMods != null) {
             this.params.mapmods = this.input.overrides.filterMods;
+            this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
         }
         if (this.input.overrides?.ex != null) {
             this.ctn.content += this.input.overrides?.ex;
@@ -236,24 +239,24 @@ export class Map extends OsuCommand {
         if (this.params.isppCalc) {
             buttons.addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-Map-${this.name}-${this.commanduser.id}-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.map)
+                    .setCustomId(`${helper.versions.releaseDate}-Map-${this.name}-${this.commanduser.id}-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.map)
             );
         } else {
             if (this.params.detailed == 2) {
                 buttons.addComponents(
                     new Discord.ButtonBuilder()
-                        .setCustomId(`${helper.vars.versions.releaseDate}-DetailDisable-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                        .setStyle(helper.vars.buttons.type.current)
-                        .setEmoji(helper.vars.buttons.label.main.detailLess)
+                        .setCustomId(`${helper.versions.releaseDate}-DetailDisable-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                        .setStyle(helper.buttons.type.current)
+                        .setEmoji(helper.buttons.label.main.detailLess)
                 );
             } else {
                 buttons.addComponents(
                     new Discord.ButtonBuilder()
-                        .setCustomId(`${helper.vars.versions.releaseDate}-DetailEnable-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                        .setStyle(helper.vars.buttons.type.current)
-                        .setEmoji(helper.vars.buttons.label.main.detailMore)
+                        .setCustomId(`${helper.versions.releaseDate}-DetailEnable-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                        .setStyle(helper.buttons.type.current)
+                        .setEmoji(helper.buttons.label.main.detailMore)
                 );
             }
         }
@@ -262,21 +265,42 @@ export class Map extends OsuCommand {
             const temp = this.getLatestMap();
             this.params.mapid = +temp.mapid;
 
-            if (!this.params.mapmods || osumodcalc.mod.order(this.params.mapmods as osumodcalc.types.Mod[]).length == 0) {
-                this.params.mapmods = temp.mods;
+            if (!this.params.mapmods || this.params.mapmods.length == 0) {
+                this.params.mapmods = temp.mods.map(x => x.acronym) as osumodcalc.types.Mod[];
+                this.#apiMods = temp.mods;
+                const tempStats = osumodcalc.stats.modded({
+                    cs: 1, ar: 1, od: 1, hp: 1, bpm: 1, songLength: 1
+                }, temp.mods);
+                if (!(this.params.mapmods.includes('HR') || this.params.mapmods.includes('EZ'))) {
+                    if (!this.params.customCS && tempStats.cs != 1) {
+                        this.params.customCS = tempStats.cs;
+                    }
+                    if (!this.params.customAR && tempStats.ar != 1) {
+                        this.params.customAR = tempStats.ar;
+                    }
+                    if (!this.params.customOD && tempStats.od != 1) {
+                        this.params.customOD = tempStats.od;
+                    }
+                    if (!this.params.customHP && tempStats.hp != 1) {
+                        this.params.customHP = tempStats.hp;
+                    }
+                }
+                if (!this.params.overrideSpeed && tempStats.bpm != 1) {
+                    this.params.overrideSpeed = tempStats.bpm;
+                }
             }
             this.params.forceMode = temp.mode;
         }
         if (this.params.mapid == 0 && !this.params.maptitleq) {
-            helper.tools.commands.missingPrevID_map(this.input, 'map');
+            helper.commandTools.missingPrevID_map(this.input, 'map');
             return;
         }
 
         const inputModalDiff = new Discord.StringSelectMenuBuilder()
-            .setCustomId(`${helper.vars.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-diff`)
+            .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-diff`)
             .setPlaceholder('Select a difficulty');
         const inputModalSearch = new Discord.StringSelectMenuBuilder()
-            .setCustomId(`${helper.vars.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
+            .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
             .setPlaceholder('Select a map');
 
         if (this.input.type == 'interaction') {
@@ -302,31 +326,30 @@ export class Map extends OsuCommand {
             }
         }
         else if (this.params.maptitleq != null) {
-            const mapidtestReq = await helper.tools.api.getMapSearch(encodeURIComponent(this.params.maptitleq), ['s=any']);
-            const mapidtest = mapidtestReq.apiData as apitypes.BeatmapsetSearch;
-            if (mapidtestReq?.error) {
-                await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.map.search, false);
+            const mapidtest = await helper.osuapi.v2.beatmaps.search({ query: this.params.maptitleq });
+            if (mapidtest?.error) {
+                await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.search, false);
                 return;
             }
-            helper.tools.data.debug(mapidtestReq, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapIdTestData');
-            helper.tools.data.storeFile(mapidtestReq, this.params.maptitleq.replace(/[\W_]+/g, '').replaceAll(' ', '_'), 'mapQuerydata');
+            helper.data.debug(mapidtest, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapIdTestData');
+            helper.data.storeFile(mapidtest, this.params.maptitleq.replace(/[\W_]+/g, '').replaceAll(' ', '_'), 'mapQuerydata');
 
             if (mapidtest?.hasOwnProperty('error') && !mapidtest.hasOwnProperty('beatmapsets')) {
-                await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.map.search, true);
+                await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.search, true);
                 return;
             }
 
-            let usemapidpls;
-            let mapidtest2;
+            let usemapidpls: number;
+            let mapidtest2: helper.osuapi.types_v2.Beatmap[];
 
             if (mapidtest.beatmapsets.length == 0) {
                 this.voidcontent();
-                this.ctn.content = helper.vars.errors.uErr.osu.map.search_nf.replace('[INPUT]', this.params.maptitleq);
+                this.ctn.content = helper.errors.uErr.osu.map.search_nf.replace('[INPUT]', this.params.maptitleq);
                 await this.send();
                 return;
             }
             try {
-                let matchedId = null;
+                let matchedId: number = null;
                 // first check if any diff name matches the search
                 for (let i = 0; i < mapidtest.beatmapsets[0].beatmaps.length; i++) {
                     if (this.params.maptitleq.includes(mapidtest.beatmapsets[0].beatmaps[i].version)) {
@@ -356,11 +379,11 @@ export class Map extends OsuCommand {
                 const curmap = curmapset.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0];
                 inputModalSearch.addOptions(
                     new Discord.StringSelectMenuOptionBuilder()
-                        .setEmoji(`${curmap.mode_int == 0 ? helper.vars.emojis.gamemodes.standard :
-                            curmap.mode_int == 1 ? helper.vars.emojis.gamemodes.taiko :
-                                curmap.mode_int == 2 ? helper.vars.emojis.gamemodes.fruits :
-                                    curmap.mode_int == 3 ? helper.vars.emojis.gamemodes.mania :
-                                        helper.vars.emojis.gamemodes.standard
+                        .setEmoji(`${curmap.mode_int == 0 ? helper.emojis.gamemodes.standard :
+                            curmap.mode_int == 1 ? helper.emojis.gamemodes.taiko :
+                                curmap.mode_int == 2 ? helper.emojis.gamemodes.fruits :
+                                    curmap.mode_int == 3 ? helper.emojis.gamemodes.mania :
+                                        helper.emojis.gamemodes.standard
                             }` as Discord.APIMessageComponentEmoji)
                         .setLabel(`${curmapset.title} // ${curmapset.creator}`)
                         .setDescription(`[${curmap.version}] ${curmap.difficulty_rating}⭐`)
@@ -379,11 +402,11 @@ export class Map extends OsuCommand {
         if (typeof this.mapset?.beatmaps == 'undefined' || this.mapset?.beatmaps?.length < 2) {
             inputModalDiff.addOptions(
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji(`${this.map.mode_int == 0 ? helper.vars.emojis.gamemodes.standard :
-                        this.map.mode_int == 1 ? helper.vars.emojis.gamemodes.taiko :
-                            this.map.mode_int == 2 ? helper.vars.emojis.gamemodes.fruits :
-                                this.map.mode_int == 3 ? helper.vars.emojis.gamemodes.mania :
-                                    helper.vars.emojis.gamemodes.standard
+                    .setEmoji(`${this.map.mode_int == 0 ? helper.emojis.gamemodes.standard :
+                        this.map.mode_int == 1 ? helper.emojis.gamemodes.taiko :
+                            this.map.mode_int == 2 ? helper.emojis.gamemodes.fruits :
+                                this.map.mode_int == 3 ? helper.emojis.gamemodes.mania :
+                                    helper.emojis.gamemodes.standard
                         }` as Discord.APIMessageComponentEmoji)
                     .setLabel(`${this.map.version}`)
                     .setDescription(`${this.map.difficulty_rating}⭐`)
@@ -395,11 +418,11 @@ export class Map extends OsuCommand {
                 if (!curmap) break;
                 inputModalDiff.addOptions(
                     new Discord.StringSelectMenuOptionBuilder()
-                        .setEmoji(`${this.map.mode_int == 0 ? helper.vars.emojis.gamemodes.standard :
-                            this.map.mode_int == 1 ? helper.vars.emojis.gamemodes.taiko :
-                                this.map.mode_int == 2 ? helper.vars.emojis.gamemodes.fruits :
-                                    this.map.mode_int == 3 ? helper.vars.emojis.gamemodes.mania :
-                                        helper.vars.emojis.gamemodes.standard
+                        .setEmoji(`${this.map.mode_int == 0 ? helper.emojis.gamemodes.standard :
+                            this.map.mode_int == 1 ? helper.emojis.gamemodes.taiko :
+                                this.map.mode_int == 2 ? helper.emojis.gamemodes.fruits :
+                                    this.map.mode_int == 3 ? helper.emojis.gamemodes.mania :
+                                        helper.emojis.gamemodes.standard
                             }` as Discord.APIMessageComponentEmoji)
                         .setLabel(`${curmap.version}`)
                         .setDescription(`${curmap.difficulty_rating}⭐`)
@@ -409,7 +432,7 @@ export class Map extends OsuCommand {
         }
 
         if (this.params.showBg) {
-            const url = helper.tools.api.mapImages(this.map.beatmapset_id);
+            const url = helper.osuapi.other.beatmapImages(this.map.beatmapset_id);
             const embed = new Discord.EmbedBuilder()
                 .setTitle('Beatmap images')
                 .addFields([
@@ -452,13 +475,15 @@ export class Map extends OsuCommand {
 
             if (this.params.mapmods == null) {
                 this.params.mapmods = [];
+                this.#apiMods = [];
             }
             else {
                 this.params.mapmods = osumodcalc.mod.fix(this.params.mapmods, this.map.mode);
+                this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
             }
 
             //converts
-            let useMapdata: apitypes.Beatmap = this.map;
+            let useMapdata: helper.osuapi.types_v2.BeatmapExtended = this.map;
             let successConvert: boolean = false;
             if (this.params.forceMode && this.params.forceMode != this.map.mode && this.params.forceMode != 'osu') {
                 for (const beatmap of this.mapset.converts) {
@@ -470,16 +495,16 @@ export class Map extends OsuCommand {
                 }
             }
 
-            let statusimg = helper.vars.emojis.rankedstatus.graveyard;
+            let statusimg = helper.emojis.rankedstatus.graveyard;
             switch (useMapdata.status) {
                 case 'ranked':
-                    statusimg = helper.vars.emojis.rankedstatus.ranked;
+                    statusimg = helper.emojis.rankedstatus.ranked;
                     break;
                 case 'approved': case 'qualified':
-                    statusimg = helper.vars.emojis.rankedstatus.approved;
+                    statusimg = helper.emojis.rankedstatus.approved;
                     break;
                 case 'loved':
-                    statusimg = helper.vars.emojis.rankedstatus.loved;
+                    statusimg = helper.emojis.rankedstatus.loved;
                     break;
             }
 
@@ -510,7 +535,7 @@ export class Map extends OsuCommand {
             );
 
 
-            const mapimg = helper.vars.emojis.gamemodes[useMapdata.mode];
+            const mapimg = helper.emojis.gamemodes[useMapdata.mode];
 
             let ppComputed: rosu.PerformanceAttributes[];
             let pphd: rosu.PerformanceAttributes;
@@ -522,9 +547,9 @@ export class Map extends OsuCommand {
             let ppissue: string;
             let totaldiff: string | number = useMapdata.difficulty_rating;
             try {
-                ppComputed = await helper.tools.performance.calcMap({
+                ppComputed = await helper.performance.calcMap({
                     mods: this.params.mapmods,
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     mapid: useMapdata.id,
                     clockRate: this.params.overrideSpeed,
                     customCS: this.params.customCS,
@@ -533,10 +558,10 @@ export class Map extends OsuCommand {
                     customHP: this.params.customHP,
                     mapLastUpdated: new Date(useMapdata.last_updated)
                 });
-                pphd = await helper.tools.performance.calcFullCombo({
+                pphd = await helper.performance.calcFullCombo({
                     mapid: useMapdata.id,
                     mods: ['HD'],
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     accuracy: 100,
                     customCS: this.params.customCS,
                     customAR: this.params.customAR,
@@ -544,10 +569,10 @@ export class Map extends OsuCommand {
                     customHP: this.params.customHP,
                     mapLastUpdated: new Date(useMapdata.last_updated)
                 });
-                pphr = await helper.tools.performance.calcFullCombo({
+                pphr = await helper.performance.calcFullCombo({
                     mapid: useMapdata.id,
                     mods: ['HR'],
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     accuracy: 100,
                     customCS: this.params.customCS,
                     customAR: this.params.customAR,
@@ -555,10 +580,10 @@ export class Map extends OsuCommand {
                     customHP: this.params.customHP,
                     mapLastUpdated: new Date(useMapdata.last_updated)
                 });
-                ppdt = await helper.tools.performance.calcFullCombo({
+                ppdt = await helper.performance.calcFullCombo({
                     mapid: useMapdata.id,
                     mods: ['DT'],
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     accuracy: 100,
                     customCS: this.params.customCS,
                     customAR: this.params.customAR,
@@ -566,10 +591,10 @@ export class Map extends OsuCommand {
                     customHP: this.params.customHP,
                     mapLastUpdated: new Date(useMapdata.last_updated)
                 });
-                pphdhr = await helper.tools.performance.calcFullCombo({
+                pphdhr = await helper.performance.calcFullCombo({
                     mapid: useMapdata.id,
                     mods: ['HD', 'HR'],
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     accuracy: 100,
                     customCS: this.params.customCS,
                     customAR: this.params.customAR,
@@ -577,10 +602,10 @@ export class Map extends OsuCommand {
                     customHP: this.params.customHP,
                     mapLastUpdated: new Date(useMapdata.last_updated)
                 });
-                pphddt = await helper.tools.performance.calcFullCombo({
+                pphddt = await helper.performance.calcFullCombo({
                     mapid: useMapdata.id,
                     mods: ['HD', 'DT'],
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     accuracy: 100,
                     customCS: this.params.customCS,
                     customAR: this.params.customAR,
@@ -588,10 +613,10 @@ export class Map extends OsuCommand {
                     customHP: this.params.customHP,
                     mapLastUpdated: new Date(useMapdata.last_updated)
                 });
-                pphddthr = await helper.tools.performance.calcFullCombo({
+                pphddthr = await helper.performance.calcFullCombo({
                     mapid: useMapdata.id,
                     mods: ['HD', 'DT', 'HR'],
-                    mode: useMapdata.mode_int,
+                    mode: useMapdata.mode_int as number as rosu.GameMode,
                     accuracy: 100,
                     customCS: this.params.customCS,
                     customAR: this.params.customAR,
@@ -607,10 +632,10 @@ export class Map extends OsuCommand {
                 } catch (error) {
                     totaldiff = useMapdata.difficulty_rating;
                 }
-                helper.tools.data.debug(ppComputed, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
+                helper.data.debug(ppComputed, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
 
             } catch (error) {
-                helper.tools.log.stdout(error);
+                helper.log.stdout(error);
                 ppissue = 'Error - pp could not be calculated';
                 const tstmods = this.params.mapmods;
 
@@ -620,7 +645,7 @@ export class Map extends OsuCommand {
                 if ((tstmods.includes('DT') || tstmods.includes('NC')) && tstmods.includes('HT')) {
                     ppissue += '\nInvalid mod combinations: DT/NC + HT';
                 }
-                const ppComputedTemp = helper.tools.performance.template(useMapdata);
+                const ppComputedTemp = helper.performance.template(useMapdata);
                 ppComputed = [
                     ppComputedTemp,
                     ppComputedTemp,
@@ -651,7 +676,7 @@ export class Map extends OsuCommand {
 
             let basicvals = `CS${baseCS}\n AR${baseAR}\n OD${baseOD}\n HP${baseHP}\n`;
 
-            const mapname = helper.tools.formatter.parseUnicodeStrings({
+            const mapname = helper.formatter.parseUnicodeStrings({
                 title: this.map.beatmapset.title,
                 artist: this.map.beatmapset.artist,
                 title_unicode: this.map.beatmapset.title_unicode,
@@ -664,10 +689,10 @@ export class Map extends OsuCommand {
             const maptitle: string = this.params.mapmods ? `\`${mapname} [${this.map.version}]\` +${this.params.mapmods.join('')}` : `\`${mapname} [${this.map.version}]\``;
             const Embed = new Discord.EmbedBuilder()
                 .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
-                .setThumbnail(helper.tools.api.mapImages(this.map.beatmapset_id).list2x)
+                .setThumbnail(helper.osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
                 .setTitle(maptitle);
             const embeds: Discord.EmbedBuilder[] = [];
-            Embed.setColor(helper.tools.formatter.difficultyColour(+totaldiff).dec);
+            Embed.setColor(helper.formatter.difficultyColour(+totaldiff).dec);
             if (this.params.isppCalc) {
                 let extras = '';
 
@@ -771,10 +796,10 @@ export class Map extends OsuCommand {
                             name: 'MAP VALUES',
                             value:
                                 `CS${baseCS} AR${baseAR} OD${baseOD} HP${baseHP} ${totaldiff}⭐\n` +
-                                `${helper.vars.emojis.mapobjs.bpm}${baseBPM} | ` +
-                                `${helper.vars.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${allvals.extra.lengthReadable}(${helper.tools.calculate.secondsToTime(useMapdata.hit_length)})` : allvals.extra.lengthReadable} | ` +
+                                `${helper.emojis.mapobjs.bpm}${baseBPM} | ` +
+                                `${helper.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${allvals.extra.lengthReadable}(${helper.calculate.secondsToTime(useMapdata.hit_length)})` : allvals.extra.lengthReadable} | ` +
                                 `${ppComputed[0].difficulty.maxCombo ?? this.map.max_combo}x combo\n ` +
-                                `${helper.vars.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.vars.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.vars.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n`,
+                                `${helper.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n`,
                             inline: false
                         },
                         {
@@ -819,29 +844,29 @@ export class Map extends OsuCommand {
         OD${baseOD} (300: ${allvals.extra.odMs.hitwindow_300?.toFixed(2)}ms 100: ${allvals.extra.odMs.hitwindow_100?.toFixed(2)}ms 50:  ${allvals.extra.odMs.hitwindow_50?.toFixed(2)}ms)
         HP${baseHP}`;
                 }
-                const strains = await helper.tools.performance.calcStrains(
+                const strains = await helper.performance.calcStrains(
                     {
                         mapid: this.map.id,
-                        mode: useMapdata.mode_int,
+                        mode: useMapdata.mode_int as number as rosu.GameMode,
                         mods: this.params.mapmods,
                         mapLastUpdated: new Date(useMapdata.last_updated),
                     });
                 try {
-                    helper.tools.data.debug(strains, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+                    helper.data.debug(strains, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
 
                 } catch (error) {
-                    helper.tools.data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+                    helper.data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
                 }
                 let mapgraph;
                 if (strains) {
                     const mapgraphInit =
-                        await helper.tools.other.graph(strains.strainTime, strains.value, 'Strains', {
+                        await helper.other.graph(strains.strainTime, strains.value, 'Strains', {
                             startzero: true,
                             type: 'bar',
                             fill: true,
                             displayLegend: false,
                             title: 'Strains',
-                            imgUrl: helper.tools.api.mapImages(this.map.beatmapset_id).full,
+                            imgUrl: helper.osuapi.other.beatmapImages(this.map.beatmapset_id).full,
                             blurImg: true,
                         });
                     this.ctn.files.push(mapgraphInit.path);
@@ -890,7 +915,7 @@ export class Map extends OsuCommand {
                     }
                 }
 
-                const exMapDetails = `${helper.tools.calculate.separateNum(useMapdata.playcount)} plays | ${helper.tools.calculate.separateNum(this.map.beatmapset.play_count)} mapset plays | ${helper.tools.calculate.separateNum(useMapdata.passcount)} passes | ${helper.tools.calculate.separateNum(this.map.beatmapset.favourite_count)} favourites\n` +
+                const exMapDetails = `${helper.calculate.separateNum(useMapdata.playcount)} plays | ${helper.calculate.separateNum(this.map.beatmapset.play_count)} mapset plays | ${helper.calculate.separateNum(useMapdata.passcount)} passes | ${helper.calculate.separateNum(this.map.beatmapset.favourite_count)} favourites\n` +
                     `Submitted <t:${new Date(this.map.beatmapset.submitted_date).getTime() / 1000}:R> | Last updated <t:${new Date(this.map.beatmapset.last_updated).getTime() / 1000}:R>
             ${this.map.status == 'ranked' ?
                         `Ranked <t:${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
@@ -905,7 +930,7 @@ export class Map extends OsuCommand {
                     .setAuthor({
                         name: `Mapped by ${this.map.beatmapset.creator}`,
                         url: `https://osu.ppy.sh/users/${this.mapset.user_id}`,
-                        iconURL: `${this.mapset.user.avatar_url ?? helper.vars.defaults.images.any.url}`,
+                        iconURL: `${this.mapset.user.avatar_url ?? helper.defaults.images.any.url}`,
                     })
                     .addFields([
                         {
@@ -915,10 +940,10 @@ export class Map extends OsuCommand {
                             inline: true
                         },
                         {
-                            name: helper.vars.defaults.invisbleChar,
-                            value: `${helper.vars.emojis.mapobjs.bpm}${baseBPM}\n` +
-                                `${helper.vars.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.vars.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.vars.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n` +
-                                `${helper.vars.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${helper.tools.calculate.secondsToTime(useMapdata.hit_length)}=>${allvals.extra.lengthReadable}` : allvals.extra.lengthReadable}\n`,
+                            name: helper.defaults.invisbleChar,
+                            value: `${helper.emojis.mapobjs.bpm}${baseBPM}\n` +
+                                `${helper.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n` +
+                                `${helper.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${helper.calculate.secondsToTime(useMapdata.hit_length)}=>${allvals.extra.lengthReadable}` : allvals.extra.lengthReadable}\n`,
                             inline: true
                         },
                         {
@@ -955,27 +980,27 @@ export class Map extends OsuCommand {
                     ]);
 
                 if (this.map?.owners && !(this.map?.owners?.length == 1 && this.map?.owners?.[0].id == this.mapset.user_id)) {
-                    Embed.setDescription("Guest difficulty by " + helper.tools.other.listItems(this.map.owners.map(x => `[${x.username}](https://osu.ppy.sh/u/${x.id})`)));
+                    Embed.setDescription("Guest difficulty by " + helper.other.listItems(this.map.owners.map(x => `[${x.username}](https://osu.ppy.sh/u/${x.id})`)));
                 }
                 buttons
                     .addComponents(
                         new Discord.ButtonBuilder()
-                            .setCustomId(`${helper.vars.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.map.user_id}+${this.map.mode}`)
-                            .setStyle(helper.vars.buttons.type.current)
-                            .setEmoji(helper.vars.buttons.label.extras.user),
+                            .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.map.user_id}+${this.map.mode}`)
+                            .setStyle(helper.buttons.type.current)
+                            .setEmoji(helper.buttons.label.extras.user),
                     );
 
                 buttons.addComponents(
                     new Discord.ButtonBuilder()
-                        .setCustomId(`${helper.vars.versions.releaseDate}-Leaderboard-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                        .setStyle(helper.vars.buttons.type.current)
-                        .setEmoji(helper.vars.buttons.label.extras.leaderboard)
+                        .setCustomId(`${helper.versions.releaseDate}-Leaderboard-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                        .setStyle(helper.buttons.type.current)
+                        .setEmoji(helper.buttons.label.extras.leaderboard)
                 );
 
                 if (mapgraph) {
                     Embed.setImage(`attachment://${mapgraph}.jpg`);
                 }
-                Embed.setColor(helper.tools.formatter.difficultyColour(+totaldiff).dec);
+                Embed.setColor(helper.formatter.difficultyColour(+totaldiff).dec);
 
                 if (this.params.detailed == 2) {
                     const failval = useMapdata.failtimes.fail;
@@ -984,12 +1009,12 @@ export class Map extends OsuCommand {
                     for (let i = 0; i < failval.length; i++) {
                         numofval.push(`${i}s`);
                     }
-                    const passInit = await helper.tools.other.graph(numofval, useMapdata.failtimes.fail, 'Fails', {
+                    const passInit = await helper.other.graph(numofval, useMapdata.failtimes.fail, 'Fails', {
                         stacked: true,
                         type: 'bar',
                         showAxisX: false,
                         title: 'Fail times',
-                        imgUrl: helper.tools.api.mapImages(this.map.beatmapset_id).full,
+                        imgUrl: helper.osuapi.other.beatmapImages(this.map.beatmapset_id).full,
                         blurImg: true,
                     }, [{
                         data: useMapdata.failtimes.exit,
@@ -1006,7 +1031,7 @@ export class Map extends OsuCommand {
                 }
             }
 
-            helper.tools.commands.storeButtonArgs(this.input.id, {
+            helper.commandTools.storeButtonArgs(this.input.id, {
                 mapId: this.params.mapid,
                 mode: this.params.forceMode,
                 modsInclude: this.params.mapmods,
@@ -1019,11 +1044,11 @@ export class Map extends OsuCommand {
 
             embeds.push(Embed);
             embeds.reverse();
-            helper.tools.data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+            helper.data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
                 {
                     id: `${this.map.id}`,
                     apiData: null,
-                    mods: this.params.mapmods,
+                    mods: this.#apiMods,
                     mode: this.params.forceMode
                 }
             );
@@ -1054,7 +1079,7 @@ export class Map extends OsuCommand {
 
         }
 
-        helper.tools.data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+        helper.data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.map.id}`,
                 apiData: null,
@@ -1064,31 +1089,24 @@ export class Map extends OsuCommand {
         );
         this.send();
     }
-    map: apitypes.Beatmap;
-    mapset: apitypes.Beatmapset;
+    map: helper.osuapi.types_v2.BeatmapExtended;
+    mapset: helper.osuapi.types_v2.BeatmapsetExtended;
 
-    async getMapSet(mapsetid: string | number) {
-        let bmsdataReq: tooltypes.apiReturn<apitypes.Beatmapset>;
-        if (helper.tools.data.findFile(mapsetid, `bmsdata`) &&
-            !('error' in helper.tools.data.findFile(mapsetid, `bmsdata`)) &&
+    async getMapSet(mapsetid: number) {
+        let bmsdata: helper.osuapi.types_v2.BeatmapsetExtended;
+        if (helper.data.findFile(mapsetid, `bmsdata`) &&
+            !('error' in helper.data.findFile(mapsetid, `bmsdata`)) &&
             this.input.buttonType != 'Refresh') {
-            bmsdataReq = helper.tools.data.findFile(mapsetid, `bmsdata`);
+            bmsdata = helper.data.findFile(mapsetid, `bmsdata`);
         } else {
-            bmsdataReq = await helper.tools.api.getMapset(mapsetid, []);
+            bmsdata = await helper.osuapi.v2.beatmaps.mapset({ id: mapsetid });
         }
-        let bmsdata = bmsdataReq.apiData;
-        if (bmsdataReq?.error) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), false);
-            return;
-        }
-        helper.tools.data.debug(bmsdataReq, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
-
+        helper.data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
         if (bmsdata?.hasOwnProperty('error')) {
-            await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
+            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
             return;
         }
-
-        helper.tools.data.storeFile(bmsdataReq, mapsetid, `bmsdata`);
+        helper.data.storeFile(bmsdata, mapsetid, `bmsdata`);
 
         return bmsdata;
     }
@@ -1118,37 +1136,37 @@ export class RandomMap extends OsuCommand {
             this.params.useRandomRanked = true;
             this.input.args.splice(this.input.args.indexOf('-lb'), 1);
         }
-        const mapTypeRankedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapRanked, this.input.args, false, null, false, false);
+        const mapTypeRankedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapRanked, this.input.args, false, null, false, false);
         if (mapTypeRankedArgFinder.found) {
             this.params.mapType = 'Ranked';
             this.input.args = mapTypeRankedArgFinder.args;
         }
-        const mapTypeLovedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapLove, this.input.args, false, null, false, false);
+        const mapTypeLovedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapLove, this.input.args, false, null, false, false);
         if (mapTypeLovedArgFinder.found) {
             this.params.mapType = 'Loved';
             this.input.args = mapTypeLovedArgFinder.args;
         }
-        const mapTypeApprovedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapApprove, this.input.args, false, null, false, false);
+        const mapTypeApprovedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapApprove, this.input.args, false, null, false, false);
         if (mapTypeApprovedArgFinder.found) {
             this.params.mapType = 'Approved';
             this.input.args = mapTypeApprovedArgFinder.args;
         }
-        const mapTypeQualifiedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapQualified, this.input.args, false, null, false, false);
+        const mapTypeQualifiedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapQualified, this.input.args, false, null, false, false);
         if (mapTypeQualifiedArgFinder.found) {
             this.params.mapType = 'Qualified';
             this.input.args = mapTypeQualifiedArgFinder.args;
         }
-        const mapTypePendArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapPending, this.input.args, false, null, false, false);
+        const mapTypePendArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapPending, this.input.args, false, null, false, false);
         if (mapTypePendArgFinder.found) {
             this.params.mapType = 'Pending';
             this.input.args = mapTypePendArgFinder.args;
         }
-        const mapTypeWipArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapWip, this.input.args, false, null, false, false);
+        const mapTypeWipArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapWip, this.input.args, false, null, false, false);
         if (mapTypeWipArgFinder.found) {
             this.params.mapType = 'WIP';
             this.input.args = mapTypeWipArgFinder.args;
         }
-        const mapTypeGraveyardArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapGraveyard, this.input.args, false, null, false, false);
+        const mapTypeGraveyardArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapGraveyard, this.input.args, false, null, false, false);
         if (mapTypeGraveyardArgFinder.found) {
             this.params.mapType = 'Graveyard';
             this.input.args = mapTypeGraveyardArgFinder.args;
@@ -1172,7 +1190,7 @@ export class RandomMap extends OsuCommand {
             this.params.mapType = arr[Math.floor(Math.random() * arr.length)];
         }
 
-        const randomMap = helper.tools.data.randomMap(this.params.mapType);
+        const randomMap = helper.data.randomMap(this.params.mapType);
         if (randomMap.err != null) {
             txt = randomMap.err;
         } else {
@@ -1208,7 +1226,7 @@ export class RecommendMap extends OsuCommand {
         user: string;
         maxRange: number;
         useType: 'closest' | 'random';
-        mode: apitypes.GameMode;
+        mode: helper.osuapi.types_v2.GameMode;
     };
     constructor() {
         super();
@@ -1222,7 +1240,7 @@ export class RecommendMap extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        const usetypeRandomArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.toFlag(['r', 'random', 'f2', 'rdm', 'range', 'diff']), this.input.args, true, 'number', false, false);
+        const usetypeRandomArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.toFlag(['r', 'random', 'f2', 'rdm', 'range', 'diff']), this.input.args, true, 'number', false, false);
         if (usetypeRandomArgFinder.found) {
             this.params.maxRange = usetypeRandomArgFinder.output;
             this.params.useType = 'random';
@@ -1234,12 +1252,12 @@ export class RecommendMap extends OsuCommand {
 
         }
         {
-            const temp = await helper.tools.commands.parseArgsMode(this.input);
+            const temp = await helper.commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
         this.params.user = this.input.args.join(' ')?.replaceAll('"', '');
         if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid)) {
             this.params.user = null;
@@ -1271,7 +1289,7 @@ export class RecommendMap extends OsuCommand {
             this.params.maxRange = 0.5;
         }
 
-        let osudata: apitypes.User;
+        let osudata: helper.osuapi.types_v2.User;
 
         try {
             const t = await this.getProfile(this.params.user, this.params.mode);
@@ -1280,7 +1298,7 @@ export class RecommendMap extends OsuCommand {
             return;
         }
 
-        const randomMap = helper.tools.data.recommendMap(+(osumodcalc.extra.recdiff(osudata.statistics.pp)).toFixed(2), this.params.useType, this.params.mode, this.params.maxRange ?? 1);
+        const randomMap = helper.data.recommendMap(+(osumodcalc.extra.recdiff(osudata.statistics.pp)).toFixed(2), this.params.useType, this.params.mode, this.params.maxRange ?? 1);
         const exTxt =
             this.params.useType == 'closest' ? '' :
                 `Random map within ${this.params.maxRange}⭐ of ${(osumodcalc.extra.recdiff(osudata.statistics.pp))?.toFixed(2)}
@@ -1314,8 +1332,8 @@ export class RecommendMap extends OsuCommand {
 
 export class UserBeatmaps extends OsuCommand {
     declare protected params: {
-        filter: bottypes.ubmFilter;
-        sort: bottypes.ubmSort;
+        filter: helper.bottypes.ubmFilter;
+        sort: helper.bottypes.ubmSort;
         reverse: boolean;
         user: string;
         searchid: string;
@@ -1324,7 +1342,7 @@ export class UserBeatmaps extends OsuCommand {
         parseId: number;
         filterTitle: string;
         reachedMaxCount: boolean;
-        mode: apitypes.GameMode;
+        mode: helper.osuapi.types_v2.GameMode;
         detailed: number;
     };
     constructor() {
@@ -1347,58 +1365,58 @@ export class UserBeatmaps extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const pageArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.pages, this.input.args, true, 'number', false, true);
+        const pageArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
         if (pageArgFinder.found) {
             this.params.page = pageArgFinder.output;
             this.input.args = pageArgFinder.args;
         }
 
-        const detailArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.details, this.input.args, false, null, false, false);
+        const detailArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
         if (detailArgFinder.found) {
             this.params.detailed = 2;
             this.input.args = detailArgFinder.args;
         }
-        const filterRankArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapRanked, this.input.args, false, null, false, false);
+        const filterRankArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapRanked, this.input.args, false, null, false, false);
         if (filterRankArgFinder.found) {
             this.params.filter = 'ranked';
             this.input.args = filterRankArgFinder.args;
         }
-        const filterFavouritesArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapFavourite, this.input.args, false, null, false, false);
+        const filterFavouritesArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapFavourite, this.input.args, false, null, false, false);
         if (filterFavouritesArgFinder.found) {
             this.params.filter = 'favourite';
             this.input.args = filterFavouritesArgFinder.args;
         }
-        const filterGraveyardArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapGraveyard, this.input.args, false, null, false, false);
+        const filterGraveyardArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapGraveyard, this.input.args, false, null, false, false);
         if (filterGraveyardArgFinder.found) {
             this.params.filter = 'graveyard';
             this.input.args = filterGraveyardArgFinder.args;
         }
-        const filterLovedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapLove, this.input.args, false, null, false, false);
+        const filterLovedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapLove, this.input.args, false, null, false, false);
         if (filterLovedArgFinder.found) {
             this.params.filter = 'loved';
             this.input.args = filterLovedArgFinder.args;
         }
-        const filterPendingArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapPending, this.input.args, false, null, false, false);
+        const filterPendingArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapPending, this.input.args, false, null, false, false);
         if (filterPendingArgFinder.found) {
             this.params.filter = 'pending';
             this.input.args = filterPendingArgFinder.args;
         }
-        const filterNominatedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapNominated, this.input.args, false, null, false, false);
+        const filterNominatedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapNominated, this.input.args, false, null, false, false);
         if (filterNominatedArgFinder.found) {
             this.params.filter = 'nominated';
             this.input.args = filterNominatedArgFinder.args;
         }
-        const filterGuestArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapGuest, this.input.args, false, null, false, false);
+        const filterGuestArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapGuest, this.input.args, false, null, false, false);
         if (filterGuestArgFinder.found) {
             this.params.filter = 'guest';
             this.input.args = filterGuestArgFinder.args;
         }
-        const filterMostPlayedArgFinder = helper.tools.commands.matchArgMultiple(helper.vars.argflags.mapMostPlayed, this.input.args, false, null, false, false);
+        const filterMostPlayedArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.mapMostPlayed, this.input.args, false, null, false, false);
         if (filterMostPlayedArgFinder.found) {
             this.params.filter = 'most_played';
             this.input.args = filterMostPlayedArgFinder.args;
         }
-        const reverseArgFinder = helper.tools.commands.matchArgMultiple(['-reverse', '-rev'], this.input.args, false, null, false, false);
+        const reverseArgFinder = helper.commandTools.matchArgMultiple(['-reverse', '-rev'], this.input.args, false, null, false, false);
         if (reverseArgFinder.found) {
             this.params.reverse = true;
             this.input.args = reverseArgFinder.args;
@@ -1409,20 +1427,20 @@ export class UserBeatmaps extends OsuCommand {
         }
         if (this.input.args.includes('-parse')) {
             this.params.parseMap = true;
-            const temp = helper.tools.commands.parseArg(this.input.args, '-parse', 'number', 1, null, true);
+            const temp = helper.commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
             this.params.parseId = temp.value;
             this.input.args = temp.newArgs;
         }
 
         if (this.input.args.includes('-?')) {
-            const temp = helper.tools.commands.parseArg(this.input.args, '-?', 'string', this.params.filterTitle, true);
+            const temp = helper.commandTools.parseArg(this.input.args, '-?', 'string', this.params.filterTitle, true);
             this.params.filterTitle = temp.value;
             this.input.args = temp.newArgs;
         }
 
-        this.input.args = helper.tools.commands.cleanArgs(this.input.args);
+        this.input.args = helper.commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.tools.commands.fetchUser(this.input.args);
+        const usertemp = helper.commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -1435,8 +1453,8 @@ export class UserBeatmaps extends OsuCommand {
         this.params.searchid = this.commanduser.id;
 
         this.params.user = interaction.options.getString('user') ?? null;
-        this.params.filter = (interaction.options.getString('type') ?? 'favourite') as bottypes.ubmFilter;
-        this.params.sort = (interaction.options.getString('sort') ?? 'dateadded') as bottypes.ubmSort;
+        this.params.filter = (interaction.options.getString('type') ?? 'favourite') as helper.bottypes.ubmFilter;
+        this.params.sort = (interaction.options.getString('sort') ?? 'dateadded') as helper.bottypes.ubmSort;
         this.params.reverse = interaction.options.getBoolean('reverse') ?? false;
         this.params.filterTitle = interaction.options.getString('filter');
 
@@ -1449,14 +1467,14 @@ export class UserBeatmaps extends OsuCommand {
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
         const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        const temp = helper.tools.commands.getButtonArgs(this.input.id);
+        const temp = helper.commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
-                content: helper.vars.errors.paramFileMissing,
+                content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
                 allowedMentions: { repliedUser: false }
             });
-            helper.tools.commands.disableAllButtons(this.input.message);
+            helper.commandTools.disableAllButtons(this.input.message);
             return;
         }
         this.params.searchid = temp.searchid;
@@ -1464,12 +1482,12 @@ export class UserBeatmaps extends OsuCommand {
         this.params.filter = temp.mapType;
         this.params.sort = temp.sortMap;
         this.params.reverse = temp.reverse;
-        this.params.page = helper.tools.commands.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
+        this.params.page = helper.commandTools.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
         this.params.parseMap = temp.parse;
         this.params.parseId = temp.parseId;
         this.params.filterTitle = temp.filterTitle;
         // mode = temp.mode;
-        this.params.detailed = helper.tools.commands.buttonDetail(temp.detailed, this.input.buttonType);
+        this.params.detailed = helper.commandTools.buttonDetail(temp.detailed, this.input.buttonType);
 
     }
     getOverrides(): void {
@@ -1533,34 +1551,41 @@ export class UserBeatmaps extends OsuCommand {
             return;
         }
 
-        const pgbuttons: Discord.ActionRowBuilder = await helper.tools.commands.pageButtons(this.name, this.commanduser, this.input.id);
+        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         const buttons = new Discord.ActionRowBuilder()
             .addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.vars.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.osudata.id}+${this.osudata.playmode}`)
-                    .setStyle(helper.vars.buttons.type.current)
-                    .setEmoji(helper.vars.buttons.label.extras.user),
+                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.osudata.id}+${this.osudata.playmode}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
             );
 
-        let maplistdata: (apitypes.Beatmapset[] & apitypes.Error | apitypes.BeatmapPlayCountArr) = [];
+        let maplistdata: (helper.osuapi.types_v2.Beatmapset[] | helper.osuapi.types_v2.BeatmapPlaycount[]) = [];
 
-        async function getScoreCount(cinitnum, input, args, osudata) {
+        async function getScoreCount(cinitnum:number, input:helper.bottypes.commandInput, args, osudata) {
             if (cinitnum >= 499) {
                 args.reachedMaxCount = true;
                 return;
             }
-            const fdReq: tooltypes.apiReturn = await helper.tools.api.getUserMaps(osudata.id, args.filter, [`offset=${cinitnum}`]);
-            const fd = fdReq.apiData;
-            if (fdReq?.error) {
-                await helper.tools.commands.errorAndAbort(input, this.name, true, helper.vars.errors.uErr.osu.map.group_nf.replace('[TYPE]', args.filter), false);
-                return;
-            }
+            const fd = 
+            args.filter == 'most_played' ? 
+            await helper.osuapi.v2.users.mostPlayed({
+                user_id: osudata.id,
+                offset: cinitnum
+            })
+            :
+            await helper.osuapi.v2.users.beatmaps({
+                user_id: osudata.id,
+                type: args.filter,
+                offset: cinitnum
+            });
             if (fd?.hasOwnProperty('error')) {
-                await helper.tools.commands.errorAndAbort(input, this.name, true, helper.vars.errors.uErr.osu.map.group_nf.replace('[TYPE]', args.filter), true);
+                await helper.commandTools.errorAndAbort(input, this.name, true, helper.errors.uErr.osu.map.group_nf.replace('[TYPE]', args.filter), true);
                 return;
             }
             for (let i = 0; i < fd.length; i++) {
                 if (!fd[i] || typeof fd[i] == 'undefined') { break; }
+                //@ts-expect-error Beatmapset missing properties from BeatmapPlaycount
                 maplistdata.push(fd[i]);
             }
             if (fd.length == 100 && args.filter != 'most_played') {
@@ -1568,29 +1593,29 @@ export class UserBeatmaps extends OsuCommand {
             }
             return args;
         }
-        if (helper.tools.data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter) &&
-            !('error' in helper.tools.data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter)) &&
+        if (helper.data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter) &&
+            !('error' in helper.data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter)) &&
             this.input.buttonType != 'Refresh'
         ) {
-            maplistdata = helper.tools.data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter);
+            maplistdata = helper.data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter);
         } else {
             this.params = await getScoreCount(0, this.input, this.params, this.osudata);
         }
 
-        helper.tools.data.debug(maplistdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
-        helper.tools.data.storeFile(maplistdata, this.osudata.id, 'maplistdata', null, this.params.filter);
+        helper.data.debug(maplistdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
+        helper.data.storeFile(maplistdata, this.osudata.id, 'maplistdata', null, this.params.filter);
 
         if (this.params.parseMap) {
             if (this.params.filterTitle) {
                 switch (this.params.filter) {
                     case 'most_played':
-                        maplistdata = helper.tools.formatter.filterMapPlays(maplistdata as apitypes.BeatmapPlayCountArr,
+                        maplistdata = helper.formatter.filterMapPlays(maplistdata as helper.osuapi.types_v2.BeatmapPlaycount[],
                             this.params.sort as any, {
                             title: this.params.filterTitle
                         }, this.params.reverse);
                         break;
                     default:
-                        maplistdata = helper.tools.formatter.filterMaps(maplistdata as apitypes.Beatmapset[],
+                        maplistdata = helper.formatter.filterMaps(maplistdata as helper.osuapi.types_v2.BeatmapsetExtended[],
                             this.params.sort as any, {
                             title: this.params.filterTitle
                         }, this.params.reverse);
@@ -1608,13 +1633,13 @@ export class UserBeatmaps extends OsuCommand {
             this.input.overrides = {
                 id:
                     this.params.filter == 'most_played' ?
-                        (maplistdata as apitypes.BeatmapPlayCountArr)[pid]?.beatmap_id :
-                        (maplistdata as apitypes.Beatmapset[])[pid]?.beatmaps[0]?.id,
+                        (maplistdata as helper.osuapi.types_v2.BeatmapPlayCountArr)[pid]?.beatmap_id :
+                        (maplistdata as helper.osuapi.types_v2.Beatmapset[])[pid]?.beatmaps[0]?.id,
                 commanduser: this.commanduser,
                 commandAs: this.input.type
             };
             if (this.input.overrides.id == null) {
-                await helper.tools.commands.errorAndAbort(this.input, this.name, true, helper.vars.errors.uErr.osu.map.m_uk + `at index ${pid}`, true);
+                await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.m_uk + `at index ${pid}`, true);
                 return;
             }
             this.input.type = 'other';
@@ -1634,14 +1659,14 @@ export class UserBeatmaps extends OsuCommand {
 
         switch (this.params.filter) {
             case 'most_played':
-                mapsarg = helper.tools.formatter.mapPlaysList(maplistdata as apitypes.BeatmapPlayCountArr,
+                mapsarg = helper.formatter.mapPlaysList(maplistdata as helper.osuapi.types_v2.BeatmapPlayCountArr,
                     this.params.sort as any, {
                     title: this.params.filterTitle
                 },
                     this.params.reverse, this.params.page);
                 break;
             default:
-                mapsarg = helper.tools.formatter.mapList(maplistdata as apitypes.Beatmapset[],
+                mapsarg = helper.formatter.mapList(maplistdata as helper.osuapi.types_v2.BeatmapsetExtended[],
                     this.params.sort as any, {
                     title: this.params.filterTitle
                 },
@@ -1649,7 +1674,7 @@ export class UserBeatmaps extends OsuCommand {
                 break;
         }
 
-        helper.tools.commands.storeButtonArgs(this.input.id, {
+        helper.commandTools.storeButtonArgs(this.input.id, {
             searchid: this.params.searchid,
             user: this.params.user,
             mapType: this.params.filter,
@@ -1666,12 +1691,12 @@ export class UserBeatmaps extends OsuCommand {
             .setFooter({
                 text: `${mapsarg.curPage}/${mapsarg.maxPage}`
             })
-            .setTitle(`${this.osudata.username}'s ${helper.tools.formatter.toCapital(this.params.filter)} Maps`)
-            .setThumbnail(`${this.osudata?.avatar_url ?? helper.vars.defaults.images.any.url}`)
+            .setTitle(`${this.osudata.username}'s ${helper.formatter.toCapital(this.params.filter)} Maps`)
+            .setThumbnail(`${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setURL(`https://osu.ppy.sh/users/${this.osudata.id}/${this.osudata.playmode}#beatmaps`)
-            .setColor(helper.vars.colours.embedColour.userlist.dec)
+            .setColor(helper.colours.embedColour.userlist.dec)
             .setDescription(this.params.reachedMaxCount ? 'Only the first 500 mapsets are shown\n\n' : '\n\n' + mapsarg.text);
-        helper.tools.formatter.userAuthor(this.osudata, mapList);
+        helper.formatter.userAuthor(this.osudata, mapList);
 
         if (mapsarg.text.length == 0) {
             mapList.setDescription('No mapsets found');
@@ -1695,5 +1720,5 @@ export class UserBeatmaps extends OsuCommand {
 
         this.send();
     }
-    osudata: apitypes.User;
+    osudata: helper.osuapi.types_v2.UserExtended;
 }

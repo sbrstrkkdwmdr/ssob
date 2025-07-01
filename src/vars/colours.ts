@@ -1,4 +1,4 @@
-import * as colourcalc from '../tools/colourcalc.js';
+import * as colourcalc from '../tools/colourcalc';
 
 const diffcolour = [
     {
