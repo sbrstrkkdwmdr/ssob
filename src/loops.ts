@@ -2,7 +2,9 @@
 import axios from 'axios';
 import Discord from 'discord.js';
 import fs from 'fs';
+import v8 from 'v8';
 import * as helper from './helper';
+
 export function loops() {
     setInterval(() => {
         clearMapFiles();
@@ -17,14 +19,26 @@ export function loops() {
         getOnlineChangelog();
     }, 1000 * 60 * 60 * 6);
 
+    setInterval(async () => {
+        checkHeap();
+    }, 1000 * 60 * 1);
+
     clearMapFiles();
     clearParseArgs();
     clearCommandCache();
     getOnlineChangelog();
+    checkHeap();
 
-    
+    function checkHeap() {
+        const sl = v8.getHeapStatistics();
+        helper.log.stdout(toMiB(sl.heap_size_limit) + ' MiB Heap Limit');
+        helper.log.stdout(toMiB(sl.used_heap_size).toFixed(2) + ' MiB Heap Used');
+    }
+    function toMiB(number: number) {
+        return number / (1024 * 1024);
+    }
     // status switcher
-    const activities:Discord.ActivitiesOptions[] = [];
+    const activities: Discord.ActivitiesOptions[] = [];
 
     function getMap() {
         const filesPathing = `${helper.path.cache}/commandData`;

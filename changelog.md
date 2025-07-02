@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Changed
+
+- updated osumodcalculator
+
 ## [5.2.0] - 2025-07-02
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
