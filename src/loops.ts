@@ -31,8 +31,11 @@ export function loops() {
 
     function checkHeap() {
         const sl = v8.getHeapStatistics();
-        helper.log.stdout(sl.heap_size_limit / (1024 * 1024) + ' MiB Limit');
-        helper.log.stdout((sl.used_heap_size / (1024 * 1024)).toFixed(2) + ' MiB Used');
+        helper.log.stdout(toMiB(sl.heap_size_limit) + ' MiB Heap Limit');
+        helper.log.stdout(toMiB(sl.used_heap_size).toFixed(2) + ' MiB Heap Used');
+    }
+    function toMiB(number: number) {
+        return number / (1024 * 1024);
     }
     // status switcher
     const activities: Discord.ActivitiesOptions[] = [];
