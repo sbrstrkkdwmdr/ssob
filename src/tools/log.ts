@@ -3,6 +3,7 @@ import fs from 'fs';
 import moment from 'moment';
 import util from 'util';
 import * as helper from '../helper';
+
 export function out(text: string, path: string, fileOnly?: boolean) {
     text = appendTime(text);
     if (helper.vars.config.logs.file) {

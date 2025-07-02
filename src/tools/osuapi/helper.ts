@@ -66,7 +66,7 @@ function setParams_all(input: Dict, params: Dict) {
 export function log(data: any) {
     if (logCalls) {
         const rn = new Date();
-        const str = `[${rn.getUTCFullYear()}-${twoDigits(rn.getUTCMonth())}-${twoDigits(rn.getUTCDate())} ${twoDigits(rn.getUTCHours())}:${twoDigits(rn.getUTCMinutes())}:${twoDigits(rn.getUTCSeconds())}] `;
+        const str = `[${rn.getUTCFullYear()}-${twoDigits(rn.getUTCMonth() + 1)}-${twoDigits(rn.getUTCDate())} ${twoDigits(rn.getUTCHours())}:${twoDigits(rn.getUTCMinutes())}:${twoDigits(rn.getUTCSeconds())}] `;
         console.log(str + format(data));
     }
 }
