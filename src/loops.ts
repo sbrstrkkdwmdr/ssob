@@ -22,7 +22,9 @@ export function loops() {
     setInterval(async () => {
         checkHeap();
         try {
-            // global.gc();
+            if (global?.gc) {
+                global.gc();
+            }
         } catch (err) {
 
         }
