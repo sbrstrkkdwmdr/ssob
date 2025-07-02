@@ -191,7 +191,7 @@ export async function filterScores(
 ): Promise<indexedScore<helper.osuapi.types_v2.Score>[]> {
     let newScores = [] as indexedScore<helper.osuapi.types_v2.Score>[];
     for (let i = 0; i < scores.length; i++) {
-        const newScore = { ...scores[i], ...{ originalIndex: i } };
+        const newScore = { ...scores[i], originalIndex: i };
         newScores.push(newScore);
     }
     if (filter?.mapper) {

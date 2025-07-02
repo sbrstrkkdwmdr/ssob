@@ -6,7 +6,6 @@ import * as helper from './helper';
 const buttonWarnedUsers = new Set();
 let command: Command;
 let foundCommand = true;
-let mainId: number;
 export async function onInteraction(interaction: Discord.Interaction) {
     if (!(interaction.type == Discord.InteractionType.MessageComponent || interaction.type == Discord.InteractionType.ModalSubmit)) return;
     if (interaction.applicationId != helper.vars.client?.application?.id) return;
@@ -26,7 +25,6 @@ export async function onInteraction(interaction: Discord.Interaction) {
     const buttonType = buttonsplit[1] as helper.bottypes.buttonType;
     const cmd = buttonsplit[2];
     const specid = buttonsplit[3];
-    mainId = +buttonsplit[4];
 
     if (buttonVer != helper.versions.releaseDate) {
         const findcommand = helper.versions.versions.find(x =>
@@ -76,7 +74,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
     if (buttonType == 'Search' && PageOnlyCommands.includes(cmd)) {
         const menu = new Discord.ModalBuilder()
             .setTitle('Page')
-            .setCustomId(`${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${mainId}`)
+            .setCustomId(`${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${helper.commandTools.getCmdId()}`)
             .addComponents(
                 //@ts-expect-error - TextInputBuilder not assignable to AnyInputBuilder
                 new Discord.ActionRowBuilder()
@@ -145,10 +143,9 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         }
         overrides.commandAs = 'interaction';
         overrides.commanduser = interaction.member.user as Discord.User;
-        mainId = helper.commandTools.getCmdId();
         command = new helper.cmd_osu_maps.Map();
         foundCommand = true;
-        await runCommand(interaction, buttonType, overrides, 'other', false);
+        await runCommand(interaction, buttonType, overrides, helper.commandTools.getCmdId(), 'other', false);
         return;
     }
 
@@ -158,10 +155,9 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         overrides.commandAs = 'interaction';
         overrides.commanduser = interaction.member.user as Discord.User;
 
-        mainId = helper.commandTools.getCmdId();
         command = new helper.cmd_osu_profiles.Profile();
         foundCommand = true;
-        await runCommand(interaction, buttonType, overrides, 'other', false);
+        await runCommand(interaction, buttonType, overrides, helper.commandTools.getCmdId(), 'other', false);
         return;
     }
     if (buttonType == 'Leaderboard') {
@@ -183,10 +179,9 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
                 overrides.commandAs = 'interaction';
 
                 overrides.commanduser = interaction.member.user as Discord.User;
-                mainId = helper.commandTools.getCmdId();
                 command = new helper.cmd_osu_scores.MapLeaderboard();
                 foundCommand = true;
-                await runCommand(interaction, buttonType, overrides, 'other', false);
+                await runCommand(interaction, buttonType, overrides, helper.commandTools.getCmdId(), 'other', false);
                 return;
             }
         }
@@ -199,7 +194,7 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
         overrides.commanduser = interaction.member.user as Discord.User;
         command = new helper.cmd_osu_scores.MapScores();
         foundCommand = true;
-        await runCommand(interaction, buttonType, overrides, 'other', false);
+        await runCommand(interaction, buttonType, overrides, helper.commandTools.getCmdId(), 'other', false);
         return;
     }
 
@@ -287,10 +282,10 @@ Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name
             runFail(interaction);
             return;
     }
-    runCommand(interaction, buttonType, overrides, null, true);
+    runCommand(interaction, buttonType, overrides, +buttonsplit[4], null, true);
 }
 
-async function runCommand(interaction: Discord.ButtonInteraction, buttonType: helper.bottypes.buttonType, overrides: helper.bottypes.overrides, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
+async function runCommand(interaction: Discord.ButtonInteraction, buttonType: helper.bottypes.buttonType, overrides: helper.bottypes.overrides, id: number, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
     if (defer) {
         await interaction.deferUpdate()
             .catch(error => { });
@@ -301,7 +296,7 @@ async function runCommand(interaction: Discord.ButtonInteraction, buttonType: he
             interaction,
             args: [],
             date: new Date(),
-            id: mainId,
+            id,
             overrides,
             canReply: true,
             type: overrideType ?? "button",

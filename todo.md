@@ -3,6 +3,7 @@
 newest-oldest
 
 ## current
+- [ ] fix memory leaks (leaks don't seem to be present in windows so its hard to test)
 - [x] fix maplb page buttons crashing
 - [ ] reduce code complexity
 - [x] fix changelog (buttons switch commands, etc.)

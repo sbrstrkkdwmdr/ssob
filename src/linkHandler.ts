@@ -8,7 +8,6 @@ let command: Command;
 const overrides: helper.bottypes.overrides = {
 
 };
-let id: number;
 export async function onMessage(message: Discord.Message) {
     if (!(message.content.startsWith('http') || message.content.includes('osu.') || message.attachments.size > 0)) {
         return;
@@ -19,7 +18,7 @@ export async function onMessage(message: Discord.Message) {
     }
 
 
-    let settings:helper.tooltypes.guildSettings;
+    let settings: helper.tooltypes.guildSettings;
     try {
         const curGuildSettings = await helper.vars.guildSettings.findOne({ where: { guildid: message.guildId } });
         settings = curGuildSettings.dataValues;
@@ -48,14 +47,12 @@ export async function onMessage(message: Discord.Message) {
 
     const messagenohttp = message.content.replace('https://', '').replace('http://', '').replace('www.', '');
     if (messagenohttp.startsWith('osu.ppy.sh/b/') || messagenohttp.startsWith('osu.ppy.sh/beatmaps/') || messagenohttp.startsWith('osu.ppy.sh/beatmapsets/') || messagenohttp.startsWith('osu.ppy.sh/s/')) {
-        id = helper.commandTools.getCmdId();
         command = new helper.cmd_osu_maps.Map();
         await runCommand(message);
         return;
     }
     if (messagenohttp.startsWith('osu.ppy.sh/u/') || messagenohttp.startsWith('osu.ppy.sh/users/')) {
         command = new helper.cmd_osu_profiles.Profile();
-        id = helper.commandTools.getCmdId();
         await runCommand(message);
         return;
     }
@@ -63,31 +60,30 @@ export async function onMessage(message: Discord.Message) {
         if (settings.osuParseReplays == false) {
             return;
         }
+        const id = helper.commandTools.getCmdId();
         const attachosr = message.attachments.first().url;
-        id = helper.commandTools.getCmdId();
         const osrdlfile = fs.createWriteStream(`${helper.path.files}/replays/${id}.osr`);
         https.get(`${attachosr}`, function (response) {
             response.pipe(osrdlfile);
         });
         setTimeout(async () => {
             command = new helper.cmd_osu_scores.ReplayParse();
-            await runCommand(message);
+            await runCommand(message, id);
         }, 1500);
     }
     if (messagenohttp.startsWith('osu.ppy.sh/scores/')) {
-        id = helper.commandTools.getCmdId();
         command = new helper.cmd_osu_scores.ScoreParse();
         await runCommand(message);
     }
 }
 
-async function runCommand(message: Discord.Message,) {
+async function runCommand(message: Discord.Message, tid?: number) {
     command.setInput({
         message,
         interaction: null,
         args: [],
         date: new Date(),
-        id,
+        id: tid ?? helper.commandTools.getCmdId(),
         overrides,
         canReply: true,
         type: "link",

@@ -552,7 +552,7 @@ export class ScoreListCommand extends OsuCommand {
             filterBpm: this.params.bpm,
             sort: this.params.sort,
             reverse: this.params.reverse,
-            ...{ maxPage: scoresFormat.maxPage }
+            maxPage: scoresFormat.maxPage
         });
 
         scoresEmbed.setFooter({
@@ -751,7 +751,7 @@ export class MapScores extends ScoreListCommand {
             this.params.mapid = mapIdArgFinder.output;
             this.input.args = mapIdArgFinder.args;
         }
-        if(!this.params.mapid){
+        if (!this.params.mapid) {
             this.params.mapid = (await helper.commandTools.mapIdFromLink(this.input.args.join(' '), true,)).map;
         }
         if (this.params.mapid != null) {

@@ -166,17 +166,16 @@ helper.osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.c
 helper.osuapi.logCalls(true);
 
 client.once('ready', () => {
-    const currentDate = new Date();
     helper.vars.userdata.sync();
     helper.vars.guildSettings.sync();
     helper.vars.trackDb.sync();
     helper.vars.statsCache.sync();
-    const timetostart = currentDate.getTime() - initdate.getTime();
+    const currentDate = new Date();
     console.log(`
 ====================================================
 BOT IS NOW ONLINE
 ----------------------------------------------------
-Boot time:        ${timetostart}ms
+Boot time:        ${currentDate.getTime() - initdate.getTime()}ms
 Time:             ${currentDate.toLocaleString()}
 Time (ISO):       ${currentDate.toISOString()}
 Time (epoch, ms): ${currentDate.getTime()}
