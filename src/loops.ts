@@ -23,6 +23,7 @@ export function loops() {
         checkHeap();
         try {
             if (global?.gc) {
+                helper.log.stdout('Calling garbage collector...');
                 global.gc();
             }
         } catch (err) {
