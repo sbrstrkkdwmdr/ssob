@@ -807,47 +807,9 @@ export class SingleScoreCommand extends OsuCommand {
     mapset: helper.osuapi.types_v2.Beatmapset;
 
     async renderEmbed() {
-        let cg;
         const gamehits = this.score.statistics;
-        helper.osuapi.Ruleset.osu;
-        switch (this.score.ruleset_id) {
-            case helper.osuapi.Ruleset.osu: default:
-                cg = osumodcalc.accuracy.standard(
-                    gamehits.great,
-                    (gamehits.ok ?? 0),
-                    (gamehits.meh ?? 0),
-                    (gamehits.miss ?? 0)
-                );
-                break;
-            case helper.osuapi.Ruleset.taiko:
-                cg = osumodcalc.accuracy.taiko(
-                    gamehits.great,
-                    (gamehits.good ?? 0),
-                    (gamehits.miss ?? 0)
-                );
-                break;
-            case helper.osuapi.Ruleset.fruits:
-                cg = osumodcalc.accuracy.fruits(
-                    gamehits.great,
-                    (gamehits.ok ?? 0),
-                    (gamehits.small_tick_hit ?? 0),
-                    (gamehits.small_tick_miss ?? 0),
-                    (gamehits.miss ?? 0)
-                );
-                break;
-            case helper.osuapi.Ruleset.mania:
-                cg = osumodcalc.accuracy.mania(
-                    (gamehits.perfect ?? 0),
-                    gamehits.great,
-                    gamehits.good ?? 0,
-                    (gamehits.ok ?? 0),
-                    (gamehits.meh ?? 0),
-                    (gamehits.miss ?? 0)
-                );
-                break;
-        }
         let rspassinfo = '';
-        let totalhits;
+        let totalhits: number;
 
         switch (this.score.ruleset_id) {
             case helper.osuapi.Ruleset.osu: default:
@@ -871,6 +833,9 @@ export class SingleScoreCommand extends OsuCommand {
             this.map.count_sliders,
             this.map.count_spinners,
         );
+
+        const [perfs, ppissue, fcflag] = await this.perf(failed);
+
         switch (this.params.detailed) {
             default: {
                 hitlist = getHits.short;
@@ -880,56 +845,6 @@ export class SingleScoreCommand extends OsuCommand {
                 hitlist = getHits.long;
             }
                 break;
-        }
-
-        let rspp: string | number = 0;
-        let ppissue: string = '';
-        let perfs: rosu.PerformanceAttributes[];
-        let fcflag = '';
-        try {
-            const overrides = helper.calculate.modOverrides(this.score.mods);
-            perfs = await helper.performance.fullPerformance(
-                this.score.beatmap.id,
-                this.score.ruleset_id,
-                this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
-                this.score.accuracy,
-                overrides.speed,
-                this.score.statistics,
-                this.score.max_combo,
-                failed.objectsHit,
-                new Date(this.score.beatmap.last_updated),
-                overrides.cs,
-                overrides.ar,
-                overrides.od,
-                overrides.hp,
-            );
-            rspp =
-                this.score.pp ?
-                    this.score.pp.toFixed(2) :
-                    perfs[0].pp.toFixed(2);
-            helper.data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalcing');
-
-            const mxCombo = perfs[0].difficulty.maxCombo ?? this.map?.max_combo;
-
-            if (this.score.accuracy < 1 && this.score.max_combo == mxCombo) {
-                fcflag = `FC\n**${perfs[2].pp.toFixed(2)}**pp IF SS`;
-            }
-            if (this.score.max_combo != mxCombo) {
-                fcflag =
-                    `\n**${perfs[1].pp.toFixed(2)}**pp IF FC
-                **${perfs[2].pp.toFixed(2)}**pp IF SS`;
-            }
-            if (this.score.max_combo == mxCombo && this.score.accuracy == 1) {
-                fcflag = 'FC';
-            }
-
-        } catch (error) {
-            rspp =
-                this.score.pp ?
-                    this.score.pp.toFixed(2) :
-                    NaN;
-            ppissue = helper.errors.uErr.osu.performance.crash;
-            helper.log.commandErr(error, this.input.id, 'firsts', this.input.message, this.input.interaction);
         }
 
         const curbmhitobj = this.map.count_circles + this.map.count_sliders + this.map.count_spinners;
@@ -943,8 +858,7 @@ export class SingleScoreCommand extends OsuCommand {
         // let showFailGraph = false;
         // let FailGraph = '';
 
-        let rsgrade;
-        rsgrade = helper.emojis.grades[this.score.rank.toUpperCase()];
+        let rsgrade = helper.emojis.grades[this.score.rank.toUpperCase()];
         if (!this.score.passed) {
             rspassinfo = `${guesspasspercentage.toFixed(2)}% completed (${helper.calculate.secondsToTime(curbmpasstime)}/${helper.calculate.secondsToTime(this.map.total_length)})`;
             rsgrade =
@@ -970,53 +884,71 @@ export class SingleScoreCommand extends OsuCommand {
             scorerank = '| ' + scorerank;
         }
 
-        let embed = new Discord.EmbedBuilder()
-            .setColor(helper.colours.embedColour.score.dec)
-            .setAuthor({
-                name: `${trycountstr} | #${helper.calculate.separateNum(this.osudata?.statistics?.global_rank)} | #${helper.calculate.separateNum(this.osudata?.statistics?.country_rank)} ${this.osudata.country_code} | ${helper.calculate.separateNum(this.osudata?.statistics?.pp)}pp`,
-                url: `https://osu.ppy.sh/users/${this.osudata.id}`,
-                iconURL: `${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`
-            })
-            .setURL(this.score.id ? `https://osu.ppy.sh/scores/${this.score.id}` : `https://osu.ppy.sh/b/${this.map.id}`)
-            .setThumbnail(`${this.mapset.covers.list}`);
-        embed
-            .addFields([
-                {
-                    name: 'SCORE DETAILS',
-                    value: `${helper.calculate.separateNum(helper.other.getTotalScore(this.score))} ${scorerank}
-${(this.score.accuracy * 100).toFixed(2)}% | ${rsgrade}
-${this.score.has_replay ? `[REPLAY](https://osu.ppy.sh/scores/${this.score.id}/download)\n` : ''}` +
-                        `${rspassinfo.length > 1 ? rspassinfo + '\n' : ''}\`${hitlist}\`
-${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.score.max_combo}x`}/**${mxcombo}x** combo`,
-                    inline: true
-                },
-                {
-                    name: 'PP',
-                    value: `**${rspp}**pp ${fcflag}\n${ppissue}`,
-                    inline: true
-                }
-            ]);
-        switch (this.type) {
-            case 'default':
-                embed.setTitle(fulltitle)
-                    .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments + ' |' : ''} <t:${new Date(this.score.ended_at).getTime() / 1000}:R>
-${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
-`);
-                helper.formatter.userAuthor(this.osudata, embed, this.params.overrideAuthor);
-                break;
-            case 'recent':
-                embed.setTitle(`#${this.params.page + 1} most recent ${this.params.showFails == 1 ? 'play' : 'pass'} for ${this.score.user.username} | <t:${new Date(this.score.ended_at).getTime() / 1000}:R>`)
-                    .setDescription(`[\`${fulltitle}\`](https://osu.ppy.sh/b/${this.map.id}) ${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments : ''} 
-${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
-${helper.formatter.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
-`);
-
-                break;
-        }
+        const embed = this.setEmbed({
+            trycountstr,
+            rsgrade,
+            rspassinfo,
+            mxcombo,
+            fcflag,
+            ppissue,
+            fulltitle,
+            hitlist,
+            scorerank,
+            perfs,
+            modadjustments
+        });
 
         this.ctn.embeds = [embed];
         return embed;
     }
+
+    async perf(failed: {
+        passed: boolean;
+        objectsHit: number;
+        percentage: number;
+    }): Promise<[rosu.PerformanceAttributes[], string, string]> {
+        let ppissue: string = '';
+        let fcflag = '';
+        let perfs: rosu.PerformanceAttributes[];
+        try {
+            const overrides = helper.calculate.modOverrides(this.score.mods);
+            perfs = await helper.performance.fullPerformance(
+                this.score.beatmap.id,
+                this.score.ruleset_id,
+                this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+                this.score.accuracy,
+                overrides.speed,
+                this.score.statistics,
+                this.score.max_combo,
+                failed.objectsHit,
+                new Date(this.score.beatmap.last_updated),
+                overrides.cs,
+                overrides.ar,
+                overrides.od,
+                overrides.hp,
+            );
+            helper.data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalcing');
+
+            const mxCombo = perfs[0].difficulty.maxCombo ?? this.map?.max_combo;
+
+            if (this.score.accuracy < 1 && this.score.max_combo == mxCombo) {
+                fcflag = `FC\n**${perfs[2].pp.toFixed(2)}**pp IF SS`;
+            }
+            if (this.score.max_combo != mxCombo) {
+                fcflag =
+                    `\n**${perfs[1].pp.toFixed(2)}**pp IF FC
+                **${perfs[2].pp.toFixed(2)}**pp IF SS`;
+            }
+            if (this.score.max_combo == mxCombo && this.score.accuracy == 1) {
+                fcflag = 'FC';
+            }
+        } catch (error) {
+            ppissue = helper.errors.uErr.osu.performance.crash;
+            helper.log.commandErr(error, this.input.id, 'firsts', this.input.message, this.input.interaction);
+        }
+        return [perfs, ppissue, fcflag];
+    }
+
     async getStrains(map: helper.osuapi.types_v2.Beatmap, score: helper.osuapi.types_v2.Score) {
         const strains = await helper.performance.calcStrains({
             mapid: map.id,
@@ -1051,6 +983,75 @@ ${helper.formatter.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
             }
         }
         return trycount;
+    }
+    setEmbed({
+        trycountstr,
+        rsgrade,
+        rspassinfo,
+        mxcombo,
+        fcflag,
+        ppissue,
+        fulltitle,
+        hitlist,
+        scorerank,
+        perfs,
+        modadjustments
+    }: {
+        trycountstr: string,
+        rsgrade: string,
+        rspassinfo: string,
+        mxcombo: number,
+        fcflag: string,
+        ppissue: string,
+        fulltitle: string,
+        hitlist: string,
+        scorerank: string,
+        perfs: rosu.PerformanceAttributes[],
+        modadjustments: string,
+    }) {
+        let embed = new Discord.EmbedBuilder()
+            .setColor(helper.colours.embedColour.score.dec)
+            .setAuthor({
+                name: `${trycountstr} | #${helper.calculate.separateNum(this.osudata?.statistics?.global_rank)} | #${helper.calculate.separateNum(this.osudata?.statistics?.country_rank)} ${this.osudata.country_code} | ${helper.calculate.separateNum(this.osudata?.statistics?.pp)}pp`,
+                url: `https://osu.ppy.sh/users/${this.osudata.id}`,
+                iconURL: `${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`
+            })
+            .setURL(this.score.id ? `https://osu.ppy.sh/scores/${this.score.id}` : `https://osu.ppy.sh/b/${this.map.id}`)
+            .setThumbnail(`${this.mapset.covers.list}`)
+            .addFields([
+                {
+                    name: 'SCORE DETAILS',
+                    value: `${helper.calculate.separateNum(helper.other.getTotalScore(this.score))} ${scorerank}
+${(this.score.accuracy * 100).toFixed(2)}% | ${rsgrade}
+${this.score.has_replay ? `[REPLAY](https://osu.ppy.sh/scores/${this.score.id}/download)\n` : ''}` +
+                        `${rspassinfo.length > 1 ? rspassinfo + '\n' : ''}\`${hitlist}\`
+${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.score.max_combo}x`}/**${mxcombo}x** combo`,
+                    inline: true
+                },
+                {
+                    name: 'PP',
+                    value: `**${this.score?.pp ?? perfs[0]?.pp ?? NaN}**pp ${fcflag}\n${ppissue}`,
+                    inline: true
+                }
+            ]);
+        switch (this.type) {
+            case 'default':
+                embed.setTitle(fulltitle)
+                    .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments + ' |' : ''} <t:${new Date(this.score.ended_at).getTime() / 1000}:R>
+    ${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
+    `);
+                helper.formatter.userAuthor(this.osudata, embed, this.params.overrideAuthor);
+                break;
+            case 'recent':
+                embed.setTitle(`#${this.params.page + 1} most recent ${this.params.showFails == 1 ? 'play' : 'pass'} for ${this.score.user.username} | <t:${new Date(this.score.ended_at).getTime() / 1000}:R>`)
+                    .setDescription(`[\`${fulltitle}\`](https://osu.ppy.sh/b/${this.map.id}) ${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments : ''} 
+    ${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
+    ${helper.formatter.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
+    `);
+
+                break;
+        }
+        return embed;
     }
 }
 
@@ -1978,7 +1979,7 @@ export class ScoreStats extends OsuCommand {
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
-        let scoresdata: helper.osuapi.types_v2.Score[] & helper.osuapi.types_v2.Error = [];
+        let scoresdata: helper.osuapi.types_v2.Score[] = [];
 
         async function getScoreCount(cinitnum: number, args = this.params, input = this.input): Promise<boolean> {
             let fd: helper.osuapi.types_v2.Score[];
@@ -2034,187 +2035,191 @@ export class ScoreStats extends OsuCommand {
 
         // let useFiles: string[] = [];
 
-        const Embed: Discord.EmbedBuilder = new Discord.EmbedBuilder()
+        const embed: Discord.EmbedBuilder = new Discord.EmbedBuilder()
             .setTitle(`Statistics for ${osudata.username}'s ${this.params.scoreTypes} scores`)
             .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`);
-        helper.formatter.userAuthor(osudata, Embed);
+        helper.formatter.userAuthor(osudata, embed);
         if (scoresdata.length == 0) {
-            Embed.setDescription('No scores found');
+            embed.setDescription('No scores found');
         } else {
-            Embed.setDescription(`${helper.calculate.separateNum(scoresdata.length)} scores found\n${this.params.reachedMaxCount ? 'Only first 100 scores are calculated' : ''}`);
-            const mappers = helper.calculate.findMode(scoresdata.map(x => x.beatmapset.creator));
-            const mods = helper.calculate.findMode(scoresdata.map(x => {
-                return x.mods.length == 0 ?
-                    'NM' :
-                    x.mods.map(x => x.acronym).join('');
-            }));
-            const grades = helper.calculate.findMode(scoresdata.map(x => x.rank));
-            const acc = helper.calculate.stats(scoresdata.map(x => x.accuracy));
-            const combo = helper.calculate.stats(scoresdata.map(x => x.max_combo));
-            let pp = helper.calculate.stats(scoresdata.map(x => x.pp));
-            let totpp = '';
-            let weighttotpp = '';
-
-            if (this.params.all) {
-                //do pp calc
-                const calculations: rosu.PerformanceAttributes[] = [];
-                for (const score of scoresdata) {
-                    calculations.push(
-                        await helper.performance.calcScore({
-                            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
-                            mode: score.ruleset_id,
-                            mapid: score.beatmap.id,
-                            stats: score.statistics,
-                            accuracy: score.accuracy,
-                            maxcombo: score.max_combo,
-                            mapLastUpdated: new Date(score.beatmap.last_updated)
-                        }));
-                }
-
-                pp = helper.calculate.stats(calculations.map(x => x.pp));
-                calculations.sort((a, b) => b.pp - a.pp);
-
-                const ppcalc = {
-                    total: calculations.map(x => x.pp).reduce((a, b) => a + b, 0),
-                    acc: calculations.map(x => x.ppAccuracy).reduce((a, b) => a + b, 0),
-                    aim: calculations.map(x => x.ppAim).reduce((a, b) => a + b, 0),
-                    diff: calculations.map(x => x.ppDifficulty).reduce((a, b) => a + b, 0),
-                    speed: calculations.map(x => x.ppSpeed).reduce((a, b) => a + b, 0),
-                };
-                const weightppcalc = {
-                    total: helper.calculate.weightPerformance(calculations.map(x => x.pp)).reduce((a, b) => a + b, 0),
-                    acc: helper.calculate.weightPerformance(calculations.map(x => x.ppAccuracy)).reduce((a, b) => a + b, 0),
-                    aim: helper.calculate.weightPerformance(calculations.map(x => x.ppAim)).reduce((a, b) => a + b, 0),
-                    diff: helper.calculate.weightPerformance(calculations.map(x => x.ppDifficulty)).reduce((a, b) => a + b, 0),
-                    speed: helper.calculate.weightPerformance(calculations.map(x => x.ppSpeed)).reduce((a, b) => a + b, 0),
-                };
-                totpp = `Total: ${ppcalc.total.toFixed(2)}`;
-                ppcalc.acc ? totpp += `\nAccuracy: ${ppcalc.acc.toFixed(2)}` : '';
-                ppcalc.aim ? totpp += `\nAim: ${ppcalc.aim.toFixed(2)}` : '';
-                ppcalc.diff ? totpp += `\nDifficulty: ${ppcalc.diff.toFixed(2)}` : '';
-                ppcalc.speed ? totpp += `\nSpeed: ${ppcalc.speed.toFixed(2)}` : '';
-
-                weighttotpp = `Total: ${weightppcalc.total.toFixed(2)}`;
-                ppcalc.acc ? weighttotpp += `\nAccuracy: ${weightppcalc.acc.toFixed(2)}` : '';
-                ppcalc.aim ? weighttotpp += `\nAim: ${weightppcalc.aim.toFixed(2)}` : '';
-                ppcalc.diff ? weighttotpp += `\nDifficulty: ${weightppcalc.diff.toFixed(2)}` : '';
-                ppcalc.speed ? weighttotpp += `\nSpeed: ${weightppcalc.speed.toFixed(2)}` : '';
-            }
-            if (this.input.type == 'button') {
-                let mappersStr = '';
-                for (let i = 0; i < mappers.length; i++) {
-                    mappersStr += `#${i + 1}. ${mappers[i].string} - ${helper.calculate.separateNum(mappers[i].count)} | ${mappers[i].percentage.toFixed(2)}%\n`;
-                }
-                let modsStr = '';
-                for (let i = 0; i < mods.length; i++) {
-                    modsStr += `#${i + 1}. ${mods[i].string} - ${helper.calculate.separateNum(mods[i].count)} | ${mods[i].percentage.toFixed(2)}%\n`;
-                }
-                let gradesStr = '';
-                for (let i = 0; i < grades.length; i++) {
-                    gradesStr += `#${i + 1}. ${grades[i].string} - ${helper.calculate.separateNum(grades[i].count)} | ${grades[i].percentage.toFixed(2)}%\n`;
-                }
-
-                // const Mapperspath = `${helper.path.cache}/commandData/${input.id}Mappers.txt`;
-                // const Modspath = `${helper.path.cache}/commandData/${input.id}Mods.txt`;
-                // const Rankspath = `${helper.path.cache}/commandData/${input.id}Ranks.txt`;
-
-                // fs.writeFileSync(Mapperspath, mappersStr, 'utf-8');
-                // fs.writeFileSync(Modspath, modsStr, 'utf-8');
-                // fs.writeFileSync(Rankspath, gradesStr, 'utf-8');
-                // useFiles = [Mapperspath, Modspath, Rankspath];
-            } else {
-                let mappersStr = '';
-                for (let i = 0; i < mappers.length && i < 5; i++) {
-                    mappersStr += `#${i + 1}. ${mappers[i].string} - ${helper.calculate.separateNum(mappers[i].count)} | ${mappers[i].percentage.toFixed(2)}%\n`;
-                }
-                let modsStr = '';
-                for (let i = 0; i < mods.length && i < 5; i++) {
-                    modsStr += `#${i + 1}. ${mods[i].string} - ${helper.calculate.separateNum(mods[i].count)} | ${mods[i].percentage.toFixed(2)}%\n`;
-                }
-                let gradesStr = '';
-                for (let i = 0; i < grades.length && i < 5; i++) {
-                    gradesStr += `#${i + 1}. ${grades[i].string} - ${helper.calculate.separateNum(grades[i].count)} | ${grades[i].percentage.toFixed(2)}%\n`;
-                }
-
-
-                Embed.setFields([{
-                    name: 'Mappers',
-                    value: mappersStr.length == 0 ?
-                        'No data available' :
-                        mappersStr,
-                    inline: true,
-                },
-                {
-                    name: 'Mods',
-                    value: modsStr.length == 0 ?
-                        'No data available' :
-                        modsStr,
-                    inline: true
-                },
-                {
-                    name: 'Ranks',
-                    value: gradesStr.length == 0 ?
-                        'No data available' :
-                        gradesStr,
-                    inline: true
-                },
-                {
-                    name: 'Accuracy',
-                    value: `
-    Highest: ${(acc?.highest * 100)?.toFixed(2)}%
-    Lowest: ${(acc?.lowest * 100)?.toFixed(2)}%
-    Average: ${(acc?.mean * 100)?.toFixed(2)}%
-    Median: ${(acc?.median * 100)?.toFixed(2)}%
-    ${acc?.ignored > 0 ? `Skipped: ${acc?.ignored}` : ''}
-    `,
-                    inline: true
-                },
-                {
-                    name: 'Combo',
-                    value: `
-                    Highest: ${combo?.highest}
-                    Lowest: ${combo?.lowest}
-                    Average: ${Math.floor(combo?.mean)}
-                    Median: ${combo?.median}
-                    ${combo?.ignored > 0 ? `Skipped: ${combo?.ignored}` : ''}
-                    `,
-                    inline: true
-                },
-                {
-                    name: 'PP',
-                    value: `
-    Highest: ${pp?.highest?.toFixed(2)}pp
-    Lowest: ${pp?.lowest?.toFixed(2)}pp
-    Average: ${pp?.mean?.toFixed(2)}pp
-    Median: ${pp?.median?.toFixed(2)}pp
-    ${pp?.ignored > 0 ? `Skipped: ${pp?.ignored}` : ''}
-    `,
-                    inline: true
-                },
-                ]);
-                if (this.params.all) {
-                    Embed.addFields([
-                        {
-                            name: 'Total PP',
-                            value: totpp,
-                            inline: true
-                        },
-                        {
-                            name: '(Weighted)',
-                            value: weighttotpp,
-                            inline: true
-                        },
-                    ]);
-                }
-            }
+            embed.setDescription(`${helper.calculate.separateNum(scoresdata.length)} scores found\n${this.params.reachedMaxCount ? 'Only first 100 scores are calculated' : ''}`);
         }
 
-        this.ctn.embeds = [Embed];
+        await this.setEmbed(embed, scoresdata);
+
+        this.ctn.embeds = [embed];
         this.ctn.components = [buttons];
 
         this.send();
     }
+    async setEmbed(embed: Discord.EmbedBuilder, scoresdata: helper.osuapi.types_v2.Score[]) {
+        const mappers = helper.calculate.findMode(scoresdata.map(x => x.beatmapset.creator));
+        const mods = helper.calculate.findMode(scoresdata.map(x => {
+            return x.mods.length == 0 ?
+                'NM' :
+                x.mods.map(x => x.acronym).join('');
+        }));
+        const grades = helper.calculate.findMode(scoresdata.map(x => x.rank));
+        const acc = helper.calculate.stats(scoresdata.map(x => x.accuracy));
+        const combo = helper.calculate.stats(scoresdata.map(x => x.max_combo));
+        let pp = helper.calculate.stats(scoresdata.map(x => x.pp));
+        let totpp = '';
+        let weighttotpp = '';
 
+        if (this.params.all) {
+            //do pp calc
+            const calculations: rosu.PerformanceAttributes[] = [];
+            for (const score of scoresdata) {
+                calculations.push(
+                    await helper.performance.calcScore({
+                        mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+                        mode: score.ruleset_id,
+                        mapid: score.beatmap.id,
+                        stats: score.statistics,
+                        accuracy: score.accuracy,
+                        maxcombo: score.max_combo,
+                        mapLastUpdated: new Date(score.beatmap.last_updated)
+                    }));
+            }
+
+            pp = helper.calculate.stats(calculations.map(x => x.pp));
+            calculations.sort((a, b) => b.pp - a.pp);
+
+            const ppcalc = {
+                total: calculations.map(x => x.pp).reduce((a, b) => a + b, 0),
+                acc: calculations.map(x => x.ppAccuracy).reduce((a, b) => a + b, 0),
+                aim: calculations.map(x => x.ppAim).reduce((a, b) => a + b, 0),
+                diff: calculations.map(x => x.ppDifficulty).reduce((a, b) => a + b, 0),
+                speed: calculations.map(x => x.ppSpeed).reduce((a, b) => a + b, 0),
+            };
+            const weightppcalc = {
+                total: helper.calculate.weightPerformance(calculations.map(x => x.pp)).reduce((a, b) => a + b, 0),
+                acc: helper.calculate.weightPerformance(calculations.map(x => x.ppAccuracy)).reduce((a, b) => a + b, 0),
+                aim: helper.calculate.weightPerformance(calculations.map(x => x.ppAim)).reduce((a, b) => a + b, 0),
+                diff: helper.calculate.weightPerformance(calculations.map(x => x.ppDifficulty)).reduce((a, b) => a + b, 0),
+                speed: helper.calculate.weightPerformance(calculations.map(x => x.ppSpeed)).reduce((a, b) => a + b, 0),
+            };
+            totpp = `Total: ${ppcalc.total.toFixed(2)}`;
+            ppcalc.acc ? totpp += `\nAccuracy: ${ppcalc.acc.toFixed(2)}` : '';
+            ppcalc.aim ? totpp += `\nAim: ${ppcalc.aim.toFixed(2)}` : '';
+            ppcalc.diff ? totpp += `\nDifficulty: ${ppcalc.diff.toFixed(2)}` : '';
+            ppcalc.speed ? totpp += `\nSpeed: ${ppcalc.speed.toFixed(2)}` : '';
+
+            weighttotpp = `Total: ${weightppcalc.total.toFixed(2)}`;
+            ppcalc.acc ? weighttotpp += `\nAccuracy: ${weightppcalc.acc.toFixed(2)}` : '';
+            ppcalc.aim ? weighttotpp += `\nAim: ${weightppcalc.aim.toFixed(2)}` : '';
+            ppcalc.diff ? weighttotpp += `\nDifficulty: ${weightppcalc.diff.toFixed(2)}` : '';
+            ppcalc.speed ? weighttotpp += `\nSpeed: ${weightppcalc.speed.toFixed(2)}` : '';
+        }
+        if (this.input.type == 'button') {
+            let mappersStr = '';
+            for (let i = 0; i < mappers.length; i++) {
+                mappersStr += `#${i + 1}. ${mappers[i].string} - ${helper.calculate.separateNum(mappers[i].count)} | ${mappers[i].percentage.toFixed(2)}%\n`;
+            }
+            let modsStr = '';
+            for (let i = 0; i < mods.length; i++) {
+                modsStr += `#${i + 1}. ${mods[i].string} - ${helper.calculate.separateNum(mods[i].count)} | ${mods[i].percentage.toFixed(2)}%\n`;
+            }
+            let gradesStr = '';
+            for (let i = 0; i < grades.length; i++) {
+                gradesStr += `#${i + 1}. ${grades[i].string} - ${helper.calculate.separateNum(grades[i].count)} | ${grades[i].percentage.toFixed(2)}%\n`;
+            }
+
+            // const Mapperspath = `${helper.path.cache}/commandData/${input.id}Mappers.txt`;
+            // const Modspath = `${helper.path.cache}/commandData/${input.id}Mods.txt`;
+            // const Rankspath = `${helper.path.cache}/commandData/${input.id}Ranks.txt`;
+
+            // fs.writeFileSync(Mapperspath, mappersStr, 'utf-8');
+            // fs.writeFileSync(Modspath, modsStr, 'utf-8');
+            // fs.writeFileSync(Rankspath, gradesStr, 'utf-8');
+            // useFiles = [Mapperspath, Modspath, Rankspath];
+        } else {
+            let mappersStr = '';
+            for (let i = 0; i < mappers.length && i < 5; i++) {
+                mappersStr += `#${i + 1}. ${mappers[i].string} - ${helper.calculate.separateNum(mappers[i].count)} | ${mappers[i].percentage.toFixed(2)}%\n`;
+            }
+            let modsStr = '';
+            for (let i = 0; i < mods.length && i < 5; i++) {
+                modsStr += `#${i + 1}. ${mods[i].string} - ${helper.calculate.separateNum(mods[i].count)} | ${mods[i].percentage.toFixed(2)}%\n`;
+            }
+            let gradesStr = '';
+            for (let i = 0; i < grades.length && i < 5; i++) {
+                gradesStr += `#${i + 1}. ${grades[i].string} - ${helper.calculate.separateNum(grades[i].count)} | ${grades[i].percentage.toFixed(2)}%\n`;
+            }
+
+
+            embed.setFields([{
+                name: 'Mappers',
+                value: mappersStr.length == 0 ?
+                    'No data available' :
+                    mappersStr,
+                inline: true,
+            },
+            {
+                name: 'Mods',
+                value: modsStr.length == 0 ?
+                    'No data available' :
+                    modsStr,
+                inline: true
+            },
+            {
+                name: 'Ranks',
+                value: gradesStr.length == 0 ?
+                    'No data available' :
+                    gradesStr,
+                inline: true
+            },
+            {
+                name: 'Accuracy',
+                value: `
+Highest: ${(acc?.highest * 100)?.toFixed(2)}%
+Lowest: ${(acc?.lowest * 100)?.toFixed(2)}%
+Average: ${(acc?.mean * 100)?.toFixed(2)}%
+Median: ${(acc?.median * 100)?.toFixed(2)}%
+${acc?.ignored > 0 ? `Skipped: ${acc?.ignored}` : ''}
+`,
+                inline: true
+            },
+            {
+                name: 'Combo',
+                value: `
+                Highest: ${combo?.highest}
+                Lowest: ${combo?.lowest}
+                Average: ${Math.floor(combo?.mean)}
+                Median: ${combo?.median}
+                ${combo?.ignored > 0 ? `Skipped: ${combo?.ignored}` : ''}
+                `,
+                inline: true
+            },
+            {
+                name: 'PP',
+                value: `
+Highest: ${pp?.highest?.toFixed(2)}pp
+Lowest: ${pp?.lowest?.toFixed(2)}pp
+Average: ${pp?.mean?.toFixed(2)}pp
+Median: ${pp?.median?.toFixed(2)}pp
+${pp?.ignored > 0 ? `Skipped: ${pp?.ignored}` : ''}
+`,
+                inline: true
+            },
+            ]);
+            if (this.params.all) {
+                embed.addFields([
+                    {
+                        name: 'Total PP',
+                        value: totpp,
+                        inline: true
+                    },
+                    {
+                        name: '(Weighted)',
+                        value: weighttotpp,
+                        inline: true
+                    },
+                ]);
+            }
+        }
+
+    }
 
 }
 

@@ -171,7 +171,8 @@ client.once('ready', () => {
     helper.vars.trackDb.sync();
     helper.vars.statsCache.sync();
     const currentDate = new Date();
-    console.log(`
+
+helper.log.stdout(`
 ====================================================
 BOT IS NOW ONLINE
 ----------------------------------------------------
@@ -182,8 +183,7 @@ Time (epoch, ms): ${currentDate.getTime()}
 Client:           ${client.user?.tag} 
 Client ID:        ${client.user?.id}
 ====================================================
-`);
-
+`)
     if (!fs.existsSync(`${helper.path.precomp}/config/osuauth.json`)) {
         helper.log.stdout(`Creating ${helper.path.precomp}/config/osuauth.json`);
         fs.writeFileSync(`${helper.path.precomp}/config/osuauth.json`,
