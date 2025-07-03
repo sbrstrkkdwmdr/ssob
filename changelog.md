@@ -6,15 +6,16 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
-### Fixed
-
-- remove methods and commands from helper module (circular refs)
-- move commands to separate helper module
-
 ### Changed
 
-- updated osumodcalculator
-- convert command handlers into classes
+-   updated osumodcalculator
+-   convert command handlers into classes
+
+### Refactor
+
+-   remove methods and commands from helper module (circular refs)
+-   move commands to separate helper module
+-   `Map` split `execute()` into multiple smaller methods
 
 ## [5.2.0] - 2025-07-02
 
@@ -47,7 +48,7 @@
 -   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
 -   `MapScores` add `-b` and `-map` params to specify map (map url still works)
 -   move `ServerLeaderboard` to `osu_other` (same as in command data)
-- `ServerLeaderboard` slightly change spacing
+-   `ServerLeaderboard` slightly change spacing
 
 ### Added
 
@@ -62,7 +63,7 @@
 -   unused API stuff
 -   unused files from old versions
 -   `tz` arg in `Info`
-- `Requested by` sections on `Map`, `Profile`, `MapScores`, `MapLeaderboard`
+-   `Requested by` sections on `Map`, `Profile`, `MapScores`, `MapLeaderboard`
 
 ### BREAKING
 

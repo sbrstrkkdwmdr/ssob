@@ -269,6 +269,69 @@ export class Map extends OsuCommand {
             }
         }
 
+        if (this.checkNullParams()) {
+            return;
+        }
+
+        const inputModalDiff = new Discord.StringSelectMenuBuilder()
+            .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-diff`)
+            .setPlaceholder('Select a difficulty');
+        const inputModalSearch = new Discord.StringSelectMenuBuilder()
+            .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
+            .setPlaceholder('Select a map');
+
+        if (this.input.type == 'interaction') {
+            this.ctn.content = 'Loading...';
+            this.send();
+            this.voidcontent();
+            this.ctn.edit = true;
+        }
+
+        if (await this.checkQueryType(inputModalSearch)) {
+            return;
+        }
+
+        this.setModalDifficulty(inputModalDiff);
+
+        if (this.params.showBg) {
+            this.execute_bg();
+        } else {
+            this.execute_map(buttons, inputModalDiff, inputModalSearch);
+        }
+
+        data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+            {
+                id: `${this.map.id}`,
+                apiData: null,
+                mods: null,
+                mode: this.params.forceMode
+            }
+        );
+        this.send();
+    }
+    map: osuapi.types_v2.BeatmapExtended;
+    mapset: osuapi.types_v2.BeatmapsetExtended;
+
+    async getMapSet(mapsetid: number) {
+        let bmsdata: osuapi.types_v2.BeatmapsetExtended;
+        if (data.findFile(mapsetid, `bmsdata`) &&
+            !('error' in data.findFile(mapsetid, `bmsdata`)) &&
+            this.input.buttonType != 'Refresh') {
+            bmsdata = data.findFile(mapsetid, `bmsdata`);
+        } else {
+            bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
+        }
+        data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
+        if (bmsdata?.hasOwnProperty('error')) {
+            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
+            return;
+        }
+        data.storeFile(bmsdata, mapsetid, `bmsdata`);
+
+        return bmsdata;
+    }
+
+    checkNullParams() {
         if (!this.params.mapid && !this.params.maptitleq) {
             const temp = this.getLatestMap();
             this.params.mapid = +temp.mapid;
@@ -301,29 +364,17 @@ export class Map extends OsuCommand {
         }
         if (this.params.mapid == 0 && !this.params.maptitleq) {
             commandTools.missingPrevID_map(this.input, 'map');
-            return;
+            return true;
         }
-
-        const inputModalDiff = new Discord.StringSelectMenuBuilder()
-            .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-diff`)
-            .setPlaceholder('Select a difficulty');
-        const inputModalSearch = new Discord.StringSelectMenuBuilder()
-            .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
-            .setPlaceholder('Select a map');
-
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
-
+        return false;
+    }
+    async checkQueryType(inputModalSearch: Discord.StringSelectMenuBuilder) {
         if (this.params.maptitleq == null) {
             try {
                 const m = await this.getMap(this.params.mapid);
                 this.map = m;
             } catch (e) {
-                return;
+                return true;
             }
 
             try {
@@ -406,7 +457,8 @@ export class Map extends OsuCommand {
                 return;
             }
         }
-
+    }
+    setModalDifficulty(inputModalDiff: Discord.StringSelectMenuBuilder) {
         if (typeof this.mapset?.beatmaps == 'undefined' || this.mapset?.beatmaps?.length < 2) {
             inputModalDiff.addOptions(
                 new Discord.StringSelectMenuOptionBuilder()
@@ -438,690 +490,562 @@ export class Map extends OsuCommand {
                 );
             }
         }
-
-        if (this.params.showBg) {
-            const url = osuapi.other.beatmapImages(this.map.beatmapset_id);
-            const embed = new Discord.EmbedBuilder()
-                .setTitle('Beatmap images')
-                .addFields([
-                    {
-                        name: 'Thumbnail (4:3)',
-                        value: `${url.thumbnail}\n\n${url.thumbnailLarge}`,
-                        inline: true
-                    },
-                    {
-                        name: 'Full/Raw',
-                        value: `${url.full}\n\n${url.raw}`,
-                        inline: true
-                    },
-                    {
-                        name: 'Cover (18:5)',
-                        value: `${url.cover}\n\n${url.cover2x}`,
-                        inline: true
-                    },
-                    {
-                        name: 'Card (20:7)',
-                        value: `${url.card}\n\n${url.card2x}`,
-                        inline: true
-                    },
-                    {
-                        name: 'List (1:1)',
-                        value: `${url.list}\n\n${url.list2x}`,
-                        inline: true
-                    },
-                    {
-                        name: 'Slimcover (16:3)',
-                        value: `${url.slimcover}\n\n${url.slimcover2x}`,
-                        inline: true
-                    },
-                ])
-                .setImage(url.full);
-            this.ctn.embeds = [embed];
-            this.ctn.edit = true;
-        } else {
-            //parsing maps
-
-            if (this.params.mapmods == null) {
-                this.params.mapmods = [];
-                this.#apiMods = [];
-            }
-            else {
-                this.params.mapmods = osumodcalc.mod.fix(this.params.mapmods, this.map.mode);
-                this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
-            }
-
-            //converts
-            let useMapdata: osuapi.types_v2.BeatmapExtended = this.map;
-            let successConvert: boolean = false;
-            if (this.params.forceMode && this.params.forceMode != this.map.mode && this.params.forceMode != 'osu') {
-                for (const beatmap of this.mapset.converts) {
-                    if (beatmap.mode == this.params.forceMode && beatmap.id == this.map.id) {
-                        useMapdata = beatmap;
-                        successConvert = true;
-                        break;
-                    }
-                }
-            }
-
-            let statusimg = helper.emojis.rankedstatus.graveyard;
-            switch (useMapdata.status) {
-                case 'ranked':
-                    statusimg = helper.emojis.rankedstatus.ranked;
-                    break;
-                case 'approved': case 'qualified':
-                    statusimg = helper.emojis.rankedstatus.approved;
-                    break;
-                case 'loved':
-                    statusimg = helper.emojis.rankedstatus.loved;
-                    break;
-            }
-
-            if (this.params.customCS == 'current' || isNaN(+this.params.customCS)) {
-                this.params.customCS = useMapdata.cs;
-            }
-            if (this.params.customAR == 'current' || isNaN(+this.params.customAR)) {
-                this.params.customAR = useMapdata.ar;
-            }
-            if (this.params.customOD == 'current' || isNaN(+this.params.customOD)) {
-                this.params.customOD = useMapdata.accuracy;
-            }
-            if (this.params.customHP == 'current' || isNaN(+this.params.customHP)) {
-                this.params.customHP = useMapdata.drain;
-            }
-
-            let hitlength = useMapdata.hit_length;
-
-            const allvals = osumodcalc.stats.modded({
-                cs: this.params.customCS,
-                ar: this.params.customAR,
-                od: this.params.customOD,
-                hp: this.params.customHP,
-                bpm: this.params.overrideBpm ?? useMapdata.bpm,
-                songLength: hitlength
-            }, this.params.mapmods,
-                this?.params?.overrideSpeed ?? undefined
-            );
-
-
-            const mapimg = helper.emojis.gamemodes[useMapdata.mode];
-
-            let ppComputed: rosu.PerformanceAttributes[];
-            let pphd: rosu.PerformanceAttributes;
-            let pphr: rosu.PerformanceAttributes;
-            let ppdt: rosu.PerformanceAttributes;
-            let pphdhr: rosu.PerformanceAttributes;
-            let pphddt: rosu.PerformanceAttributes;
-            let pphddthr: rosu.PerformanceAttributes;
-            let ppissue: string;
-            let totaldiff: string | number = useMapdata.difficulty_rating;
-            try {
-                ppComputed = await performance.calcMap({
-                    mods: this.params.mapmods,
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    mapid: useMapdata.id,
-                    clockRate: this.params.overrideSpeed,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                pphd = await performance.calcFullCombo({
-                    mapid: useMapdata.id,
-                    mods: ['HD'],
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    accuracy: 100,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                pphr = await performance.calcFullCombo({
-                    mapid: useMapdata.id,
-                    mods: ['HR'],
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    accuracy: 100,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                ppdt = await performance.calcFullCombo({
-                    mapid: useMapdata.id,
-                    mods: ['DT'],
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    accuracy: 100,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                pphdhr = await performance.calcFullCombo({
-                    mapid: useMapdata.id,
-                    mods: ['HD', 'HR'],
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    accuracy: 100,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                pphddt = await performance.calcFullCombo({
-                    mapid: useMapdata.id,
-                    mods: ['HD', 'DT'],
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    accuracy: 100,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                pphddthr = await performance.calcFullCombo({
-                    mapid: useMapdata.id,
-                    mods: ['HD', 'DT', 'HR'],
-                    mode: useMapdata.mode_int as number as rosu.GameMode,
-                    accuracy: 100,
-                    customCS: this.params.customCS,
-                    customAR: this.params.customAR,
-                    customOD: this.params.customOD,
-                    customHP: this.params.customHP,
-                    mapLastUpdated: new Date(useMapdata.last_updated)
-                });
-                ppissue = '';
-                try {
-                    totaldiff = useMapdata.difficulty_rating.toFixed(2) != ppComputed[0].difficulty.stars?.toFixed(2) ?
-                        `${useMapdata.difficulty_rating.toFixed(2)}=>${ppComputed[0].difficulty.stars?.toFixed(2)}` :
-                        `${useMapdata.difficulty_rating.toFixed(2)}`;
-                } catch (error) {
-                    totaldiff = useMapdata.difficulty_rating;
-                }
-                data.debug(ppComputed, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
-
-            } catch (error) {
-                log.stdout(error);
-                ppissue = 'Error - pp could not be calculated';
-                const tstmods = this.params.mapmods;
-
-                if (tstmods.includes('EZ') || tstmods.includes('HR')) {
-                    ppissue += '\nInvalid mod combinations: EZ + HR';
-                }
-                if ((tstmods.includes('DT') || tstmods.includes('NC')) && tstmods.includes('HT')) {
-                    ppissue += '\nInvalid mod combinations: DT/NC + HT';
-                }
-                const ppComputedTemp = performance.template(useMapdata);
-                ppComputed = [
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                    ppComputedTemp,
-                ];
-                pphd = ppComputedTemp;
-                pphr = ppComputedTemp;
-                ppdt = ppComputedTemp;
-                pphdhr = ppComputedTemp;
-                pphddt = ppComputedTemp;
-                pphddthr = ppComputedTemp;
-            }
-            const baseCS = allvals.cs != useMapdata.cs ? `${useMapdata.cs}=>${allvals.cs}` : allvals.cs;
-            const baseAR = allvals.ar != useMapdata.ar ? `${useMapdata.ar}=>${allvals.ar}` : allvals.ar;
-            const baseOD = allvals.od != useMapdata.accuracy ? `${useMapdata.accuracy}=>${allvals.od}` : allvals.od;
-            const baseHP = allvals.hp != useMapdata.drain ? `${useMapdata.drain}=>${allvals.hp}` : allvals.hp;
-            const baseBPM = useMapdata.bpm * (this.params.overrideSpeed ?? 1) != useMapdata.bpm ? `${useMapdata.bpm}=>${useMapdata.bpm * (this.params.overrideSpeed ?? 1)}` : useMapdata.bpm;
-
-            let basicvals = `CS${baseCS}\n AR${baseAR}\n OD${baseOD}\n HP${baseHP}\n`;
-
-            const mapname = formatters.parseUnicodeStrings({
-                title: this.map.beatmapset.title,
-                artist: this.map.beatmapset.artist,
-                title_unicode: this.map.beatmapset.title_unicode,
-                artist_unicode: this.map.beatmapset.artist_unicode,
-                ignore: {
-                    artist: false,
-                    title: false
-                }
-            }, 1);
-            const showMods =
-                this.params.mapmods && this.params.mapmods.length > 0 ?
-                    ' +' + this.params.mapmods.join('') :
-                    '';
-
-            const maptitle: string = `\`${mapname} [${this.map.version}]\`${showMods}`;
-            const Embed = new Discord.EmbedBuilder()
-                .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
-                .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
-                .setTitle(maptitle);
-            const embeds: Discord.EmbedBuilder[] = [];
-            Embed.setColor(formatters.difficultyColour(+totaldiff).dec);
-            if (this.params.isppCalc) {
-                let extras = '';
-
-                switch (useMapdata.mode) {
-                    case 'osu': {
-                        extras = `
-        ---===SS===---  
-        \`Aim        ${ppComputed[0].ppAim?.toFixed(3)}\`
-        \`Speed      ${ppComputed[0].ppSpeed?.toFixed(3)}\`
-        \`Acc        ${ppComputed[0].ppAccuracy?.toFixed(3)}\`
-        ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[0].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[0].pp?.toFixed(3)}\`
-        ---===97%===---
-        \`Aim        ${ppComputed[3].ppAim?.toFixed(3)}\`
-        \`Speed      ${ppComputed[3].ppSpeed?.toFixed(3)}\`
-        \`Acc        ${ppComputed[3].ppAccuracy?.toFixed(3)}\`
-        ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[3].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[3].pp?.toFixed(3)}\`
-        ---===95%===---
-        \`Aim        ${ppComputed[5].ppAim?.toFixed(3)}\`
-        \`Speed      ${ppComputed[5].ppSpeed?.toFixed(3)}\`
-        \`Acc        ${ppComputed[5].ppAccuracy?.toFixed(3)}\`
-        ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[5].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[5].pp?.toFixed(3)}\`
-        ---===93%===---
-        \`Aim        ${ppComputed[7].ppAim?.toFixed(3)}\`
-        \`Speed      ${ppComputed[7].ppSpeed?.toFixed(3)}\`
-        \`Acc        ${ppComputed[7].ppAccuracy?.toFixed(3)}\`
-        ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[7].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[7].pp?.toFixed(3)}\`
-        ---===90%===---
-        \`Aim        ${ppComputed[10].ppAim?.toFixed(3)}\`
-        \`Speed      ${ppComputed[10].ppSpeed?.toFixed(3)}\`
-        \`Acc        ${ppComputed[10].ppAccuracy?.toFixed(3)}\`
-        ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[10].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[10].pp?.toFixed(3)}\`
-        `;
-                    }
-                        break;
-                    case 'taiko': {
-                        extras = `
-        ---===SS===---  
-        - Strain: ${ppComputed[0].ppDifficulty}
-        - Acc: ${ppComputed[0].ppAccuracy}
-        - Total: ${ppComputed[0].pp} 
-        ---===97%===---
-        - Strain: ${ppComputed[3].ppDifficulty}
-        - Acc: ${ppComputed[3].ppAccuracy}
-        - Total: ${ppComputed[3].pp} 
-        ---===95%===---
-        - Strain: ${ppComputed[5].ppDifficulty}
-        - Acc: ${ppComputed[5].ppAccuracy}
-        - Total: ${ppComputed[5].pp} 
-        ---===93%===---
-        - Strain: ${ppComputed[7].ppDifficulty}
-        - Acc: ${ppComputed[7].ppAccuracy}
-        - Total: ${ppComputed[7].pp} 
-        ---===90%===---
-        - Strain: ${ppComputed[10].ppDifficulty}
-        - Acc: ${ppComputed[10].ppAccuracy}
-        - Total: ${ppComputed[10].pp}                 
-        `;
-                    }
-                        break;
-                    case 'fruits': {
-                        extras = `
-        ---===SS===---  
-        - Strain: ${ppComputed[0].ppDifficulty}
-        - Total: ${ppComputed[0].pp} 
-        ---===97%===---
-        - Strain: ${ppComputed[3].ppDifficulty}
-        - Total: ${ppComputed[3].pp} 
-        ---===95%===---
-        - Strain: ${ppComputed[5].ppDifficulty}
-        - Total: ${ppComputed[5].pp} 
-        ---===93%===---
-        - Strain: ${ppComputed[7].ppDifficulty}
-        - Total: ${ppComputed[7].pp} 
-        ---===90%===---
-        - Strain: ${ppComputed[10].ppDifficulty}
-        - Total: ${ppComputed[10].pp}                 
-        `;
-                    }
-                        break;
-                    case 'mania': {
-                        extras = `
-        ---===SS===---  
-        - Total: ${ppComputed[0].pp} 
-        ---===97%===---
-        - Total: ${ppComputed[3].pp} 
-        ---===95%===---
-        - Total: ${ppComputed[5].pp} 
-        ---===93%===---
-        - Total: ${ppComputed[7].pp} 
-        ---===90%===---
-        - Total: ${ppComputed[10].pp}                 
-        `;
-                    }
-                        break;
-                }
-
-                Embed
-                    .setTitle(maptitle)
-                    .addFields([
-                        {
-                            name: 'MAP VALUES',
-                            value:
-                                `CS${baseCS} AR${baseAR} OD${baseOD} HP${baseHP} ${totaldiff}⭐\n` +
-                                `${helper.emojis.mapobjs.bpm}${baseBPM} | ` +
-                                `${helper.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${allvals.extra.lengthReadable}(${calculate.secondsToTime(useMapdata.hit_length)})` : allvals.extra.lengthReadable} | ` +
-                                `${ppComputed[0].difficulty.maxCombo ?? this.map.max_combo}x combo\n ` +
-                                `${helper.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n`,
-                            inline: false
-                        },
-                        {
-                            name: 'PP',
-                            value:
-                                `\`SS:    \` ${ppComputed[0].pp?.toFixed(2)} \n ` +
-                                `\`99%:   \` ${ppComputed[1].pp?.toFixed(2)} \n ` +
-                                `\`98%:   \` ${ppComputed[2].pp?.toFixed(2)} \n ` +
-                                `\`97%:   \` ${ppComputed[3].pp?.toFixed(2)} \n ` +
-                                `\`96%:   \` ${ppComputed[4].pp?.toFixed(2)} \n ` +
-                                `\`95%:   \` ${ppComputed[5].pp?.toFixed(2)} \n ` +
-                                `\`94%:   \` ${ppComputed[6].pp?.toFixed(2)} \n ` +
-                                `\`93%:   \` ${ppComputed[7].pp?.toFixed(2)} \n ` +
-                                `\`92%:   \` ${ppComputed[8].pp?.toFixed(2)} \n ` +
-                                `\`91%:   \` ${ppComputed[9].pp?.toFixed(2)} \n ` +
-                                `\`90%:   \` ${ppComputed[10].pp?.toFixed(2)} \n ` +
-                                `---===MODDED===---\n` +
-                                `\`HD:    \` ${pphd.pp?.toFixed(2)} \n ` +
-                                `\`HR:    \` ${pphr.pp?.toFixed(2)} \n ` +
-                                `\`DT:    \` ${ppdt.pp?.toFixed(2)} \n ` +
-                                `\`HDHR:  \` ${pphdhr.pp?.toFixed(2)} \n ` +
-                                `\`HDDT:  \` ${pphddt.pp?.toFixed(2)} \n ` +
-                                `\`HDDTHR:\` ${pphddthr.pp?.toFixed(2)} \n ` +
-
-                                `\n${ppissue}`
-                            ,
-                            inline: true
-                        },
-                        {
-                            name: 'Full',
-                            value: extras,
-                            inline: true
-                        }
-                    ]);
-            } else {
-
-
-                if (this.params.detailed == 2) {
-                    basicvals =
-                        `CS${baseCS} (${allvals.extra.csRadius?.toFixed(2)}r)
-        AR${baseAR}  (${allvals.extra.arMs?.toFixed(2)}ms)
-        OD${baseOD} (300: ${allvals.extra.odMs.hitwindow_300?.toFixed(2)}ms 100: ${allvals.extra.odMs.hitwindow_100?.toFixed(2)}ms 50:  ${allvals.extra.odMs.hitwindow_50?.toFixed(2)}ms)
-        HP${baseHP}`;
-                }
-                const strains = await performance.calcStrains(
-                    {
-                        mapid: this.map.id,
-                        mode: useMapdata.mode_int as number as rosu.GameMode,
-                        mods: this.params.mapmods,
-                        mapLastUpdated: new Date(useMapdata.last_updated),
-                    });
-                try {
-                    data.debug(strains, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
-
-                } catch (error) {
-                    data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
-                }
-                let mapgraph;
-                if (strains) {
-                    const mapgraphInit =
-                        await other.graph(strains.strainTime, strains.value, 'Strains', {
-                            startzero: true,
-                            type: 'bar',
-                            fill: true,
-                            displayLegend: false,
-                            title: 'Strains',
-                            imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-                            blurImg: true,
-                        });
-                    this.ctn.files.push(mapgraphInit.path);
-                    mapgraph = mapgraphInit.filename;
-                } else {
-                    mapgraph = null;
-                }
-                let detailedmapdata = '-';
-                if (this.params.detailed == 2) {
-                    switch (useMapdata.mode) {
-                        case 'osu': {
-                            detailedmapdata = `**SS**: ${ppComputed[0].pp?.toFixed(2)} | Aim: ${ppComputed[0].ppAim?.toFixed(2)} | Speed: ${ppComputed[0].ppSpeed?.toFixed(2)} | Acc: ${ppComputed[0].ppAccuracy?.toFixed(2)} \n ` +
-                                `**99**: ${ppComputed[1].pp?.toFixed(2)} | Aim: ${ppComputed[1].ppAim?.toFixed(2)} | Speed: ${ppComputed[1].ppSpeed?.toFixed(2)} | Acc: ${ppComputed[1].ppAccuracy?.toFixed(2)} \n ` +
-                                `**97**: ${ppComputed[3].pp?.toFixed(2)} | Aim: ${ppComputed[3].ppAim?.toFixed(2)} | Speed: ${ppComputed[3].ppSpeed?.toFixed(2)} | Acc: ${ppComputed[3].ppAccuracy?.toFixed(2)} \n ` +
-                                `**95**: ${ppComputed[5].pp?.toFixed(2)} | Aim: ${ppComputed[5].ppAim?.toFixed(2)} | Speed: ${ppComputed[5].ppSpeed?.toFixed(2)} | Acc: ${ppComputed[5].ppAccuracy?.toFixed(2)} \n ` +
-                                `${ppissue}`;
-                        }
-                            break;
-                        case 'taiko': {
-                            detailedmapdata = `**SS**: ${ppComputed[0].pp?.toFixed(2)} | Acc: ${ppComputed[0].ppAccuracy?.toFixed(2)} | Strain: ${ppComputed[0].ppDifficulty?.toFixed(2)} \n ` +
-                                `**99**: ${ppComputed[1].pp?.toFixed(2)} | Acc: ${ppComputed[1].ppAccuracy?.toFixed(2)} | Strain: ${ppComputed[1]?.ppDifficulty?.toFixed(2)} \n ` +
-                                `**97**: ${ppComputed[3].pp?.toFixed(2)} | Acc: ${ppComputed[3].ppAccuracy?.toFixed(2)} | Strain: ${ppComputed[3]?.ppDifficulty?.toFixed(2)} \n ` +
-                                `**95**: ${ppComputed[5].pp?.toFixed(2)} | Acc: ${ppComputed[5].ppAccuracy?.toFixed(2)} | Strain: ${ppComputed[5]?.ppDifficulty?.toFixed(2)} \n ` +
-                                `${ppissue}`;
-                        }
-                            break;
-                        case 'fruits': {
-                            detailedmapdata = `**SS**: ${ppComputed[0].pp?.toFixed(2)} | Strain: ${ppComputed[0].ppDifficulty?.toFixed(2)} \n ` +
-                                `**99**: ${ppComputed[1].pp?.toFixed(2)} | Strain: ${ppComputed[1]?.ppDifficulty?.toFixed(2)} \n ` +
-                                `**97**: ${ppComputed[3].pp?.toFixed(2)} | Strain: ${ppComputed[3]?.ppDifficulty?.toFixed(2)} \n ` +
-                                `**95**: ${ppComputed[5].pp?.toFixed(2)} | Strain: ${ppComputed[5]?.ppDifficulty?.toFixed(2)} \n ` +
-                                `${ppissue}`;
-                        }
-                            break;
-                        case 'mania': {
-                            detailedmapdata = `**SS**: ${ppComputed[0].pp?.toFixed(2)} \n ` +
-                                `**99**: ${ppComputed[1].pp?.toFixed(2)} \n ` +
-                                `**98**: ${ppComputed[2].pp?.toFixed(2)} \n ` +
-                                `**97**: ${ppComputed[3].pp?.toFixed(2)} \n ` +
-                                `**96**: ${ppComputed[4].pp?.toFixed(2)} \n ` +
-                                `**95**: ${ppComputed[5].pp?.toFixed(2)} \n ` +
-                                `${ppissue}`;
-                        }
-                            break;
-
-                    }
-                }
-
-                const exMapDetails = `${calculate.separateNum(useMapdata.playcount)} plays | ${calculate.separateNum(this.map.beatmapset.play_count)} mapset plays | ${calculate.separateNum(useMapdata.passcount)} passes | ${calculate.separateNum(this.map.beatmapset.favourite_count)} favourites\n` +
-                    `Submitted <t:${new Date(this.map.beatmapset.submitted_date).getTime() / 1000}:R> | Last updated <t:${new Date(this.map.beatmapset.last_updated).getTime() / 1000}:R>
-            ${this.map.status == 'ranked' ?
-                        `Ranked <t:${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
-                    }${useMapdata.status == 'approved' || useMapdata.status == 'qualified' ?
-                        `Approved/Qualified <t: ${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
-                    }${useMapdata.status == 'loved' ?
-                        `Loved <t:${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
-                    }\n` +
-                    `${this.map.beatmapset.video ? '📺' : ''} ${this.map.beatmapset.storyboard ? '🎨' : ''}`;
-
-                Embed
-                    .setAuthor({
-                        name: `Mapped by ${this.map.beatmapset.creator}`,
-                        url: `https://osu.ppy.sh/users/${this.mapset.user_id}`,
-                        iconURL: `${this.mapset.user.avatar_url ?? helper.defaults.images.any.url}`,
-                    })
-                    .addFields([
-                        {
-                            name: 'MAP VALUES',
-                            value:
-                                `${basicvals} ⭐${totaldiff}\n`,
-                            inline: true
-                        },
-                        {
-                            name: helper.defaults.invisbleChar,
-                            value: `${helper.emojis.mapobjs.bpm}${baseBPM}\n` +
-                                `${helper.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n` +
-                                `${helper.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${calculate.secondsToTime(useMapdata.hit_length)}=>${allvals.extra.lengthReadable}` : allvals.extra.lengthReadable}\n`,
-                            inline: true
-                        },
-                        {
-                            name: 'PP',
-                            value:
-                                this.params.detailed != 2 ?
-                                    `SS: ${ppComputed[0].pp?.toFixed(2)} \n ` +
-                                    `99: ${ppComputed[1].pp?.toFixed(2)} \n ` +
-                                    `98: ${ppComputed[2].pp?.toFixed(2)} \n ` +
-                                    `97: ${ppComputed[3].pp?.toFixed(2)} \n ` +
-                                    `96: ${ppComputed[4].pp?.toFixed(2)} \n ` +
-                                    `95: ${ppComputed[5].pp?.toFixed(2)} \n ` +
-                                    `${ppissue}` :
-                                    detailedmapdata
-                            ,
-                            inline: this.params.detailed != 2
-                        },
-                        {
-                            name: 'DOWNLOAD',
-                            value: `[osu!](https://osu.ppy.sh/b/${this.map.id}) | [Chimu](https://api.chimu.moe/v1/download${this.map.beatmapset_id}) | [Beatconnect](https://beatconnect.io/b/${this.map.beatmapset_id}) | [Kitsu](https://kitsu.io/d/${this.map.beatmapset_id})\n` +
-                                `[MAP PREVIEW](https://jmir.xyz/osu/preview.html#${this.map.id})`,
-                            inline: false
-                        }, // [osu!direct](osu://b/${this.map.id}) - discord doesn't support schemes other than http, https and discord
-                        {
-                            name: 'MAP DETAILS',
-                            value: `${statusimg} | ${mapimg} | ${ppComputed[0].difficulty.maxCombo ?? this.map.max_combo}x combo \n ` +
-                                `${this.params.detailed == 2 ?
-                                    exMapDetails
-                                    : ''}`
-
-                            ,
-                            inline: false
-                        }
-                    ]);
-
-                if (this.map?.owners && !(this.map?.owners?.length == 1 && this.map?.owners?.[0].id == this.mapset.user_id)) {
-                    Embed.setDescription("Guest difficulty by " + other.listItems(this.map.owners.map(x => `[${x.username}](https://osu.ppy.sh/u/${x.id})`)));
-                }
-                buttons
-                    .addComponents(
-                        new Discord.ButtonBuilder()
-                            .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.map.user_id}+${this.map.mode}`)
-                            .setStyle(helper.buttons.type.current)
-                            .setEmoji(helper.buttons.label.extras.user),
-                    );
-
-                buttons.addComponents(
-                    new Discord.ButtonBuilder()
-                        .setCustomId(`${helper.versions.releaseDate}-Leaderboard-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                        .setStyle(helper.buttons.type.current)
-                        .setEmoji(helper.buttons.label.extras.leaderboard)
-                );
-
-                if (mapgraph) {
-                    Embed.setImage(`attachment://${mapgraph}.jpg`);
-                }
-                Embed.setColor(formatters.difficultyColour(+totaldiff).dec);
-
-                if (this.params.detailed == 2) {
-                    const failval = useMapdata.failtimes.fail;
-                    const exitval = useMapdata.failtimes.exit;
-                    const numofval = [];
-                    for (let i = 0; i < failval.length; i++) {
-                        numofval.push(`${i}s`);
-                    }
-                    const passInit = await other.graph(numofval, useMapdata.failtimes.fail, 'Fails', {
-                        stacked: true,
-                        type: 'bar',
-                        showAxisX: false,
-                        title: 'Fail times',
-                        imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-                        blurImg: true,
-                    }, [{
-                        data: useMapdata.failtimes.exit,
-                        label: 'Exits',
-                        separateAxis: false,
-                    }]);
-                    this.ctn.files.push(passInit.path);
-
-                    const passurl = passInit.filename;
-                    const passEmbed = new Discord.EmbedBuilder()
-                        .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
-                        .setImage(`attachment://${passurl}.jpg`);
-                    embeds.push(passEmbed);
-                }
-            }
-
-            commandTools.storeButtonArgs(this.input.id, {
-                mapId: this.params.mapid,
-                mode: this.params.forceMode,
-                modsInclude: this.params.mapmods,
-                overrideBpm: this.params.overrideBpm,
-                overrideSpeed: this.params.overrideSpeed,
-                ppCalc: this.params.isppCalc,
-                detailed: this.params.detailed,
-                filterTitle: this.params.maptitleq,
-            });
-
-            embeds.push(Embed);
-            embeds.reverse();
-            data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+    }
+    execute_bg() {
+        const url = osuapi.other.beatmapImages(this.map.beatmapset_id);
+        const embed = new Discord.EmbedBuilder()
+            .setTitle('Beatmap images')
+            .addFields([
                 {
-                    id: `${this.map.id}`,
-                    apiData: null,
-                    mods: this.#apiMods,
-                    mode: this.params.forceMode
-                }
-            );
+                    name: 'Thumbnail (4:3)',
+                    value: `${url.thumbnail}\n\n${url.thumbnailLarge}`,
+                    inline: true
+                },
+                {
+                    name: 'Full/Raw',
+                    value: `${url.full}\n\n${url.raw}`,
+                    inline: true
+                },
+                {
+                    name: 'Cover (18:5)',
+                    value: `${url.cover}\n\n${url.cover2x}`,
+                    inline: true
+                },
+                {
+                    name: 'Card (20:7)',
+                    value: `${url.card}\n\n${url.card2x}`,
+                    inline: true
+                },
+                {
+                    name: 'List (1:1)',
+                    value: `${url.list}\n\n${url.list2x}`,
+                    inline: true
+                },
+                {
+                    name: 'Slimcover (16:3)',
+                    value: `${url.slimcover}\n\n${url.slimcover2x}`,
+                    inline: true
+                },
+            ])
+            .setImage(url.full);
+        this.ctn.embeds = [embed];
+        this.ctn.edit = true;
+    }
+    async execute_map(buttons: Discord.ActionRowBuilder, inputModalDiff: Discord.StringSelectMenuBuilder, inputModalSearch: Discord.StringSelectMenuBuilder) {
+        this.checkMapMods();
 
-            this.ctn.components.push(buttons);
+        //converts
+        let [useMapdata] = this.converts();
 
-            let frmod = inputModalSearch;
-            if (this.params.overwriteModal != null) {
-                frmod = this.params.overwriteModal as Discord.StringSelectMenuBuilder;
-            }
-
-            if (!(inputModalDiff.options.length < 1)) {
-                this.ctn.components.push(new Discord.ActionRowBuilder()
-                    .addComponents(inputModalDiff));
-            }
-            if (!(inputModalSearch.options.length < 1)) {
-                this.ctn.components.push(new Discord.ActionRowBuilder()
-                    .addComponents(frmod));
-            }
-            if (this.params.overwriteModal) {
-
-                this.ctn.components.push(new Discord.ActionRowBuilder()
-                    //@ts-expect-error anycomponentbuilder has properties missing in stringselectmenu  
-                    .addComponents(this.params.overwriteModal));
-            }
-
-            this.ctn.embeds = embeds;
-
+        if (this.params.customCS == 'current' || isNaN(+this.params.customCS)) {
+            this.params.customCS = useMapdata.cs;
         }
+        if (this.params.customAR == 'current' || isNaN(+this.params.customAR)) {
+            this.params.customAR = useMapdata.ar;
+        }
+        if (this.params.customOD == 'current' || isNaN(+this.params.customOD)) {
+            this.params.customOD = useMapdata.accuracy;
+        }
+        if (this.params.customHP == 'current' || isNaN(+this.params.customHP)) {
+            this.params.customHP = useMapdata.drain;
+        }
+
+        let hitlength = useMapdata.hit_length;
+
+        const allvals = osumodcalc.stats.modded({
+            cs: this.params.customCS,
+            ar: this.params.customAR,
+            od: this.params.customOD,
+            hp: this.params.customHP,
+            bpm: this.params.overrideBpm ?? useMapdata.bpm,
+            songLength: hitlength
+        }, this.params.mapmods,
+            this?.params?.overrideSpeed ?? undefined
+        );
+
+        let ppComputed: rosu.PerformanceAttributes[];
+        let ppissue: string;
+        let totaldiff: string = useMapdata.difficulty_rating?.toFixed(2);
+        try {
+            ppComputed = await performance.calcMap({
+                mods: this.params.mapmods,
+                mode: useMapdata.mode_int as number as rosu.GameMode,
+                mapid: useMapdata.id,
+                clockRate: this.params.overrideSpeed,
+                customCS: this.params.customCS,
+                customAR: this.params.customAR,
+                customOD: this.params.customOD,
+                customHP: this.params.customHP,
+                mapLastUpdated: new Date(useMapdata.last_updated)
+            });
+            ppissue = '';
+            try {
+                totaldiff = useMapdata.difficulty_rating.toFixed(2) != ppComputed[0].difficulty.stars?.toFixed(2) ?
+                    `${useMapdata.difficulty_rating.toFixed(2)}=>${ppComputed[0].difficulty.stars?.toFixed(2)}` :
+                    `${useMapdata.difficulty_rating.toFixed(2)}`;
+            } catch (error) {
+                totaldiff = useMapdata.difficulty_rating?.toFixed(2);
+            }
+            data.debug(ppComputed, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
+
+        } catch (error) {
+            log.stdout(error);
+            ppissue = 'Error - pp could not be calculated';
+            const tstmods = this.params.mapmods;
+
+            if (tstmods.includes('EZ') || tstmods.includes('HR')) {
+                ppissue += '\nInvalid mod combinations: EZ + HR';
+            }
+            if ((tstmods.includes('DT') || tstmods.includes('NC')) && tstmods.includes('HT')) {
+                ppissue += '\nInvalid mod combinations: DT/NC + HT';
+            }
+            const ppComputedTemp = performance.template(useMapdata);
+            ppComputed = [
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+                ppComputedTemp,
+            ];
+        }
+        const mapname = formatters.parseUnicodeStrings({
+            title: this.map.beatmapset.title,
+            artist: this.map.beatmapset.artist,
+            title_unicode: this.map.beatmapset.title_unicode,
+            artist_unicode: this.map.beatmapset.artist_unicode,
+            ignore: {
+                artist: false,
+                title: false
+            }
+        }, 1);
+        const showMods =
+            this.params.mapmods && this.params.mapmods.length > 0 ?
+                ' +' + this.params.mapmods.join('') :
+                '';
+
+        const maptitle: string = `\`${mapname} [${this.map.version}]\`${showMods}`;
+        const embed = new Discord.EmbedBuilder()
+            .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
+            .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
+            .setTitle(maptitle);
+        embed.setColor(formatters.difficultyColour(+totaldiff).dec);
+        await this.embedStart(useMapdata, allvals, totaldiff, ppComputed, buttons);
+
+        commandTools.storeButtonArgs(this.input.id, {
+            mapId: this.params.mapid,
+            mode: this.params.forceMode,
+            modsInclude: this.params.mapmods,
+            overrideBpm: this.params.overrideBpm,
+            overrideSpeed: this.params.overrideSpeed,
+            ppCalc: this.params.isppCalc,
+            detailed: this.params.detailed,
+            filterTitle: this.params.maptitleq,
+        });
 
         data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.map.id}`,
                 apiData: null,
-                mods: null,
+                mods: this.#apiMods,
                 mode: this.params.forceMode
             }
         );
-        this.send();
+
+        this.ctn.components.push(buttons);
+
+        let frmod = inputModalSearch;
+        if (this.params.overwriteModal != null) {
+            frmod = this.params.overwriteModal as Discord.StringSelectMenuBuilder;
+        }
+
+        if (!(inputModalDiff.options.length < 1)) {
+            this.ctn.components.push(new Discord.ActionRowBuilder()
+                .addComponents(inputModalDiff));
+        }
+        if (!(inputModalSearch.options.length < 1)) {
+            this.ctn.components.push(new Discord.ActionRowBuilder()
+                .addComponents(frmod));
+        }
+        if (this.params.overwriteModal) {
+
+            this.ctn.components.push(new Discord.ActionRowBuilder()
+                //@ts-expect-error anycomponentbuilder has properties missing in stringselectmenu  
+                .addComponents(this.params.overwriteModal));
+        }
     }
-    map: osuapi.types_v2.BeatmapExtended;
-    mapset: osuapi.types_v2.BeatmapsetExtended;
+    checkMapMods() {
+        if (this.params.mapmods == null) {
+            this.params.mapmods = [];
+            this.#apiMods = [];
+        }
+        else {
+            this.params.mapmods = osumodcalc.mod.fix(this.params.mapmods, this.map.mode);
+            this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
+        }
+    }
+    converts(): [osuapi.types_v2.BeatmapExtended, boolean] {
+        let useMapdata: osuapi.types_v2.BeatmapExtended = this.map;
+        let successConvert: boolean = false;
+        if (this.params.forceMode && this.params.forceMode != this.map.mode && this.params.forceMode != 'osu') {
+            for (const beatmap of this.mapset.converts) {
+                if (beatmap.mode == this.params.forceMode && beatmap.id == this.map.id) {
+                    useMapdata = beatmap;
+                    successConvert = true;
+                    break;
+                }
+            }
+        }
+        return [useMapdata, successConvert];
+    }
+    async perf(mods: osumodcalc.types.Mod[], useMapdata: osuapi.types_v2.BeatmapExtended) {
+        return await performance.calcFullCombo({
+            mapid: useMapdata.id,
+            mods,
+            mode: useMapdata.mode_int as number as rosu.GameMode,
+            accuracy: 100,
+            customCS: +this.params.customCS,
+            customAR: +this.params.customAR,
+            customOD: +this.params.customOD,
+            customHP: +this.params.customHP,
+            mapLastUpdated: new Date(useMapdata.last_updated)
+        });
+    }
+    async embedStart(useMapdata: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[], buttons:Discord.ActionRowBuilder) {
+        const mapname = formatters.parseUnicodeStrings({
+            title: this.map.beatmapset.title,
+            artist: this.map.beatmapset.artist,
+            title_unicode: this.map.beatmapset.title_unicode,
+            artist_unicode: this.map.beatmapset.artist_unicode,
+            ignore: {
+                artist: false,
+                title: false
+            }
+        }, 1);
+        const showMods =
+            this.params.mapmods && this.params.mapmods.length > 0 ?
+                ' +' + this.params.mapmods.join('') :
+                '';
 
-    async getMapSet(mapsetid: number) {
-        let bmsdata: osuapi.types_v2.BeatmapsetExtended;
-        if (data.findFile(mapsetid, `bmsdata`) &&
-            !('error' in data.findFile(mapsetid, `bmsdata`)) &&
-            this.input.buttonType != 'Refresh') {
-            bmsdata = data.findFile(mapsetid, `bmsdata`);
+        const maptitle: string = `\`${mapname} [${this.map.version}]\`${showMods}`;
+        const embed = new Discord.EmbedBuilder()
+            .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
+            .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
+            .setTitle(maptitle);
+        embed.setColor(formatters.difficultyColour(+useMapdata.difficulty_rating).dec);
+        if (this.params.isppCalc) await this.embedPerformance(embed, useMapdata, allvals, totaldiff, ppComputed); else await this.embedMap(embed, useMapdata, allvals, totaldiff, ppComputed, buttons);
+    }
+    async embedMap(embed: Discord.EmbedBuilder, useMapdata: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[], buttons:Discord.ActionRowBuilder) {
+        const strains = await performance.calcStrains(
+            {
+                mapid: this.map.id,
+                mode: useMapdata.mode_int as number as rosu.GameMode,
+                mods: this.params.mapmods,
+                mapLastUpdated: new Date(useMapdata.last_updated),
+            });
+        try {
+            data.debug(strains, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+
+        } catch (error) {
+            data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+        }
+        let mapgraph;
+        if (strains) {
+            const mapgraphInit =
+                await other.graph(strains.strainTime, strains.value, 'Strains', {
+                    startzero: true,
+                    type: 'bar',
+                    fill: true,
+                    displayLegend: false,
+                    title: 'Strains',
+                    imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
+                    blurImg: true,
+                });
+            this.ctn.files.push(mapgraphInit.path);
+            mapgraph = mapgraphInit.filename;
         } else {
-            bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
+            mapgraph = null;
         }
-        data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
-        if (bmsdata?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
-            return;
-        }
-        data.storeFile(bmsdata, mapsetid, `bmsdata`);
 
-        return bmsdata;
+        const exMapDetails = `${calculate.separateNum(useMapdata.playcount)} plays | ${calculate.separateNum(this.map.beatmapset.play_count)} mapset plays | ${calculate.separateNum(useMapdata.passcount)} passes | ${calculate.separateNum(this.map.beatmapset.favourite_count)} favourites\n` +
+            `Submitted <t:${new Date(this.map.beatmapset.submitted_date).getTime() / 1000}:R> | Last updated <t:${new Date(this.map.beatmapset.last_updated).getTime() / 1000}:R>
+        ${this.map.status == 'ranked' ?
+                `Ranked <t:${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
+            }${useMapdata.status == 'approved' || useMapdata.status == 'qualified' ?
+                `Approved/Qualified <t: ${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
+            }${useMapdata.status == 'loved' ?
+                `Loved <t:${Math.floor(new Date(this.map.beatmapset.ranked_date).getTime() / 1000)}:R>` : ''
+            }\n` +
+            `${this.map.beatmapset.video ? '📺' : ''} ${this.map.beatmapset.storyboard ? '🎨' : ''}`;
+
+        embed
+            .setAuthor({
+                name: `Mapped by ${this.map.beatmapset.creator}`,
+                url: `https://osu.ppy.sh/users/${this.mapset.user_id}`,
+                iconURL: `${this.mapset.user.avatar_url ?? helper.defaults.images.any.url}`,
+            })
+            .addFields([
+                {
+                    name: 'MAP VALUES',
+                    value: this.mapstats(useMapdata, allvals, totaldiff),
+                    inline: true
+                },
+                {
+                    name: helper.defaults.invisbleChar,
+                    value: `${helper.emojis.mapobjs.bpm}${useMapdata.bpm * (this.params.overrideSpeed ?? 1) != useMapdata.bpm ? `${useMapdata.bpm}=>${useMapdata.bpm * (this.params.overrideSpeed ?? 1)}` : useMapdata.bpm}\n` +
+                        `${helper.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n` +
+                        `${helper.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${calculate.secondsToTime(useMapdata.hit_length)}=>${allvals.extra.lengthReadable}` : allvals.extra.lengthReadable}\n`,
+                    inline: true
+                },
+                {
+                    name: 'PP',
+                    value:
+                        `SS: ${ppComputed[0].pp?.toFixed(2)} \n ` +
+                        `99: ${ppComputed[1].pp?.toFixed(2)} \n ` +
+                        `98: ${ppComputed[2].pp?.toFixed(2)} \n ` +
+                        `97: ${ppComputed[3].pp?.toFixed(2)} \n ` +
+                        `96: ${ppComputed[4].pp?.toFixed(2)} \n ` +
+                        `95: ${ppComputed[5].pp?.toFixed(2)} \n `
+                    ,
+                    inline: this.params.detailed != 2
+                },
+                {
+                    name: 'DOWNLOAD',
+                    value: `[osu!](https://osu.ppy.sh/b/${this.map.id}) | [Chimu](https://api.chimu.moe/v1/download${this.map.beatmapset_id}) | [Beatconnect](https://beatconnect.io/b/${this.map.beatmapset_id}) | [Kitsu](https://kitsu.io/d/${this.map.beatmapset_id})\n` +
+                        `[MAP PREVIEW](https://jmir.xyz/osu/preview.html#${this.map.id})`,
+                    inline: false
+                }, // [osu!direct](osu://b/${this.map.id}) - discord doesn't support schemes other than http, https and discord
+                {
+                    name: 'MAP DETAILS',
+                    value: `${this.statusEmoji(useMapdata)} | ${helper.emojis.gamemodes[useMapdata.mode]} | ${ppComputed[0].difficulty.maxCombo ?? this.map.max_combo}x combo \n ` +
+                        `${this.params.detailed == 2 ?
+                            exMapDetails
+                            : ''}`
+
+                    ,
+                    inline: false
+                }
+            ]);
+
+        if (this.map?.owners && !(this.map?.owners?.length == 1 && this.map?.owners?.[0].id == this.mapset.user_id)) {
+            embed.setDescription("Guest difficulty by " + other.listItems(this.map.owners.map(x => `[${x.username}](https://osu.ppy.sh/u/${x.id})`)));
+        }
+        buttons
+            .addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.map.user_id}+${this.map.mode}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
+            );
+
+        buttons.addComponents(
+            new Discord.ButtonBuilder()
+                .setCustomId(`${helper.versions.releaseDate}-Leaderboard-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.extras.leaderboard)
+        );
+
+        if (mapgraph) {
+            embed.setImage(`attachment://${mapgraph}.jpg`);
+        }
+        embed.setColor(formatters.difficultyColour(+totaldiff).dec);
+
+        this.ctn.embeds = [embed];
+
+        if (this.params.detailed == 2) {
+            const failval = useMapdata.failtimes.fail;
+            const exitval = useMapdata.failtimes.exit;
+            const numofval = [];
+            for (let i = 0; i < failval.length; i++) {
+                numofval.push(`${i}s`);
+            }
+            const passInit = await other.graph(numofval, useMapdata.failtimes.fail, 'Fails', {
+                stacked: true,
+                type: 'bar',
+                showAxisX: false,
+                title: 'Fail times',
+                imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
+                blurImg: true,
+            }, [{
+                data: useMapdata.failtimes.exit,
+                label: 'Exits',
+                separateAxis: false,
+            }]);
+            this.ctn.files.push(passInit.path);
+
+            const passurl = passInit.filename;
+            const passEmbed = new Discord.EmbedBuilder()
+                .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${useMapdata.mode}/${this.map.id}`)
+                .setImage(`attachment://${passurl}.jpg`);
+            this.ctn.embeds.push(passEmbed);
+        }
+    }
+    async embedPerformance(embed: Discord.EmbedBuilder, useMapdata: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[]) {
+        let extras = '';
+
+        switch (useMapdata.mode) {
+            case 'osu': {
+                extras = `
+---===SS===---  
+\`Aim        ${ppComputed[0].ppAim?.toFixed(3)}\`
+\`Speed      ${ppComputed[0].ppSpeed?.toFixed(3)}\`
+\`Acc        ${ppComputed[0].ppAccuracy?.toFixed(3)}\`
+${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[0].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[0].pp?.toFixed(3)}\`
+---===97%===---
+\`Aim        ${ppComputed[3].ppAim?.toFixed(3)}\`
+\`Speed      ${ppComputed[3].ppSpeed?.toFixed(3)}\`
+\`Acc        ${ppComputed[3].ppAccuracy?.toFixed(3)}\`
+${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[3].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[3].pp?.toFixed(3)}\`
+---===95%===---
+\`Aim        ${ppComputed[5].ppAim?.toFixed(3)}\`
+\`Speed      ${ppComputed[5].ppSpeed?.toFixed(3)}\`
+\`Acc        ${ppComputed[5].ppAccuracy?.toFixed(3)}\`
+${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[5].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[5].pp?.toFixed(3)}\`
+---===93%===---
+\`Aim        ${ppComputed[7].ppAim?.toFixed(3)}\`
+\`Speed      ${ppComputed[7].ppSpeed?.toFixed(3)}\`
+\`Acc        ${ppComputed[7].ppAccuracy?.toFixed(3)}\`
+${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[7].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[7].pp?.toFixed(3)}\`
+---===90%===---
+\`Aim        ${ppComputed[10].ppAim?.toFixed(3)}\`
+\`Speed      ${ppComputed[10].ppSpeed?.toFixed(3)}\`
+\`Acc        ${ppComputed[10].ppAccuracy?.toFixed(3)}\`
+${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[10].ppFlashlight?.toFixed(3)}\`\n` : ''}\`Total      ${ppComputed[10].pp?.toFixed(3)}\`
+`;
+            }
+                break;
+            case 'taiko': {
+                extras = `
+---===SS===---  
+- Strain: ${ppComputed[0].ppDifficulty}
+- Acc: ${ppComputed[0].ppAccuracy}
+- Total: ${ppComputed[0].pp} 
+---===97%===---
+- Strain: ${ppComputed[3].ppDifficulty}
+- Acc: ${ppComputed[3].ppAccuracy}
+- Total: ${ppComputed[3].pp} 
+---===95%===---
+- Strain: ${ppComputed[5].ppDifficulty}
+- Acc: ${ppComputed[5].ppAccuracy}
+- Total: ${ppComputed[5].pp} 
+---===93%===---
+- Strain: ${ppComputed[7].ppDifficulty}
+- Acc: ${ppComputed[7].ppAccuracy}
+- Total: ${ppComputed[7].pp} 
+---===90%===---
+- Strain: ${ppComputed[10].ppDifficulty}
+- Acc: ${ppComputed[10].ppAccuracy}
+- Total: ${ppComputed[10].pp}                 
+`;
+            }
+                break;
+            case 'fruits': {
+                extras = `
+---===SS===---  
+- Strain: ${ppComputed[0].ppDifficulty}
+- Total: ${ppComputed[0].pp} 
+---===97%===---
+- Strain: ${ppComputed[3].ppDifficulty}
+- Total: ${ppComputed[3].pp} 
+---===95%===---
+- Strain: ${ppComputed[5].ppDifficulty}
+- Total: ${ppComputed[5].pp} 
+---===93%===---
+- Strain: ${ppComputed[7].ppDifficulty}
+- Total: ${ppComputed[7].pp} 
+---===90%===---
+- Strain: ${ppComputed[10].ppDifficulty}
+- Total: ${ppComputed[10].pp}                 
+`;
+            }
+                break;
+            case 'mania': {
+                extras = `
+---===SS===---  
+- Total: ${ppComputed[0].pp} 
+---===97%===---
+- Total: ${ppComputed[3].pp} 
+---===95%===---
+- Total: ${ppComputed[5].pp} 
+---===93%===---
+- Total: ${ppComputed[7].pp} 
+---===90%===---
+- Total: ${ppComputed[10].pp}                 
+`;
+            }
+                break;
+        }
+
+        embed
+            .addFields([
+                {
+                    name: 'MAP VALUES',
+                    value:
+                        this.mapstats(useMapdata, allvals, totaldiff).replaceAll('\n', ' ') + '\n' +
+                        `${helper.emojis.mapobjs.bpm}${useMapdata.bpm * (this.params.overrideSpeed ?? 1) != useMapdata.bpm ? `${useMapdata.bpm}=>${useMapdata.bpm * (this.params.overrideSpeed ?? 1)}` : useMapdata.bpm} | ` +
+                        `${helper.emojis.mapobjs.total_length}${allvals.songLength != useMapdata.hit_length ? `${allvals.extra.lengthReadable}(${calculate.secondsToTime(useMapdata.hit_length)})` : allvals.extra.lengthReadable} | ` +
+                        `${ppComputed[0].difficulty.maxCombo ?? this.map.max_combo}x combo\n ` +
+                        `${helper.emojis.mapobjs.circle}${useMapdata.count_circles} \n${helper.emojis.mapobjs.slider}${useMapdata.count_sliders} \n${helper.emojis.mapobjs.spinner}${useMapdata.count_spinners}\n`,
+                    inline: false
+                },
+                {
+                    name: 'PP',
+                    value:
+                        `\`SS:    \` ${ppComputed[0].pp?.toFixed(2)} \n ` +
+                        `\`99%:   \` ${ppComputed[1].pp?.toFixed(2)} \n ` +
+                        `\`98%:   \` ${ppComputed[2].pp?.toFixed(2)} \n ` +
+                        `\`97%:   \` ${ppComputed[3].pp?.toFixed(2)} \n ` +
+                        `\`96%:   \` ${ppComputed[4].pp?.toFixed(2)} \n ` +
+                        `\`95%:   \` ${ppComputed[5].pp?.toFixed(2)} \n ` +
+                        `\`94%:   \` ${ppComputed[6].pp?.toFixed(2)} \n ` +
+                        `\`93%:   \` ${ppComputed[7].pp?.toFixed(2)} \n ` +
+                        `\`92%:   \` ${ppComputed[8].pp?.toFixed(2)} \n ` +
+                        `\`91%:   \` ${ppComputed[9].pp?.toFixed(2)} \n ` +
+                        `\`90%:   \` ${ppComputed[10].pp?.toFixed(2)} \n ` +
+                        `---===MODDED===---\n` +
+                        `\`HD:    \` ${(await this.perf(['HD'], useMapdata)).pp?.toFixed(2)} \n ` +
+                        `\`HR:    \` ${(await this.perf(['HR'], useMapdata)).pp?.toFixed(2)} \n ` +
+                        `\`DT:    \` ${(await this.perf(['DT'], useMapdata)).pp?.toFixed(2)} \n ` +
+                        `\`HDHR:  \` ${(await this.perf(['HD', 'HR'], useMapdata)).pp?.toFixed(2)} \n ` +
+                        `\`HDDT:  \` ${(await this.perf(['HD', 'DT'], useMapdata)).pp?.toFixed(2)} \n ` +
+                        `\`HDDTHR:\` ${(await this.perf(['HD', 'DT', 'HR'], useMapdata)).pp?.toFixed(2)} \n `
+                    ,
+                    inline: true
+                },
+                {
+                    name: 'Full',
+                    value: extras,
+                    inline: true
+                }
+            ]);
+    }
+    mapstats(useMapdata: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string) {
+        return `CS${allvals.cs != useMapdata.cs ? `${useMapdata.cs}=>${allvals.cs}` : allvals.cs}
+AR${allvals.ar != useMapdata.ar ? `${useMapdata.ar}=>${allvals.ar}` : allvals.ar}OD${allvals.od != useMapdata.accuracy ? `${useMapdata.accuracy}=>${allvals.od}` : allvals.od}
+HP${allvals.hp != useMapdata.drain ? `${useMapdata.drain}=>${allvals.hp}` : allvals.hp}
+⭐${totaldiff}`;
+    }
+    statusEmoji(useMapdata: osuapi.types_v2.BeatmapExtended) {
+        let statusimg = helper.emojis.rankedstatus.graveyard;
+        switch (useMapdata.status) {
+            case 'ranked':
+                statusimg = helper.emojis.rankedstatus.ranked;
+                break;
+            case 'approved': case 'qualified':
+                statusimg = helper.emojis.rankedstatus.approved;
+                break;
+            case 'loved':
+                statusimg = helper.emojis.rankedstatus.loved;
+                break;
+        }
+        return statusimg;
     }
 }
 
