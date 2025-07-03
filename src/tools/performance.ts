@@ -190,7 +190,7 @@ export async function calcStrains(input: {
     const straintimes = [];
     const totalval = [];
 
-    for (let i = 0; i < (strainValues?.aim ?? strainValues?.color ?? strainValues?.movement ?? strainValues?.strains).length; i++) {
+    for (let i = 0; i < (strainValues?.aim ?? strainValues?.color ?? strainValues?.movement ?? strainValues?.strains ?? []).length; i++) {
         const offset = i;
         let curval: number;
         switch (input.mode) {

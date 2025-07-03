@@ -533,7 +533,7 @@ export class Profile extends OsuCommand {
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
-        this.params.searchid = (interaction?.member?.user ?? interaction?.user).id;
+        this.params.searchid = (interaction?.member?.user ?? interaction.user).id;
 
         this.params.user = interaction.options.getString('user');
         this.params.detailed = interaction.options.getBoolean('detailed') ? 2 : 1;
