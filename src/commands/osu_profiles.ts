@@ -1,6 +1,12 @@
 import Discord from 'discord.js';
 import { bws } from 'osumodcalculator/dist/extra';
 import * as helper from '../helper';
+import * as calculate from '../tools/calculate';
+import * as commandTools from '../tools/commands';
+import * as data from '../tools/data';
+import * as formatters from '../tools/formatters';
+import * as osuapi from '../tools/osuapi';
+import * as other from '../tools/other';
 import { OsuCommand } from './command';
 
 export class Badges extends OsuCommand {
@@ -19,9 +25,9 @@ export class Badges extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        this.input.args = helper.commandTools.cleanArgs(this.input.args);
+        this.input.args = commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.commandTools.fetchUser(this.input.args);
+        const usertemp = commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -55,7 +61,7 @@ export class Badges extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: helper.osuapi.types_v2.UserExtended;
+        let osudata: osuapi.types_v2.UserExtended;
 
         try {
             const t = await this.getProfile(this.params.user, 'osu');
@@ -80,7 +86,7 @@ export class Badges extends OsuCommand {
             .setDescription(
                 'Current number of badges: ' + badgecount
             );
-        helper.formatter.userAuthor(osudata, embed);
+        formatters.userAuthor(osudata, embed);
 
         const fields: Discord.EmbedField[] = [];
 
@@ -124,9 +130,9 @@ export class BadgeWeightSeed extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        this.input.args = helper.commandTools.cleanArgs(this.input.args);
+        this.input.args = commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.commandTools.fetchUser(this.input.args);
+        const usertemp = commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -160,7 +166,7 @@ export class BadgeWeightSeed extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: helper.osuapi.types_v2.UserExtended;
+        let osudata: osuapi.types_v2.UserExtended;
 
         try {
             const t = await this.getProfile(this.params.user, 'osu');
@@ -181,7 +187,7 @@ export class BadgeWeightSeed extends OsuCommand {
         if (osudata?.statistics?.global_rank) {
             res = this.response(osudata?.statistics?.global_rank, osudata?.badges?.length ?? 0);
         } else if (osudata?.statistics?.pp) {
-            const estRank = await helper.data.getRankPerformance('pp->rank', osudata?.statistics?.pp ?? 0, 'osu');
+            const estRank = await data.getRankPerformance('pp->rank', osudata?.statistics?.pp ?? 0, 'osu');
             res = '***Using an estimated rank***\n\n' + this.response(estRank.value, osudata?.badges?.length ?? 0);
         }
 
@@ -191,7 +197,7 @@ export class BadgeWeightSeed extends OsuCommand {
             .setDescription(res)
             .setFooter({ text: 'Values are rounded' });
 
-        helper.formatter.userAuthor(osudata, embed);
+        formatters.userAuthor(osudata, embed);
 
         this.ctn.embeds = [embed];
         this.ctn.components = [cmdbuttons];
@@ -227,8 +233,8 @@ export class BadgeWeightSeed extends OsuCommand {
 export class Ranking extends OsuCommand {
     declare protected params: {
         country: string;
-        mode: helper.osuapi.types_v2.GameMode;
-        type: helper.osuapi.types_v2.RankingType;
+        mode: osuapi.types_v2.GameMode;
+        type: osuapi.types_v2.RankingType;
         page: number;
         spotlight: number;
         parse: boolean;
@@ -249,49 +255,49 @@ export class Ranking extends OsuCommand {
 
     }
     async setParamsMsg() {
-        const pageArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
+        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
         if (pageArgFinder.found) {
             this.params.page = pageArgFinder.output;
             this.input.args = pageArgFinder.args;
         }
         {
-            const temp = await helper.commandTools.parseArgsMode(this.input);
+            const temp = await commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
         if (this.input.args.includes('-parse')) {
             this.params.parse = true;
-            const temp = helper.commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
+            const temp = commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
             this.params.parseId = temp.value;
             this.input.args = temp.newArgs;
         }
 
-        this.input.args = helper.commandTools.cleanArgs(this.input.args);
+        this.input.args = commandTools.cleanArgs(this.input.args);
 
         this.input.args[0] && this.input.args[0].length == 2 ? this.params.country = this.input.args[0].toUpperCase() : this.params.country = 'ALL';
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
         this.params.country = interaction.options.getString('country') ?? 'ALL';
-        this.params.mode = (interaction.options.getString('mode') ?? 'osu') as helper.osuapi.types_v2.GameMode;
-        this.params.type = (interaction.options.getString('type') ?? 'performance') as helper.osuapi.types_v2.RankingType;
+        this.params.mode = (interaction.options.getString('mode') ?? 'osu') as osuapi.types_v2.GameMode;
+        this.params.type = (interaction.options.getString('type') ?? 'performance') as osuapi.types_v2.RankingType;
         this.params.page = interaction.options.getInteger('page') ?? 0;
         this.params.spotlight = interaction.options.getInteger('spotlight') ?? undefined;
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
         const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        const temp = helper.commandTools.getButtonArgs(this.input.id);
+        const temp = commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
                 content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
                 allowedMentions: { repliedUser: false }
             });
-            helper.commandTools.disableAllButtons(this.input.message);
+            commandTools.disableAllButtons(this.input.message);
             return;
         }
-        this.params.page = helper.commandTools.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
+        this.params.page = commandTools.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
         this.params.country = temp.country;
         this.params.mode = temp.mode;
         this.params.type = temp.rankingtype;
@@ -310,8 +316,8 @@ export class Ranking extends OsuCommand {
         this.logInput();
         this.getOverrides();
         // do stuff
-        this.params.mode = helper.other.modeValidator(this.params.mode);
-        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.params.mode = other.modeValidator(this.params.mode);
+        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
             this.params.page = 1;
@@ -321,7 +327,7 @@ export class Ranking extends OsuCommand {
         const extras = {};
         if (this.params.country != 'ALL') {
             // validate country
-            if (!helper.other.validCountryCodeA2(this.params.country)) {
+            if (!other.validCountryCodeA2(this.params.country)) {
                 this.voidcontent();
                 this.ctn.content = `Invalid country code. Must be a valid [ISO 3166-1 alpha-2](https://en.wikipedia.org/wiki/List_of_ISO_3166_country_codes) code.`;
                 this.ctn.edit = true;
@@ -336,31 +342,31 @@ export class Ranking extends OsuCommand {
             extras['spotlight'] = this.params.spotlight;
         }
 
-        let rankingdata: helper.osuapi.types_v2.Rankings;
-        if (helper.data.findFile(this.input.id, 'rankingdata') &&
+        let rankingdata: osuapi.types_v2.Rankings;
+        if (data.findFile(this.input.id, 'rankingdata') &&
             this.input.type == 'button' &&
-            !('error' in helper.data.findFile(this.input.id, 'rankingdata')) &&
+            !('error' in data.findFile(this.input.id, 'rankingdata')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            rankingdata = helper.data.findFile(this.input.id, 'rankingdata');
+            rankingdata = data.findFile(this.input.id, 'rankingdata');
         } else {
-            rankingdata = await helper.osuapi.v2.rankings.ranking({
+            rankingdata = await osuapi.v2.rankings.ranking({
                 mode: this.params.mode,
                 type: this.params.type,
                 ...extras
             });
         }
 
-        helper.data.storeFile(rankingdata, this.input.id, 'rankingdata');
+        data.storeFile(rankingdata, this.input.id, 'rankingdata');
 
         if (rankingdata?.hasOwnProperty('error')) {
-            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.rankings, true);
+            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.rankings, true);
             return;
         }
 
 
         try {
-            helper.data.debug(rankingdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rankingData');
+            data.debug(rankingdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rankingData');
         } catch (e) {
             return;
         }
@@ -378,7 +384,7 @@ export class Ranking extends OsuCommand {
         }
 
         if (this.input.buttonType == null) {
-            helper.data.userStatsCache(rankingdata.ranking, helper.other.modeValidator(this.params.mode), 'Stat');
+            data.userStatsCache(rankingdata.ranking, other.modeValidator(this.params.mode), 'Stat');
         }
 
         if (this.params.parse) {
@@ -397,7 +403,7 @@ export class Ranking extends OsuCommand {
                 commandAs: this.input.type
             };
             if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await helper.commandTools.errorAndAbort(this.input, 'osu', true, `${helper.errors.uErr.osu.score.nf} at index ${pid}`, true);
+                await commandTools.errorAndAbort(this.input, 'osu', true, `${helper.errors.uErr.osu.score.nf} at index ${pid}`, true);
                 return;
             }
             this.input.type = 'other';
@@ -411,8 +417,8 @@ export class Ranking extends OsuCommand {
             .setFooter({
                 text: `${this.params.page + 1}/${Math.ceil(rankingdata.ranking.length / 5)}`
             }).setTitle(this.params.country != 'ALL' ?
-                `${this.params.mode == 'osu' ? 'osu!' : helper.formatter.toCapital(this.params.mode)} ${helper.formatter.toCapital(this.params.type)} Rankings for ${this.params.country}` :
-                `Global ${this.params.mode == 'osu' ? 'osu!' : helper.formatter.toCapital(this.params.mode)} ${helper.formatter.toCapital(this.params.type)} Ranking`)
+                `${this.params.mode == 'osu' ? 'osu!' : formatters.toCapital(this.params.mode)} ${formatters.toCapital(this.params.type)} Rankings for ${this.params.country}` :
+                `Global ${this.params.mode == 'osu' ? 'osu!' : formatters.toCapital(this.params.mode)} ${formatters.toCapital(this.params.type)} Ranking`)
             .setColor(helper.colours.embedColour.userlist.dec)
             .setDescription(`${ifchart}\n`);
         this.params.country != 'ALL' ?
@@ -424,7 +430,7 @@ export class Ranking extends OsuCommand {
         if (this.params.page > Math.ceil(rankingdata.ranking.length / 5)) {
             this.params.page = Math.ceil(rankingdata.ranking.length / 5);
         }
-        helper.commandTools.storeButtonArgs(this.input.id, {
+        commandTools.storeButtonArgs(this.input.id, {
             page: this.params.page + 1,
             maxPage: Math.ceil(rankingdata.ranking.length / 5),
             country: this.params.country,
@@ -447,7 +453,7 @@ export class Ranking extends OsuCommand {
         this.send();
     }
 
-    formatUL(embed: Discord.EmbedBuilder, rankingdata: helper.osuapi.types_v2.Rankings) {
+    formatUL(embed: Discord.EmbedBuilder, rankingdata: osuapi.types_v2.Rankings) {
         for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.ranking.length; i++) {
             const curuser = rankingdata.ranking[i + (this.params.page * 5)];
             if (!curuser) break;
@@ -457,15 +463,15 @@ export class Ranking extends OsuCommand {
                     '' :
                     curuser.global_rank == null ?
                         '' :
-                        '(#' + helper.calculate.separateNum(curuser.global_rank) + ' Global)';
+                        '(#' + calculate.separateNum(curuser.global_rank) + ' Global)';
             embed.addFields(
                 [
                     {
                         name: `#${num} ${parseGlobalRank}`,
                         value:
                             `:flag_${curuser.user.country_code.toLowerCase()}: [${curuser.user.username}](https://osu.ppy.sh/users/${curuser.user.id}/${this.params.mode})
-    Score: ${curuser.total_score == null ? '---' : helper.calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : helper.calculate.numberShorthand(curuser.ranked_score)} ranked)
-    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : helper.calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : helper.calculate.separateNum(curuser.play_count)} plays
+    Score: ${curuser.total_score == null ? '---' : calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : calculate.numberShorthand(curuser.ranked_score)} ranked)
+    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : calculate.separateNum(curuser.play_count)} plays
     `
                         ,
                         inline: false
@@ -479,7 +485,7 @@ export class Ranking extends OsuCommand {
 export class Profile extends OsuCommand {
     declare protected params: {
         user: string;
-        mode: helper.osuapi.types_v2.GameMode;
+        mode: osuapi.types_v2.GameMode;
         graphonly: boolean;
         detailed: number;
         searchid: string;
@@ -497,25 +503,25 @@ export class Profile extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const detailArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
+        const detailArgFinder = commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
         if (detailArgFinder.found) {
             this.params.detailed = 2;
             this.input.args = detailArgFinder.args;
         }
-        const graphArgFinder = helper.commandTools.matchArgMultiple(['-g', '-graph',], this.input.args, false, null, false, false);
+        const graphArgFinder = commandTools.matchArgMultiple(['-g', '-graph',], this.input.args, false, null, false, false);
         if (graphArgFinder.found) {
             this.params.graphonly = true;
             this.input.args = graphArgFinder.args;
         }
         {
-            const temp = await helper.commandTools.parseArgsMode(this.input);
+            const temp = await commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
 
-        this.input.args = helper.commandTools.cleanArgs(this.input.args);
+        this.input.args = commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.commandTools.fetchUser(this.input.args);
+        const usertemp = commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (usertemp.mode && !this.params.mode) {
@@ -531,7 +537,7 @@ export class Profile extends OsuCommand {
 
         this.params.user = interaction.options.getString('user');
         this.params.detailed = interaction.options.getBoolean('detailed') ? 2 : 1;
-        this.params.mode = interaction.options.getString('mode') as helper.osuapi.types_v2.GameMode;
+        this.params.mode = interaction.options.getString('mode') as osuapi.types_v2.GameMode;
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
@@ -539,7 +545,7 @@ export class Profile extends OsuCommand {
         this.params.searchid = this.commanduser.id;
 
         this.params.user = this.input.message.embeds[0].url.split('users/')[1].split('/')[0];
-        this.params.mode = this.input.message.embeds[0].url.split('users/')[1].split('/')[1] as helper.osuapi.types_v2.GameMode;
+        this.params.mode = this.input.message.embeds[0].url.split('users/')[1].split('/')[1] as osuapi.types_v2.GameMode;
 
         switch (this.input.buttonType) {
             case 'Detail1':
@@ -572,7 +578,7 @@ export class Profile extends OsuCommand {
         }
     }
     async setParamsLink() {
-        const usertemp = helper.commandTools.fetchUser([this.input.message.content]);
+        const usertemp = commandTools.fetchUser([this.input.message.content]);
         this.params.user = usertemp.id;
         if (usertemp.mode && !this.params.mode) {
             this.params.mode = usertemp.mode;
@@ -643,7 +649,7 @@ export class Profile extends OsuCommand {
             this.params.mode = t.mode;
         }
 
-        this.params.mode = this.params.mode ? helper.other.modeValidator(this.params.mode) : null;
+        this.params.mode = this.params.mode ? other.modeValidator(this.params.mode) : null;
         if (this.input.type == 'interaction') {
             this.ctn.content = 'Loading...';
             this.send();
@@ -651,7 +657,7 @@ export class Profile extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: helper.osuapi.types_v2.UserExtended;
+        let osudata: osuapi.types_v2.UserExtended;
 
         try {
             const t = await this.getProfile(this.params.user, this.params.mode);
@@ -679,8 +685,8 @@ export class Profile extends OsuCommand {
 
         if (this.input.type != 'button' || this.input.buttonType == 'Refresh') {
             try {
-                helper.data.updateUserStats(osudata, osudata.playmode,);
-                helper.data.userStatsCache([osudata], helper.other.modeValidator(this.params.mode), 'User');
+                data.updateUserStats(osudata, osudata.playmode,);
+                data.userStatsCache([osudata], other.modeValidator(this.params.mode), 'User');
             } catch (error) {
             }
         }
@@ -690,18 +696,18 @@ export class Profile extends OsuCommand {
 
         const playerrank =
             osudata.statistics?.global_rank ?
-                helper.calculate.separateNum(osudata.statistics.global_rank) :
+                calculate.separateNum(osudata.statistics.global_rank) :
                 '---';
 
         const countryrank =
             osudata.statistics?.country_rank ?
-                helper.calculate.separateNum(osudata.statistics.country_rank) :
+                calculate.separateNum(osudata.statistics.country_rank) :
                 '---';
 
         const rankglobal = ` #${playerrank} (#${countryrank} ${osudata.country_code} :flag_${osudata.country_code.toLowerCase()}:)`;
 
         const peakRank = osudata?.rank_highest?.rank ?
-            `\n**Peak Rank**: #${helper.calculate.separateNum(osudata.rank_highest.rank)} (<t:${new Date(osudata.rank_highest.updated_at).getTime() / 1000}:R>)` :
+            `\n**Peak Rank**: #${calculate.separateNum(osudata.rank_highest.rank)} (<t:${new Date(osudata.rank_highest.updated_at).getTime() / 1000}:R>)` :
             '';
         const onlinestatus = osudata.is_online ?
             `**${helper.emojis.onlinestatus.online} Online**` :
@@ -715,7 +721,7 @@ export class Profile extends OsuCommand {
 
         const playcount = osustats.play_count == null ?
             '---' :
-            helper.calculate.separateNum(osustats.play_count);
+            calculate.separateNum(osustats.play_count);
 
         const lvl = osustats.level.current != null ?
             osustats.level.progress != null && osustats.level.progress > 0 ?
@@ -772,11 +778,11 @@ export class Profile extends OsuCommand {
                 }
                 const graphembeds = await this.getGraphs(osudata);
 
-                const mostplayeddata: helper.osuapi.types_v2.BeatmapPlayCountArr = await helper.osuapi.v2.users.mostPlayed({ user_id: osudata.id });
-                helper.data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
+                const mostplayeddata: osuapi.types_v2.BeatmapPlayCountArr = await osuapi.v2.users.mostPlayed({ user_id: osudata.id });
+                data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
 
                 if (mostplayeddata?.hasOwnProperty('error')) {
-                    await helper.commandTools.errorAndAbort(this.input, 'osu', true, helper.errors.uErr.osu.profile.mostplayed, true);
+                    await commandTools.errorAndAbort(this.input, 'osu', true, helper.errors.uErr.osu.profile.mostplayed, true);
                     return;
                 }
                 const secperplay = osudata?.statistics.play_time / parseFloat(playcount.replaceAll(',', ''));
@@ -800,7 +806,7 @@ export class Profile extends OsuCommand {
     **Accuracy:** ${(osustats.hit_accuracy != null ? osustats.hit_accuracy : 0).toFixed(2)}%
     **Play Count:** ${playcount}
     **Level:** ${lvl}
-    **Total Play Time:** ${helper.calculate.secondsToTime(osudata?.statistics.play_time)} (${helper.calculate.secondsToTime(osudata?.statistics.play_time, true,)})`,
+    **Total Play Time:** ${calculate.secondsToTime(osudata?.statistics.play_time)} (${calculate.secondsToTime(osudata?.statistics.play_time, true,)})`,
                         inline: true
                     },
                     {
@@ -812,7 +818,7 @@ export class Profile extends OsuCommand {
     **Followers:** ${osudata.follower_count}
     ${prevnames}
     ${supporter} ${onlinestatus}
-    **Avg time per play:** ${helper.calculate.secondsToTime(secperplay)}
+    **Avg time per play:** ${calculate.secondsToTime(secperplay)}
     **Avg daily playcount:** ${dailies}
     **Avg monthly playcount:** ${monthlies}
     `,
@@ -839,18 +845,18 @@ export class Profile extends OsuCommand {
     **Player joined** <t:${new Date(osudata.join_date).getTime() / 1000}:R>
     **Followers:** ${osudata.follower_count}
     ${prevnames}
-    **Total Play Time:** ${helper.calculate.secondsToTime(osudata?.statistics.play_time, true)}
+    **Total Play Time:** ${calculate.secondsToTime(osudata?.statistics.play_time, true)}
     ${supporter} ${onlinestatus}
             `);
                 this.ctn.embeds = [osuEmbed];
             }
         }
-        helper.data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${osudata.id}`, apiData: null, mods: null });
+        data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${osudata.id}`, apiData: null, mods: null });
         this.ctn.components = [buttons];
         this.send();
     }
 
-    async getGraphs(osudata: helper.osuapi.types_v2.User) {
+    async getGraphs(osudata: osuapi.types_v2.User) {
         let chartplay;
         let chartrank;
 
@@ -869,14 +875,14 @@ export class Profile extends OsuCommand {
             const datarank = ('start,' + osudata.rank_history.data.map(x => x).join(',')).split(',');
 
             const play =
-                await helper.other.graph(dataplay, osudata.monthly_playcounts.map(x => x.count), 'Playcount', {
+                await other.graph(dataplay, osudata.monthly_playcounts.map(x => x.count), 'Playcount', {
                     startzero: true,
                     fill: true,
                     displayLegend: true,
                     pointSize: 0,
                 });
             const rank =
-                await helper.other.graph(datarank, osudata.rank_history.data, 'Rank', {
+                await other.graph(datarank, osudata.rank_history.data, 'Rank', {
                     startzero: false,
                     fill: false,
                     displayLegend: true,
@@ -922,15 +928,15 @@ export class RecentActivity extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const pageArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
+        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
         if (pageArgFinder.found) {
             this.params.page = pageArgFinder.output;
             this.input.args = pageArgFinder.args;
         }
 
-        this.input.args = helper.commandTools.cleanArgs(this.input.args);
+        this.input.args = commandTools.cleanArgs(this.input.args);
 
-        const usertemp = helper.commandTools.fetchUser(this.input.args);
+        const usertemp = commandTools.fetchUser(this.input.args);
         this.input.args = usertemp.args;
         this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -975,7 +981,7 @@ export class RecentActivity extends OsuCommand {
         this.logInput();
         this.getOverrides();
         // do stuff
-        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder();
         {
@@ -994,31 +1000,31 @@ export class RecentActivity extends OsuCommand {
             this.ctn.edit = true;
         }
 
-        let osudata: helper.osuapi.types_v2.UserExtended;
+        let osudata: osuapi.types_v2.UserExtended;
 
-        if (helper.data.findFile(this.params.user, 'osudata', 'osu') &&
-            !('error' in helper.data.findFile(this.params.user, 'osudata', 'osu')) &&
+        if (data.findFile(this.params.user, 'osudata', 'osu') &&
+            !('error' in data.findFile(this.params.user, 'osudata', 'osu')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            osudata = helper.data.findFile(this.params.user, 'osudata', 'osu');
+            osudata = data.findFile(this.params.user, 'osudata', 'osu');
         } else {
-            osudata = await helper.osuapi.v2.users.profile({ name: this.params.user, mode: 'osu' });
+            osudata = await osuapi.v2.users.profile({ name: this.params.user, mode: 'osu' });
         }
 
-        helper.data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
+        data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
-            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.noUser(this.params.user), true);
+            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.noUser(this.params.user), true);
             return;
         }
 
-        helper.data.storeFile(osudata, osudata.id, 'osudata', 'osu');
-        helper.data.storeFile(osudata, this.params.user, 'osudata', 'osu');
+        data.storeFile(osudata, osudata.id, 'osudata', 'osu');
+        data.storeFile(osudata, this.params.user, 'osudata', 'osu');
 
         if (this.input.type != 'button' || this.input.buttonType == 'Refresh') {
             try {
-                helper.data.updateUserStats(osudata, osudata.playmode);
-                helper.data.userStatsCache([osudata], 'osu', 'User');
+                data.updateUserStats(osudata, osudata.playmode);
+                data.userStatsCache([osudata], 'osu', 'User');
             } catch (error) {
             }
         }
@@ -1030,25 +1036,25 @@ export class RecentActivity extends OsuCommand {
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
-        let rsactData: helper.osuapi.types_v2.Event[];
+        let rsactData: osuapi.types_v2.Event[];
 
-        if (helper.data.findFile(this.input.id, 'rsactdata') &&
-            !('error' in helper.data.findFile(this.input.id, 'rsactdata')) &&
+        if (data.findFile(this.input.id, 'rsactdata') &&
+            !('error' in data.findFile(this.input.id, 'rsactdata')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            rsactData = helper.data.findFile(this.input.id, 'rsactdata');
+            rsactData = data.findFile(this.input.id, 'rsactdata');
         } else {
-            rsactData = await helper.osuapi.v2.users.recentActivity({ user_id: osudata.id });
+            rsactData = await osuapi.v2.users.recentActivity({ user_id: osudata.id });
         }
 
-        helper.data.debug(rsactData, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
+        data.debug(rsactData, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
 
         if (rsactData?.hasOwnProperty('error')) {
-            await helper.commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.profile.rsact, true);
+            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.profile.rsact, true);
             return;
         }
 
-        helper.data.storeFile(rsactData, this.input.id, 'rsactData', 'osu');
+        data.storeFile(rsactData, this.input.id, 'rsactData', 'osu');
 
         const pageLength = 10;
 
@@ -1070,7 +1076,7 @@ export class RecentActivity extends OsuCommand {
             .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setDescription(`Page: ${this.params.page + 1}/${Math.ceil(rsactData.length / pageLength)}`);
 
-        helper.formatter.userAuthor(osudata, curEmbed);
+        formatters.userAuthor(osudata, curEmbed);
 
         let actText = '';
 
@@ -1083,58 +1089,58 @@ export class RecentActivity extends OsuCommand {
             };
             switch (curEv.type) {
                 case 'achievement': {
-                    const temp = curEv as helper.osuapi.types_v2.EventAchievement;
+                    const temp = curEv as osuapi.types_v2.EventAchievement;
                     obj.desc = `Unlocked the **${temp.achievement.name}** medal! <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetApprove': {
-                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetApprove;
+                    const temp = curEv as osuapi.types_v2.EventBeatmapsetApprove;
                     obj.desc = `Approved **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapPlaycount': {
-                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapPlaycount;
+                    const temp = curEv as osuapi.types_v2.EventBeatmapPlaycount;
                     obj.desc =
                         `Achieved ${temp.count} plays on [\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url}) <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetDelete': {
-                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetDelete;
+                    const temp = curEv as osuapi.types_v2.EventBeatmapsetDelete;
                     obj.desc = `Deleted **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetRevive': {
-                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetRevive;
+                    const temp = curEv as osuapi.types_v2.EventBeatmapsetRevive;
                     obj.desc = `Revived **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetUpdate': {
-                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetUpdate;
+                    const temp = curEv as osuapi.types_v2.EventBeatmapsetUpdate;
                     obj.desc = `Updated **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'beatmapsetUpload': {
-                    const temp = curEv as helper.osuapi.types_v2.EventBeatmapsetUpload;
+                    const temp = curEv as osuapi.types_v2.EventBeatmapsetUpload;
                     obj.desc = `Submitted **[\`${temp.beatmapset.title}\`](https://osu.ppy.sh${temp.beatmapset.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'rank': {
-                    const temp = (curEv as helper.osuapi.types_v2.EventRank);
+                    const temp = (curEv as osuapi.types_v2.EventRank);
                     obj.desc =
                         `Achieved rank **#${temp.rank}** on [\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url}) (${helper.emojis.gamemodes[temp.mode]}) <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 }
                     break;
                 case 'rankLost': {
-                    const temp = curEv as helper.osuapi.types_v2.EventRankLost;
+                    const temp = curEv as osuapi.types_v2.EventRankLost;
                     obj.desc = `Lost #1 on **[\`${temp.beatmap.title}\`](https://osu.ppy.sh${temp.beatmap.url})** <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'userSupportAgain': {
-                    const temp = curEv as helper.osuapi.types_v2.EventUserSupportAgain;
+                    const temp = curEv as osuapi.types_v2.EventUserSupportAgain;
                     obj.desc = `Purchased supporter <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'userSupportFirst': {
-                    const temp = curEv as helper.osuapi.types_v2.EventUserSupportFirst;
+                    const temp = curEv as osuapi.types_v2.EventUserSupportFirst;
                     obj.desc = `Purchased supporter for the first time <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'userSupportGift': {
-                    const temp = curEv as helper.osuapi.types_v2.EventUserSupportGift;
+                    const temp = curEv as osuapi.types_v2.EventUserSupportGift;
                     obj.desc = `Was gifted supporter <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
                 case 'usernameChange': {
-                    const temp = curEv as helper.osuapi.types_v2.EventUsernameChange;
+                    const temp = curEv as osuapi.types_v2.EventUsernameChange;
                     obj.desc = `Changed their username from ${temp.user.previousUsername} to ${temp.user.username} <t:${(new Date(temp.created_at).getTime()) / 1000}:R>`;
                 } break;
             }

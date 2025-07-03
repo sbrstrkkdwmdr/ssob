@@ -2,7 +2,9 @@ import * as Discord from 'discord.js';
 import fs from 'fs';
 import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../helper';
-
+import * as log from './log';
+import * as osuapi from './osuapi';
+import * as other from './other';
 export async function sendMessage(input: {
     type: 'message' | 'interaction' | 'link' | 'button' | "other",
     message: Discord.Message<any>,
@@ -207,7 +209,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
 
     const object: {
         set: number,
-        mode: helper.osuapi.types_v2.GameMode,
+        mode: osuapi.types_v2.GameMode,
         map: number,
     } = {
         set: null,
@@ -232,7 +234,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
         case url.includes('?m='): {
             const modeTemp = url.split('?m=')[1];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
+                object.mode = modeTemp as osuapi.types_v2.GameMode;
             } else {
                 object.mode = osumodcalc.mode.toName(+modeTemp);
             }
@@ -253,7 +255,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             object.set = +url.split('beatmapsets/')[1].split('#')[0];
             const modeTemp = url.split('#')[1].split('/')[0];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
+                object.mode = modeTemp as osuapi.types_v2.GameMode;
             } else {
                 object.mode = osumodcalc.mode.toName(+modeTemp);
             }
@@ -263,7 +265,7 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             object.set = +url.split('/s/')[1].split('#')[0];
             const modeTemp = url.split('#')[1].split('/')[0];
             if (isNaN(+modeTemp)) {
-                object.mode = modeTemp as helper.osuapi.types_v2.GameMode;
+                object.mode = modeTemp as osuapi.types_v2.GameMode;
             } else {
                 object.mode = osumodcalc.mode.toName(+modeTemp);
             }
@@ -280,8 +282,8 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
             break;
     }
     // if (callIfMapIdNull && object.map == null && object.set) {
-    //     const bmsdataReq = await helper.api.getMapset(object.set, []);
-    //     object.map = (bmsdataReq.apiData as helper.osuapi.types_v2.Beatmapset)?.beatmaps?.[0]?.id ?? null;
+    //     const bmsdataReq = await api.getMapset(object.set, []);
+    //     object.map = (bmsdataReq.apiData as osuapi.types_v2.Beatmapset)?.beatmaps?.[0]?.id ?? null;
     // }
     return object;
 }
@@ -317,7 +319,7 @@ export function fetchUser(args: string[]) {
     }
     const object: {
         id: string,
-        mode: helper.osuapi.types_v2.GameMode,
+        mode: osuapi.types_v2.GameMode,
         args: string[];
     } = {
         id: '',
@@ -333,7 +335,7 @@ export function fetchUser(args: string[]) {
      * {username}
      * -u
      */
-    const userArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.user, args, true, 'string', true, false);
+    const userArgFinder = matchArgMultiple(helper.argflags.user, args, true, 'string', true, false);
     switch (true) {
         case userArgFinder.found:
             if (userArgFinder.found) {
@@ -349,7 +351,7 @@ export function fetchUser(args: string[]) {
                     object.id = url.split('/users/')[1];
                     if (url.split('/users/')[1].includes('/')) {
                         object.id = url.split('/users/')[1].split('/')[0];
-                        object.mode = (url.split('/users/')[1].split('/')[1]) as helper.osuapi.types_v2.GameMode;
+                        object.mode = (url.split('/users/')[1].split('/')[1]) as osuapi.types_v2.GameMode;
                     }
                     break;
             }
@@ -448,7 +450,7 @@ export function scoreIdFromLink(url: string) {
     }
     const object: {
         id: string,
-        mode: helper.osuapi.types_v2.GameMode,
+        mode: osuapi.types_v2.GameMode,
     } = {
         id: null,
         mode: null,
@@ -460,7 +462,7 @@ export function scoreIdFromLink(url: string) {
     object.id = url.split('/scores/')[1];
     if (url.split('/scores/')[1].includes('/')) {
         object.id = url.split('/scores/')[1].split('/')[1];
-        object.mode = helper.other.modeValidator(url.split('/scores/')[1].split('/')[0]);
+        object.mode = other.modeValidator(url.split('/scores/')[1].split('/')[0]);
     }
     if (object.id.trim() == "") {
         object.id = null;
@@ -522,7 +524,7 @@ export type params = {
     user?: string,
     page?: number,
     maxPage?: number,
-    mode?: helper.osuapi.types_v2.GameMode,
+    mode?: osuapi.types_v2.GameMode,
     userId?: string,
     mapId?: number,
     spotlight?: string | number,
@@ -531,7 +533,7 @@ export type params = {
     list?: boolean, //recent
     fails?: 1 | 0, //recent
     nochokes?: boolean, //top
-    rankingtype?: helper.osuapi.types_v2.RankingType, //ranking
+    rankingtype?: osuapi.types_v2.RankingType, //ranking
     country?: string, //ranking
     //scorelist AND ubm
     parse?: boolean,
@@ -542,7 +544,7 @@ export type params = {
     reverse?: boolean,
     filterMapper?: string,
     filterMods?: string,
-    filterRank?: helper.osuapi.types_v2.Rank,
+    filterRank?: osuapi.types_v2.Rank,
     modsInclude?: osumodcalc.types.Mod[],
     modsExact?: (osumodcalc.types.Mod | "NONE")[],
     modsExclude?: osumodcalc.types.Mod[],
@@ -732,7 +734,7 @@ export function cleanArgs(args: string[]) {
 }
 
 export async function parseArgsMode(input: helper.bottypes.commandInput) {
-    let mode: helper.osuapi.types_v2.GameMode;
+    let mode: osuapi.types_v2.GameMode;
     const otemp = matchArgMultiple(['-o', '-osu'], input.args, false, null, false, false);
     if (otemp.found) {
         mode = 'osu';
@@ -787,7 +789,7 @@ export async function missingPrevID_map(input: helper.bottypes.commandInput, nam
             }
         }, input.canReply);
     }
-    helper.log.commandErr(
+    log.commandErr(
         helper.errors.uErr.osu.map.m_msp,
         input.id,
         name,

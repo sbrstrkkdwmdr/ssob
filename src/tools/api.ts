@@ -1,7 +1,7 @@
 import axios from 'axios';
 import * as fs from 'fs';
 import * as helper from '../helper';
-
+import * as log from './log';
 export async function dlMap(mapid: number | string, curCall: number, lastUpdated: Date) {
     const mapFiles = fs.readdirSync(`${helper.path.main}/files/maps`);
     let isFound = false;
@@ -13,7 +13,7 @@ export async function dlMap(mapid: number | string, curCall: number, lastUpdated
         if (!fs.existsSync(thispath)) {
             fs.mkdirSync(`${helper.path.main}/files/maps/`, { recursive: true });
         }
-        helper.log.stdout('DOWNLOAD MAP: ' + url);
+        log.stdout('DOWNLOAD MAP: ' + url);
         const res = await axios.get(url);
         fs.writeFileSync(thispath, res.data, 'utf-8');
         await new Promise((resolve, reject) => {
@@ -52,7 +52,7 @@ export async function dlMap(mapid: number | string, curCall: number, lastUpdated
 // tenor
 
 export async function getGif(find: string) {
-    helper.log.stdout(`GIF: https://g.tenor.com/v2/search?q=${find}&key=REDACTED&limit=50`);
+    log.stdout(`GIF: https://g.tenor.com/v2/search?q=${find}&key=REDACTED&limit=50`);
     if (helper.vars.config.tenorKey == 'INVALID_ID') {
         return {
             data: {

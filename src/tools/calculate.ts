@@ -1,4 +1,4 @@
-import * as helper from '../helper';
+import * as osuapi from './osuapi';
 /**
  * eg 1,000 -> 1k
  * 1,000,000 -> 1m
@@ -495,7 +495,7 @@ export function isWithinValue(input: number, value: number, against: number) {
 }
 
 
-export function modOverrides(mods: helper.osuapi.types_v2.Mod[]) { 
+export function modOverrides(mods: osuapi.types_v2.Mod[]) { 
     let speed:number;
     let cs:number;
     let ar:number;

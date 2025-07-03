@@ -1,8 +1,9 @@
 import Discord from 'discord.js';
 import * as helper from '../helper';
+import * as api from '../tools/api';
+import * as game from '../tools/game';
 import * as bottypes from '../types/bot';
 import { Command } from './command';
-
 export class _8Ball extends Command {
     declare protected params: {};
     constructor() {
@@ -132,7 +133,7 @@ export class Gif extends Command {
                 break;
         }
 
-        const gifSearch = await helper.api.getGif(this.params.type);
+        const gifSearch = await api.getGif(this.params.type);
         if (gifSearch?.data?.results?.length > 1) {
             gifSelection = gifSearch?.data?.results?.map(x => x.media_formats.gif.url);
         }
@@ -172,7 +173,7 @@ export class Janken extends Command {
         await this.setParams();
         this.logInput();
         // do stuff
-        const real = helper.game.jankenConvert(this.params.userchoice);
+        const real = game.jankenConvert(this.params.userchoice);
         if (real == 'INVALID') {
             this.voidcontent();
             this.ctn.content = 'Please input a valid argument';

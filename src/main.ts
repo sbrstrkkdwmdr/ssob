@@ -4,13 +4,15 @@ import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import fs from 'fs';
 import Sequelize from 'sequelize';
 
-import * as buttonHandler from './buttonHandler';
-import * as commandHandler from './commandHandler';
 import * as helper from './helper';
-import * as linkHandler from './linkHandler';
 import { loops } from './loops';
 import * as slashcmds from './slashCommands';
+import * as log from './tools/log';
+import * as osuapi from './tools/osuapi';
 
+import { ButtonHandler } from './buttonHandler';
+import { CommandHandler } from './commandHandler';
+import { LinkHandler } from './linkHandler';
 console.log('Initialising client...');
 const client = new Client({
     intents: [
@@ -162,8 +164,8 @@ helper.vars.trackDb = trackDb;
 helper.vars.statsCache = statsCache;
 
 console.log('Initialising osu!api...');
-helper.osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.clientSecret);
-helper.osuapi.logCalls(true);
+osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.clientSecret);
+osuapi.logCalls(true);
 
 client.once('ready', () => {
     helper.vars.userdata.sync();
@@ -172,7 +174,7 @@ client.once('ready', () => {
     helper.vars.statsCache.sync();
     const currentDate = new Date();
 
-helper.log.stdout(`
+    log.stdout(`
 ====================================================
 BOT IS NOW ONLINE
 ----------------------------------------------------
@@ -183,9 +185,9 @@ Time (epoch, ms): ${currentDate.getTime()}
 Client:           ${client.user?.tag} 
 Client ID:        ${client.user?.id}
 ====================================================
-`)
+`);
     if (!fs.existsSync(`${helper.path.precomp}/config/osuauth.json`)) {
-        helper.log.stdout(`Creating ${helper.path.precomp}/config/osuauth.json`);
+        log.stdout(`Creating ${helper.path.precomp}/config/osuauth.json`);
         fs.writeFileSync(`${helper.path.precomp}/config/osuauth.json`,
             '{"token_type": "Bearer", "expires_in": 1, "access_token": "blahblahblah"}', 'utf-8');
     }
@@ -233,8 +235,10 @@ Client ID:        ${client.user?.id}
         }
     });
     client.on('messageCreate', async (message) => {
-        commandHandler.onMessage(message);
-        linkHandler.onMessage(message); //{}
+        const ch = new CommandHandler();
+        const lh = new LinkHandler();
+        ch.onMessage(message);
+        lh.onMessage(message); //{}
 
         //if message mentions bot and no other args given, return prefix
         let settings: helper.tooltypes.guildSettings;
@@ -263,8 +267,10 @@ Client ID:        ${client.user?.id}
         }
     });
     client.on('interactionCreate', async (interaction) => {
-        await commandHandler.onInteraction(interaction);
-        await buttonHandler.onInteraction(interaction);
+        const ch = new CommandHandler();
+        const bh = new ButtonHandler();
+        ch.onInteraction(interaction);
+        bh.onInteraction(interaction); //{}
     });
     loops();
     slashcmds.main();
@@ -273,6 +279,6 @@ Client ID:        ${client.user?.id}
 client.login(helper.vars.config.token);
 
 process.on('warning', e => {
-    helper.log.stdout(e.stack);
+    log.stdout(e.stack);
     console.warn(e.stack);
 });

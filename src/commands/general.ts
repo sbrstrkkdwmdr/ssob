@@ -1,10 +1,14 @@
 import Discord from 'discord.js';
-import * as helper from '../helper';
-import * as bottypes from '../types/bot';
-
 import * as fs from 'fs';
 import moment from 'moment';
 import pkgjson from '../../package.json';
+import * as helper from '../helper';
+import * as calculate from '../tools/calculate';
+import * as colourcalc from '../tools/colourcalc';
+import * as commandTools from '../tools/commands';
+import * as data from '../tools/data';
+import * as formatters from '../tools/formatters';
+import * as log from '../tools/log';
 import { Command } from './command';
 
 export class Changelog extends Command {
@@ -17,7 +21,7 @@ export class Changelog extends Command {
     };
     constructor() {
         super();
-        this.name = 'Changelog'
+        this.name = 'Changelog';
         this.params = {
             version: null,
             useNum: null,
@@ -27,7 +31,7 @@ export class Changelog extends Command {
         };
     }
     async setParamsMsg() {
-        const pageArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
+        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
         if (pageArgFinder.found) {
             this.params.page = pageArgFinder.output;
             this.input.args = pageArgFinder.args;
@@ -90,7 +94,7 @@ export class Changelog extends Command {
     async execute() {
         await this.setParams();
         this.logInput();
-        const pgbuttons: Discord.ActionRowBuilder = await helper.commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         const buttons = new Discord.ActionRowBuilder();
         //get version
         let found: string | number = null;
@@ -213,22 +217,22 @@ export class Changelog extends Command {
                     const temp = change.replaceAll('###', '').trim();
                     switch (temp) {
                         case 'Fixed':
-                            txt += helper.colourcalc.codeBlockColourText(temp.toUpperCase(), "yellow", "text");
+                            txt += colourcalc.codeBlockColourText(temp.toUpperCase(), "yellow", "text");
                             break;
                         case 'Changed':
-                            txt += helper.colourcalc.codeBlockColourText(temp.toUpperCase(), "blue", "text");
+                            txt += colourcalc.codeBlockColourText(temp.toUpperCase(), "blue", "text");
                             break;
                         case 'Added':
-                            txt += helper.colourcalc.codeBlockColourText(temp.toUpperCase(), "green", "text");
+                            txt += colourcalc.codeBlockColourText(temp.toUpperCase(), "green", "text");
                             break;
                         case 'Removed':
-                            txt += helper.colourcalc.codeBlockColourText(temp.toUpperCase(), "red", "text");
+                            txt += colourcalc.codeBlockColourText(temp.toUpperCase(), "red", "text");
                             break;
                         case 'Deprecated':
-                            txt += helper.colourcalc.codeBlockColourText(temp.toUpperCase(), "pink", "text");
+                            txt += colourcalc.codeBlockColourText(temp.toUpperCase(), "pink", "text");
                             break;
                         default:
-                            txt += helper.colourcalc.codeBlockColourText(temp.toUpperCase(), "cyan", "text");
+                            txt += colourcalc.codeBlockColourText(temp.toUpperCase(), "cyan", "text");
                             break;
                     }
                 } else {
@@ -412,10 +416,10 @@ export class Help extends Command {
             new Discord.ActionRowBuilder()
                 .setComponents(selectCategoryMenu)
         );
-        let curpick: helper.bottypes.commandInfo[] = helper.commandTools.getCommands(this.params.commandCategory);
+        let curpick: helper.bottypes.commandInfo[] = commandTools.getCommands(this.params.commandCategory);
 
         if (curpick.length == 0) {
-            curpick = helper.commandTools.getCommands('general');
+            curpick = commandTools.getCommands('general');
         }
         if (this.params.commandfound == true) {
             for (let i = 0; i < curpick.length && i < 25; i++) {
@@ -529,8 +533,8 @@ export class Help extends Command {
                 desc += buttonstxt;
                 commandInfo.setTitle('Buttons')
                     .setDescription(desc);
-            } else if (helper.commandTools.getCommand(fetchcmd)) {
-                const res = helper.commandTools.getCommand(fetchcmd);
+            } else if (commandTools.getCommand(fetchcmd)) {
+                const res = commandTools.getCommand(fetchcmd);
                 this.params.commandfound = true;
                 this.params.commandCategory = res.category;
                 this.commandEmb(res, commandInfo);
@@ -543,7 +547,7 @@ export class Help extends Command {
                     let c = this.categorise(sp);
                     if (c != '') {
                         commandInfo
-                            .setTitle(helper.formatter.toCapital(sp) + " Commands")
+                            .setTitle(formatters.toCapital(sp) + " Commands")
                             .setDescription(c);
                         this.params.commandCategory = sp;
                     } else {
@@ -587,7 +591,7 @@ export class Help extends Command {
     }
     categorise(type: string) {
         let desctxt = '';
-        const cmds = helper.commandTools.getCommands(type);
+        const cmds = commandTools.getCommands(type);
         for (let i = 0; i < cmds.length; i++) {
             desctxt += `\n\`${cmds[i].name}\`: ${cmds[i].description.split('.')[0]}`;
         }
@@ -635,7 +639,7 @@ Axios: [${pkgjson.dependencies['axios'].replace('^', '')}](https://github.com/ax
 Sequelize: [${pkgjson.dependencies['sequelize'].replace('^', '')}](https://github.com/sequelize/sequelize/)
 Chart.js: [${pkgjson.dependencies['chart.js'].replace('^', '')}](https://www.chartjs.org/)
 sqlite3: [${pkgjson.dependencies['sqlite3'].replace('^', '')}](https://github.com/TryGhost/node-sqlite3)`,
-            uptime: `${helper.calculate.secondsToTime(helper.vars.client.uptime / 1000)}`,
+            uptime: `${calculate.secondsToTime(helper.vars.client.uptime / 1000)}`,
             version: pkgjson.version,
             preGlobal: helper.vars.config.prefix.includes('`') ? `"${helper.vars.config.prefix}"` : `\`${helper.vars.config.prefix}\``,
             preServer: serverpfx.includes('`') ? `"${serverpfx}"` : `\`${serverpfx}\``,
@@ -740,7 +744,7 @@ export class Ping extends Command {
         await this.setParams();
         this.logInput(true);
         // do stuff
-        const trueping = `${helper.formatter.toCapital(this.input.type)} latency: ${Math.abs((this.input.message ?? this.input.interaction).createdAt.getTime() - new Date().getTime())}ms`;
+        const trueping = `${formatters.toCapital(this.input.type)} latency: ${Math.abs((this.input.message ?? this.input.interaction).createdAt.getTime() - new Date().getTime())}ms`;
 
         const pingEmbed = new Discord.EmbedBuilder()
             .setTitle('Pong!')
@@ -762,9 +766,9 @@ export class Ping extends Command {
                         pingEmbed.setDescription(`
             Client latency: ${helper.vars.client.ws.ping}ms
             ${trueping}
-            ${helper.formatter.toCapital(this.input.type)} edit latency: ${Math.abs(timeToEdit)}ms
+            ${formatters.toCapital(this.input.type)} edit latency: ${Math.abs(timeToEdit)}ms
             `);
-                        helper.commandTools.sendMessage({
+                        commandTools.sendMessage({
                             type: this.input.type,
                             message: msg as Discord.Message,
                             interaction: msg as Discord.ChatInputCommandInteraction,
@@ -787,7 +791,7 @@ export class Ping extends Command {
                     pingEmbed.setDescription(`
         Client latency: ${helper.vars.client.ws.ping}ms
         ${trueping}
-        ${helper.formatter.toCapital(this.input.type)} edit latency: ${Math.abs(timeToEdit)}ms
+        ${formatters.toCapital(this.input.type)} edit latency: ${Math.abs(timeToEdit)}ms
         `);
                     intRes.edit({
                         embeds: [pingEmbed]
@@ -861,7 +865,7 @@ export class Remind extends Command {
             );
             this.ctn.embeds = [reminder];
         } else {
-            const absTime = Math.floor(((new Date().getTime()) + helper.calculate.timeToMs(this.params.time)) / 1000);
+            const absTime = Math.floor(((new Date().getTime()) + calculate.timeToMs(this.params.time)) / 1000);
             this.ctn.content = `Sending reminder <t:${absTime}:R> (<t:${absTime}:f>)`;
             this.sendremind(reminder, this.params.time, this.params.sendtochannel, this.params.remindertxt, absTime);
         }
@@ -879,16 +883,16 @@ export class Remind extends Command {
                 setTimeout(() => {
                     ((this.input.message ?? this.input.interaction).channel as Discord.GuildTextBasedChannel).send({ content: `Reminder for <@${this.commanduser.id}> \n${remindertxt}` });
                     this.remReminder(absTime);
-                }, helper.calculate.timeToMs(time));
+                }, calculate.timeToMs(time));
             }
             else {
                 setTimeout(() => {
                     (this.commanduser as Discord.User).send({ embeds: [reminder] }).catch();
                     this.remReminder(absTime);
-                }, helper.calculate.timeToMs(time));
+                }, calculate.timeToMs(time));
             }
         } catch (error) {
-            helper.log.stdout('embed error' + 'time:' + time + '\ntxt:' + remindertxt);
+            log.stdout('embed error' + 'time:' + time + '\ntxt:' + remindertxt);
         }
     }
 

@@ -2,6 +2,13 @@ import * as Discord from 'discord.js';
 import fs from 'fs';
 import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../helper';
+import * as calculate from './calculate';
+import * as data from './data';
+import * as formatters from './formatters';
+import * as log from './log';
+import * as osuapi from './osuapi';
+import * as other from './other';
+import * as performance from './performance';
 
 export async function editTrackUser(fr: {
     userid: string | number,
@@ -57,17 +64,17 @@ export async function editTrackUser(fr: {
 
 export async function trackUser(fr: { user: string, mode: string, inital?: boolean; }) {
     if (!fr.user) return;
-    const curdata: helper.osuapi.types_v2.Score[] & helper.osuapi.types_v2.Error = await helper.osuapi.v2.scores.best({
+    const curdata: osuapi.types_v2.Score[] & osuapi.types_v2.Error = await osuapi.v2.scores.best({
         user_id: +fr.user,
-        mode: helper.other.modeValidator(fr.mode),
+        mode: other.modeValidator(fr.mode),
     });
-    const thisUser: helper.osuapi.types_v2.User = await helper.osuapi.v2.users.profile({
+    const thisUser: osuapi.types_v2.User = await osuapi.v2.users.profile({
         name: fr.user,
-        mode: helper.other.modeValidator(fr.mode),
+        mode: other.modeValidator(fr.mode),
     });
     if (!curdata?.[0]?.user_id) return;
 
-    helper.data.updateUserStats(thisUser, fr.mode);
+    data.updateUserStats(thisUser, fr.mode);
 
     if (curdata?.[0]?.user_id && fr.inital == true) {
         fs.writeFileSync(`${helper.path.main}/trackingFiles/${curdata[0].user_id}_${fr.mode}.json`, JSON.stringify(curdata, null, 2));
@@ -75,7 +82,7 @@ export async function trackUser(fr: { user: string, mode: string, inital?: boole
     }
     if (curdata?.[0]?.user_id) {
         if (fs.existsSync(`${helper.path.main}/trackingFiles/${curdata[0].user_id}_${fr.mode}.json`)) {
-            let previous: helper.osuapi.types_v2.Score[] & helper.osuapi.types_v2.Error;
+            let previous: osuapi.types_v2.Score[] & osuapi.types_v2.Error;
             try {
                 previous = JSON.parse(fs.readFileSync(`${helper.path.main}/trackingFiles/${curdata[0].user_id}_${fr.mode}.json`, 'utf-8'));
             }
@@ -102,16 +109,16 @@ export async function trackUser(fr: { user: string, mode: string, inital?: boole
 
 export async function getEmbed(
     data: {
-        scoredata: helper.osuapi.types_v2.Score,
+        scoredata: osuapi.types_v2.Score,
         scorepos: number,
     },
 ) {
     const curscore = data.scoredata;
     const scorestats = data.scoredata.statistics;
-    let totalhits = helper.other.scoreTotalHits(scorestats);
+    let totalhits = other.scoreTotalHits(scorestats);
 
-    const overrides = helper.calculate.modOverrides(curscore.mods);
-    const perf = await helper.performance.calcScore({
+    const overrides = calculate.modOverrides(curscore.mods);
+    const perf = await performance.calcScore({
         mods: curscore.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
         mode: curscore.ruleset_id,
         mapid: curscore.beatmap.id,
@@ -125,7 +132,7 @@ export async function getEmbed(
         customOD: overrides.od,
         clockRate: overrides.speed,
     });
-    const fcperf = await helper.performance.calcFullCombo({
+    const fcperf = await performance.calcFullCombo({
         mods: curscore.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
         mode: curscore.ruleset_id,
         mapid: curscore.beatmap.id,
@@ -159,8 +166,8 @@ export async function getEmbed(
         .setImage(`${data.scoredata.beatmapset.covers['cover@2x']}`)
         .setDescription(
             `${data.scoredata.mods.length > 0 ? '+' + data.scoredata.mods.map(x => x.acronym).join('') + ' | ' : ''} **Score set** <t:${new Date(data.scoredata.ended_at).getTime() / 1000}:R>\n` +
-            `${(data.scoredata.accuracy * 100).toFixed(2)}% | ${helper.formatter.gradeToEmoji(data.scoredata.rank)} | ${(perf.difficulty.stars ?? data.scoredata.beatmap.difficulty_rating).toFixed(2)}⭐\n` +
-            `${helper.formatter.returnHits(data.scoredata.statistics, data.scoredata.ruleset_id).short} | ${data.scoredata.max_combo}x\n` +
+            `${(data.scoredata.accuracy * 100).toFixed(2)}% | ${formatters.gradeToEmoji(data.scoredata.rank)} | ${(perf.difficulty.stars ?? data.scoredata.beatmap.difficulty_rating).toFixed(2)}⭐\n` +
+            `${formatters.returnHits(data.scoredata.statistics, data.scoredata.ruleset_id).short} | ${data.scoredata.max_combo}x\n` +
             `${pp}`
         );
     return embed;
@@ -209,9 +216,9 @@ export async function trackUsers(totalTime: number) {
                 }
             }
             if (willFetch == true) {
-                helper.log.stdout(`Tracking - Fetching ${user.osuid}`);
+                log.stdout(`Tracking - Fetching ${user.osuid}`);
             } else {
-                helper.log.stdout(`Tracking cancelled - User ${user.osuid} has no tracked channels`);
+                log.stdout(`Tracking cancelled - User ${user.osuid} has no tracked channels`);
             }
         },
             i < 1 ? 0 : (Math.floor(totalTime / allUsers.length)));
@@ -243,9 +250,9 @@ export async function sendMsg(embed: Discord.EmbedBuilder, curuser: string) {
                 });
                 if (curset?.dataValues?.trackChannel) {
                     await channels.push(`${curset?.dataValues?.trackChannel}`);
-                    helper.log.stdout(`Found channel in guild settings - ${curset?.dataValues.trackChannel}`);
+                    log.stdout(`Found channel in guild settings - ${curset?.dataValues.trackChannel}`);
                 } else {
-                    helper.log.stdout('Found channel in guild settings - No channel set');
+                    log.stdout('Found channel in guild settings - No channel set');
                 }
             }
         });
@@ -258,14 +265,14 @@ export async function sendMsg(embed: Discord.EmbedBuilder, curuser: string) {
         channels.filter((item, index) => channels.indexOf(item) === index).forEach(channel => {
             const curchannel: Discord.GuildTextBasedChannel = helper.vars.client.channels.cache.get(channel) as Discord.GuildTextBasedChannel;
             if (curchannel) {
-                helper.log.stdout(`Sending to channel: ${curchannel.id}`);
+                log.stdout(`Sending to channel: ${curchannel.id}`);
                 curchannel.send({
                     embeds: [embed]
                 }).catch(error => {
-                    helper.log.stdout(`Error sending to channel: ${error}`);
+                    log.stdout(`Error sending to channel: ${error}`);
                 });
             } else {
-                helper.log.stdout(`Error sending to channel: Channel not found`);
+                log.stdout(`Error sending to channel: Channel not found`);
             }
         });
     }, 2000);

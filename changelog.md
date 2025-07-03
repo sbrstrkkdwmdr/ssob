@@ -6,9 +6,15 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Fixed
+
+- remove methods and commands from helper module (circular refs)
+- move commands to separate helper module
+
 ### Changed
 
 - updated osumodcalculator
+- convert command handlers into classes
 
 ## [5.2.0] - 2025-07-02
 

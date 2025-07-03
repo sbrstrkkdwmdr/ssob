@@ -1,11 +1,24 @@
 import * as Discord from 'discord.js';
 import moment from 'moment';
 import * as helper from '../helper';
+import * as commandTools from '../tools/commands';
+import * as data from '../tools/data';
+import * as formatters from '../tools/formatters';
+import * as log from '../tools/log';
+import * as osuapi from '../tools/osuapi';
+import * as other from '../tools/other';
+
+export abstract class InputHandler {
+    protected selected: Command;
+    protected overrides: helper.bottypes.overrides = {};
+    abstract onMessage(message: Discord.Message): Promise<void>;
+    abstract onInteraction(interaction: Discord.Interaction): Promise<void>;
+}
 
 export class Command {
     #name: string;
     protected set name(input: string) {
-        this.#name = input[0] == input[0].toUpperCase() ? input : helper.formatter.toCapital(input);
+        this.#name = input[0] == input[0].toUpperCase() ? input : formatters.toCapital(input);
     }
     protected get name() { return this.#name; }
     protected commanduser: Discord.User | Discord.APIUser;
@@ -72,12 +85,12 @@ export class Command {
         if (!skipKeys) {
             keys = Object.entries(this.params).map(x => {
                 return {
-                    name: helper.formatter.toCapital(x[0]),
+                    name: formatters.toCapital(x[0]),
                     value: x[1]
                 };
             });
         }
-        helper.log.commandOptions(
+        log.commandOptions(
             keys,
             this.input.id,
             this.name,
@@ -93,7 +106,7 @@ export class Command {
         this.send();
     }
     async send() {
-        await helper.commandTools.sendMessage({
+        await commandTools.sendMessage({
             type: this.input.type,
             message: this.input.message,
             interaction: this.input.interaction,
@@ -105,9 +118,9 @@ export class Command {
 // gasp capitalised o
 export class OsuCommand extends Command {
     // if no user, use DB or disc name
-    async validUser(user: string, searchid: string, mode: helper.osuapi.types_v2.GameMode) {
+    async validUser(user: string, searchid: string, mode: osuapi.types_v2.GameMode) {
         if (user == null) {
-            const cuser = await helper.data.searchUser(searchid, true);
+            const cuser = await data.searchUser(searchid, true);
             user = cuser?.username;
             if (mode == null) {
                 mode = cuser?.gamemode;
@@ -121,56 +134,56 @@ export class OsuCommand extends Command {
         return { user, mode };
     }
 
-    async getProfile(user: string, mode: helper.osuapi.types_v2.GameMode) {
-        let osudata: helper.osuapi.types_v2.UserExtended;
+    async getProfile(user: string, mode: osuapi.types_v2.GameMode) {
+        let osudata: osuapi.types_v2.UserExtended;
 
-        if (helper.data.findFile(user, 'osudata', helper.other.modeValidator(mode)) &&
-            !('error' in helper.data.findFile(user, 'osudata', helper.other.modeValidator(mode))) &&
+        if (data.findFile(user, 'osudata', other.modeValidator(mode)) &&
+            !('error' in data.findFile(user, 'osudata', other.modeValidator(mode))) &&
             this.input.buttonType != 'Refresh'
         ) {
-            osudata = helper.data.findFile(user, 'osudata', helper.other.modeValidator(mode));
+            osudata = data.findFile(user, 'osudata', other.modeValidator(mode));
         } else {
-            osudata = await helper.osuapi.v2.users.profile({ name: user, mode });
+            osudata = await osuapi.v2.users.profile({ name: user, mode });
         }
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
             const err = helper.errors.uErr.osu.profile.user.replace('[ID]', user);
-            await helper.commandTools.errorAndAbort(this.input, this.name, true, err, false);
+            await commandTools.errorAndAbort(this.input, this.name, true, err, false);
             throw new Error(err);
 
         }
-        helper.data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
+        data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
-        helper.data.userStatsCache([osudata], helper.other.modeValidator(mode), 'User');
+        data.userStatsCache([osudata], other.modeValidator(mode), 'User');
 
-        helper.data.storeFile(osudata, osudata.id, 'osudata', helper.other.modeValidator(mode));
-        helper.data.storeFile(osudata, osudata.username, 'osudata', helper.other.modeValidator(mode));
+        data.storeFile(osudata, osudata.id, 'osudata', other.modeValidator(mode));
+        data.storeFile(osudata, osudata.username, 'osudata', other.modeValidator(mode));
 
         return osudata;
     }
     async getMap(mapid: string | number) {
-        let mapdata: helper.osuapi.types_v2.BeatmapExtended;
-        if (helper.data.findFile(mapid, 'mapdata') &&
-            !('error' in helper.data.findFile(mapid, 'mapdata')) &&
+        let mapdata: osuapi.types_v2.BeatmapExtended;
+        if (data.findFile(mapid, 'mapdata') &&
+            !('error' in data.findFile(mapid, 'mapdata')) &&
             this.input.buttonType != 'Refresh') {
-            mapdata = helper.data.findFile(mapid, 'mapdata');
+            mapdata = data.findFile(mapid, 'mapdata');
         } else {
-            mapdata = await helper.osuapi.v2.beatmaps.map({ id: +mapid });
+            mapdata = await osuapi.v2.beatmaps.map({ id: +mapid });
         }
 
         if (mapdata?.hasOwnProperty('error')) {
             const err = helper.errors.uErr.osu.map.m.replace('[ID]', mapid + '');
-            await helper.commandTools.errorAndAbort(this.input, this.name, true, err, true);
+            await commandTools.errorAndAbort(this.input, this.name, true, err, true);
             throw new Error(err);
         }
 
-        helper.data.storeFile(mapdata, mapid, 'mapdata');
+        data.storeFile(mapdata, mapid, 'mapdata');
 
         return mapdata;
     }
     getLatestMap() {
-        const tempMap = helper.data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
-        const tempScore = helper.data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
+        const tempMap = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
+        const tempScore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
         const tmt = moment(tempMap.last_access ?? '1975-01-01');
         const tst = moment(tempScore.last_access ?? '1975-01-01');
         if (tst.isBefore(tmt)) {
@@ -207,14 +220,14 @@ class TEMPLATE extends Command {
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
         const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        const temp = helper.commandTools.getButtonArgs(this.input.id);
+        const temp = commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
                 content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
                 allowedMentions: { repliedUser: false }
             });
-            helper.commandTools.disableAllButtons(this.input.message);
+            commandTools.disableAllButtons(this.input.message);
             return;
         }
     }

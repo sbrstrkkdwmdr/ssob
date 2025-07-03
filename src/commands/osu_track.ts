@@ -1,13 +1,15 @@
 import Discord from 'discord.js';
 import * as helper from '../helper';
+import * as commandTools from '../tools/commands';
+import * as osuapi from '../tools/osuapi';
+import * as track from '../tools/track';
 import { OsuCommand } from './command';
-
 // add, remove, list, channel
 
 export class TrackAR extends OsuCommand {
     declare protected params: {
         user: string;
-        mode: helper.osuapi.types_v2.GameMode;
+        mode: osuapi.types_v2.GameMode;
     };
     type: 'add' | 'remove';
     constructor() {
@@ -19,11 +21,11 @@ export class TrackAR extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            const temp = await helper.commandTools.parseArgsMode(this.input);
+            const temp = await commandTools.parseArgsMode(this.input);
             this.input.args = temp.args;
             this.params.mode = temp.mode;
         }
-        const userArgFinder = helper.commandTools.matchArgMultiple(helper.argflags.user, this.input.args, true, 'string', true, false);
+        const userArgFinder = commandTools.matchArgMultiple(helper.argflags.user, this.input.args, true, 'string', true, false);
         if (userArgFinder.found) {
             this.params.user = userArgFinder.output;
             this.input.args = userArgFinder.args;
@@ -40,7 +42,7 @@ export class TrackAR extends OsuCommand {
         // do stuff
 
         if (this.params.user == null || !this.params.user || this.params.user.length < 1) {
-            await helper.commandTools.sendMessage({
+            await commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
@@ -55,7 +57,7 @@ export class TrackAR extends OsuCommand {
         const guildsetting = await helper.vars.guildSettings.findOne({ where: { guildid: this.input.message?.guildId ?? this.input.interaction?.guildId } });
 
         if (!guildsetting?.dataValues?.trackChannel) {
-            await helper.commandTools.sendMessage({
+            await commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
@@ -66,7 +68,7 @@ export class TrackAR extends OsuCommand {
             }, this.input.canReply);
             return;
         } else if (guildsetting?.dataValues?.trackChannel != (this.input?.message?.channelId ?? this.input?.interaction?.channelId)) {
-            await helper.commandTools.sendMessage({
+            await commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
@@ -79,7 +81,7 @@ export class TrackAR extends OsuCommand {
 
         }
 
-        let osudata: helper.osuapi.types_v2.User;
+        let osudata: osuapi.types_v2.User;
 
         try {
             const t = await this.getProfile(this.params.user, this.params.mode);
@@ -90,7 +92,7 @@ export class TrackAR extends OsuCommand {
 
         this.ctn.content = this.getMsg(osudata.username);
 
-        helper.track.editTrackUser({
+        track.editTrackUser({
             userid: osudata.id,
             action: this.type,
             guildId: this.input.message?.guildId ?? this.input.interaction?.guildId,
@@ -160,7 +162,7 @@ export class TrackChannel extends OsuCommand {
         const guildsetting = await helper.vars.guildSettings.findOne({ where: { guildid: this.input.message?.guildId ?? this.input.interaction?.guildId } });
         if (!this.params.channelId) {
             if (!guildsetting.dataValues.trackChannel) {
-                await helper.commandTools.sendMessage({
+                await commandTools.sendMessage({
                     type: this.input.type,
                     message: this.input.message,
                     interaction: this.input.interaction,
@@ -171,7 +173,7 @@ export class TrackChannel extends OsuCommand {
                 }, this.input.canReply);
                 return;
             }
-            await helper.commandTools.sendMessage({
+            await commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,
@@ -183,7 +185,7 @@ export class TrackChannel extends OsuCommand {
             return;
         }
         if (!this.params.channelId || isNaN(+this.params.channelId) || !helper.vars.client.channels.cache.get(this.params.channelId)) {
-            await helper.commandTools.sendMessage({
+            await commandTools.sendMessage({
                 type: this.input.type,
                 message: this.input.message,
                 interaction: this.input.interaction,

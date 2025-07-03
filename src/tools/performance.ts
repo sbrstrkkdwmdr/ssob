@@ -2,6 +2,11 @@ import * as fs from 'fs';
 import * as osumodcalc from 'osumodcalculator';
 import * as rosu from 'rosu-pp-js';
 import * as helper from '../helper';
+import * as api from './api';
+import * as formatters from './formatters';
+import * as log from './log';
+import * as osuapi from './osuapi';
+import * as other from './other';
 
 /** */
 export async function calcScore(input: {
@@ -10,7 +15,7 @@ export async function calcScore(input: {
     mods: osumodcalc.types.Mod[],
     accuracy: number,
     clockRate?: number,
-    stats?: helper.osuapi.types_v2.ScoreStatistics,
+    stats?: osuapi.types_v2.ScoreStatistics,
     maxcombo?: number,
     passedObjects?: number,
     mapLastUpdated: Date,
@@ -21,10 +26,10 @@ export async function calcScore(input: {
 }) {
     let data = { ...input };
     if (!fs.existsSync(helper.path.main + '/files/maps/')) {
-        helper.log.stdout('creating files/maps/');
+        log.stdout('creating files/maps/');
         fs.mkdirSync(helper.path.main + '/files/maps/');
     }
-    const mapPath = await helper.api.dlMap(data.mapid, 0, data.mapLastUpdated);
+    const mapPath = await api.dlMap(data.mapid, 0, data.mapLastUpdated);
     const map = new rosu.Beatmap(fs.readFileSync(mapPath, 'utf-8'));
     if (data.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(data.mode);
@@ -42,7 +47,7 @@ export async function calcScore(input: {
         mods: input.mods,
         accuracy: data.accuracy ?? 100,
     };
-    const oldStats = helper.other.lazerToOldStatistics(data.stats, data.mode, true);
+    const oldStats = other.lazerToOldStatistics(data.stats, data.mode, true);
     if (data.maxcombo != null && !isNaN(data.maxcombo)) {
         baseScore.combo = data.maxcombo;
     }
@@ -96,14 +101,14 @@ export async function calcFullCombo(input: {
     mods: osumodcalc.types.Mod[],
     accuracy: number,
     clockRate?: number,
-    stats?: helper.osuapi.types_v2.ScoreStatistics,
+    stats?: osuapi.types_v2.ScoreStatistics,
     mapLastUpdated: Date,
     customCS?: number,
     customAR?: number,
     customOD?: number,
     customHP?: number,
 }) {
-    let stats = input.stats ? { ...input.stats } : helper.formatter.nonNullStats(input.stats);
+    let stats = input.stats ? { ...input.stats } : formatters.nonNullStats(input.stats);
     if (stats.great == 0 && stats.perfect == 0) {
         stats.great = NaN;
     }
@@ -169,10 +174,10 @@ export async function calcStrains(input: {
     mapLastUpdated: Date,
 }) {
     if (!fs.existsSync(helper.path.main + '/files/maps/')) {
-        helper.log.stdout('creating files/maps/');
+        log.stdout('creating files/maps/');
         fs.mkdirSync(helper.path.main + '/files/maps/');
     }
-    const mapPath = await helper.api.dlMap(input.mapid, 0, input.mapLastUpdated);
+    const mapPath = await api.dlMap(input.mapid, 0, input.mapLastUpdated);
     const map = new rosu.Beatmap(fs.readFileSync(mapPath, 'utf-8'));
     if (input.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(input.mode);
@@ -216,7 +221,7 @@ export async function calcStrains(input: {
     return strains;
 }
 let x: rosu.GameMode;
-export function template(mapdata: helper.osuapi.types_v2.BeatmapExtended): rosu.PerformanceAttributes {
+export function template(mapdata: osuapi.types_v2.BeatmapExtended): rosu.PerformanceAttributes {
     return {
         pp: 0,
         estimatedUnstableRate: 0,
@@ -288,7 +293,7 @@ export async function fullPerformance(
     mods: osumodcalc.types.Mod[],
     accuracy: number,
     clockRate?: number,
-    stats?: helper.osuapi.types_v2.ScoreStatistics,
+    stats?: osuapi.types_v2.ScoreStatistics,
     maxcombo?: number,
     passedObjects?: number,
     mapLastUpdated?: Date,
@@ -340,7 +345,7 @@ export async function fullPerformance(
     return [perf, fcperf, ssperf];
 }
 
-export function getModSpeed(mods: helper.osuapi.types_v2.Mod[]) {
+export function getModSpeed(mods: osuapi.types_v2.Mod[]) {
     let rate = 1.0;
     for (const mod of mods) {
         if (mod?.settings?.speed_change) {

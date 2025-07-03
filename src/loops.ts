@@ -4,6 +4,9 @@ import Discord from 'discord.js';
 import fs from 'fs';
 import v8 from 'v8';
 import * as helper from './helper';
+import * as log from './tools/log';
+import * as osuapi from './tools/osuapi';
+import * as track from './tools/track';
 
 export function loops() {
     setInterval(() => {
@@ -23,7 +26,7 @@ export function loops() {
         checkHeap();
         try {
             if (global?.gc) {
-                helper.log.stdout('Calling garbage collector...');
+                log.stdout('Calling garbage collector...');
                 global.gc();
             }
         } catch (err) {
@@ -51,8 +54,8 @@ export function loops() {
 
 function checkHeap() {
     const sl = v8.getHeapStatistics();
-    helper.log.stdout(toMiB(sl.heap_size_limit) + ' MiB Heap Limit');
-    helper.log.stdout(toMiB(sl.used_heap_size).toFixed(2) + ' MiB Heap Used');
+    log.stdout(toMiB(sl.heap_size_limit) + ' MiB Heap Limit');
+    log.stdout(toMiB(sl.used_heap_size).toFixed(2) + ' MiB Heap Used');
 }
 function toMiB(number: number) {
     return number / (1024 * 1024);
@@ -66,7 +69,7 @@ function getMap() {
         return false;
     }
     const mapFile = maps[Math.floor(Math.random() * maps.length)];
-    const map = (JSON.parse(fs.readFileSync(`${filesPathing}/${mapFile}`, 'utf-8'))) as helper.osuapi.types_v2.Beatmap;
+    const map = (JSON.parse(fs.readFileSync(`${filesPathing}/${mapFile}`, 'utf-8'))) as osuapi.types_v2.Beatmap;
     return map;
 }
 function setActivity() {
@@ -90,7 +93,7 @@ function setActivity() {
         status: 'dnd',
         afk: false
     });
-    return (map as helper.osuapi.types_v2.Beatmap).total_length;
+    return (map as osuapi.types_v2.Beatmap).total_length;
 }
 
 //seasonal status updates
@@ -182,7 +185,7 @@ function clearMapFiles() {
                 if (file.includes('undefined')) {
                     if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 12)) {
                         fs.unlinkSync(`${helper.path.files}/maps/` + file);
-                        helper.log.stdout(`Deleted file ${helper.path.files}/maps/` + file,);
+                        log.stdout(`Deleted file ${helper.path.files}/maps/` + file,);
                         // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                     }
                 }
@@ -199,8 +202,8 @@ async function getOnlineChangelog() {
             fs.writeFileSync(`${helper.path.cache}/changelog.md`, data.data);
         })
         .catch(error => {
-            helper.log.stdout('ERROR FETCHING GIT');
-            helper.log.out(`${helper.path.logs}/err.log`, JSON.stringify(error));
+            log.stdout('ERROR FETCHING GIT');
+            log.out(`${helper.path.logs}/err.log`, JSON.stringify(error));
         });
 }
 function clearCommandCache() {
@@ -212,7 +215,7 @@ function clearCommandCache() {
     for (const file of files) {
         fs.stat(`${helper.path.cache}/commandData/` + file, (err, stat) => {
             if (err) {
-                helper.log.stdout(err);
+                log.stdout(err);
                 return;
             } else {
                 if (permanentCache.some(x => file.startsWith(x))) {
@@ -221,26 +224,26 @@ function clearCommandCache() {
                     if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 24 * 28) && files.filter(x => permanentCache.some(x => file.startsWith(x))).length >= 100) {
                         //kill after 4 weeks
                         fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
-                        helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
+                        log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                     }
                 }
                 else if (['bmsdata', 'mapdata', 'osudata', 'scoredata', 'maplistdata', 'firstscoresdata', 'weatherlocationdata',].some(x => file.startsWith(x))) {
                     if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 24)) {
                         fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
-                        helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
+                        log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                         // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                     }
                 } else if (file.includes('weatherdata')) {
                     if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 15)) {
                         fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
-                        helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
+                        log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                         // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                     }
                 }
                 else {
                     if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 3)) {
                         fs.unlinkSync(`${helper.path.cache}/commandData/` + file);
-                        helper.log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
+                        log.stdout(`Deleted file ${helper.path.cache}/commandData/` + file,);
                         // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
                     }
                 }
@@ -255,7 +258,7 @@ function clearParseArgs() {
         fs.stat(`${helper.path.cache}/params/` + file, (err, stat) => {
             if ((new Date().getTime() - stat.mtimeMs) > (1000 * 60 * 60 * 24)) {
                 fs.unlinkSync(`${helper.path.cache}/params/` + file);
-                helper.log.stdout(`Deleted file ${helper.path.cache}/params/` + file,);
+                log.stdout(`Deleted file ${helper.path.cache}/params/` + file,);
                 // fs.appendFileSync('logs/updates.log', `\ndeleted file "${file}" at ` + new Date().toLocaleString() + '\n')
             }
         });
@@ -278,10 +281,10 @@ let enableTrack = helper.vars.config.enableTracking;
 const totalTime = 60 * 1000 * 60; //requests every 60 min
 function a() {
     try {
-        helper.track.trackUsers(totalTime);
+        track.trackUsers(totalTime);
     } catch (err) {
-        helper.log.stdout(err);
-        helper.log.stdout('temporarily disabling tracking for an hour');
+        log.stdout(err);
+        log.stdout('temporarily disabling tracking for an hour');
         enableTrack = false;
         setTimeout(() => {
             enableTrack = true;

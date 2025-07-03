@@ -6,6 +6,10 @@ import * as osuclasses from 'osu-classes';
 import * as osuparsers from 'osu-parsers';
 import * as rosu from 'rosu-pp-js';
 import * as helper from '../helper';
+import * as colourcalc from './colourcalc';
+import * as log from './log';
+import * as osuapi from './osuapi';
+import * as other from './other';
 
 export function appendUrlParamsString(url: string, params: string[]) {
     let temp = url;
@@ -29,7 +33,7 @@ export function debug(data: any, type: string, name: string, serverId: string | 
     }
     try {
         if (data?.input?.config) {
-            data.helper.vars.config = helper.other.censorConfig();
+            data.helper.vars.config = other.censorConfig();
         }
         fs.writeFileSync(`${helper.path.main}/cache/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
@@ -38,7 +42,7 @@ export function debug(data: any, type: string, name: string, serverId: string | 
 }
 
 export function modeValidator(mode: string | number) {
-    let returnf: helper.osuapi.types_v2.GameMode = 'osu';
+    let returnf: osuapi.types_v2.GameMode = 'osu';
     switch (mode) {
         case 0: case 'osu': default: case 'o': case 'std': case 'standard':
             returnf = 'osu';
@@ -57,7 +61,7 @@ export function modeValidator(mode: string | number) {
 }
 
 export function modeValidatorAlt(mode: string | number) {
-    let returnf: helper.osuapi.types_v2.GameMode = 'osu';
+    let returnf: osuapi.types_v2.GameMode = 'osu';
 
     if (typeof mode == 'number') {
         switch (mode) {
@@ -381,8 +385,8 @@ export async function graph(
         let i = 1;
         for (const newData of extra) {
             if (newData?.data?.length > 0) {
-                const nHSV = helper.colourcalc.rgbToHsv(101, 101, 135);
-                const newclr = helper.colourcalc.hsvToRgb(nHSV.h + (diff * i), nHSV.s, nHSV.v);
+                const nHSV = colourcalc.rgbToHsv(101, 101, 135);
+                const newclr = colourcalc.hsvToRgb(nHSV.h + (diff * i), nHSV.s, nHSV.v);
                 const xData = {
                     label: newData.label,
                     data: newData.data,
@@ -611,7 +615,7 @@ export async function graph(
         const buffer = tc.toBuffer();
         fs.writeFileSync(curt, buffer);
     } catch (err) {
-        helper.log.stdout(err);
+        log.stdout(err);
         curt = `${helper.path.precomp}/files/blank_graph.png`;
     }
 
@@ -652,9 +656,9 @@ export function formatHours(arr: string[]) {
 }
 
 export function ubitflagsAsName(flags: Discord.UserFlagsBitField) {
-    helper.log.stdout(flags);
+    log.stdout(flags);
     const fl = flags.toArray();
-    helper.log.stdout(fl);
+    log.stdout(fl);
     return 'aa';
 }
 
@@ -674,7 +678,7 @@ export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     return newArr;
 }
 
-export function scoreTotalHits(stats: helper.osuapi.types_v2.ScoreStatistics) {
+export function scoreTotalHits(stats: osuapi.types_v2.ScoreStatistics) {
     let total = 0;
     for (const value in stats) {
         total += stats[value];
@@ -683,7 +687,7 @@ export function scoreTotalHits(stats: helper.osuapi.types_v2.ScoreStatistics) {
 }
 
 export function scoreIsComplete(
-    stats: helper.osuapi.types_v2.ScoreStatistics,
+    stats: osuapi.types_v2.ScoreStatistics,
     circles: number,
     sliders: number,
     spinners: number,
@@ -696,7 +700,7 @@ export function scoreIsComplete(
     };
 }
 
-export function filterScoreQuery(scores: helper.osuapi.types_v2.Score[], search: string) {
+export function filterScoreQuery(scores: osuapi.types_v2.Score[], search: string) {
     return scores.filter((score) =>
         (
             score.beatmapset.title.toLowerCase().replaceAll(' ', '')
@@ -738,7 +742,7 @@ export async function getFailPoint(
 
         }
     } else {
-        helper.log.stdout("Path does not exist:" + mapPath);
+        log.stdout("Path does not exist:" + mapPath);
     }
     return time;
 }
@@ -753,8 +757,8 @@ export function validCountryCodeA2(code: string) {
  * @param defaultToNan - if the stat isnt found, return NaN instead of 0 
  * @returns 
  */
-export function lazerToOldStatistics(stats: helper.osuapi.types_v2.ScoreStatistics, mode: rosu.GameMode, defaultToNan?: boolean): helper.osuapi.types_v2.Statistics {
-    let foo: helper.osuapi.types_v2.Statistics;
+export function lazerToOldStatistics(stats: osuapi.types_v2.ScoreStatistics, mode: rosu.GameMode, defaultToNan?: boolean): osuapi.types_v2.Statistics {
+    let foo: osuapi.types_v2.Statistics;
     let dv = defaultToNan ? NaN : 0;
     switch (mode) {
         case 0:
@@ -801,7 +805,7 @@ export function lazerToOldStatistics(stats: helper.osuapi.types_v2.ScoreStatisti
     return foo;
 }
 
-export function getTotalScore(score: helper.osuapi.types_v2.Score): number {
+export function getTotalScore(score: osuapi.types_v2.Score): number {
     return score.mods.map(x => x.acronym).includes('CL') ?
         scoreIsStable(score) ?
             score?.legacy_total_score :
@@ -813,7 +817,7 @@ export function getTotalScore(score: helper.osuapi.types_v2.Score): number {
 /**
  * true for stable, false for lazer
  */
-export function scoreIsStable(score: helper.osuapi.types_v2.Score): boolean {
+export function scoreIsStable(score: osuapi.types_v2.Score): boolean {
     /**
  * check score is on stable or lazer
  * stable ->
