@@ -733,34 +733,6 @@ export function cleanArgs(args: string[]) {
     return newArgs;
 }
 
-export async function parseArgsMode(input: helper.bottypes.commandInput) {
-    let mode: osuapi.types_v2.GameMode;
-    const otemp = matchArgMultiple(['-o', '-osu'], input.args, false, null, false, false);
-    if (otemp.found) {
-        mode = 'osu';
-        input.args = otemp.args;
-    }
-    const ttemp = matchArgMultiple(['-t', '-taiko'], input.args, false, null, false, false);
-    if (ttemp.found) {
-        mode = 'taiko';
-        input.args = ttemp.args;
-    }
-    const ftemp = matchArgMultiple(['-f', '-fruits', '-ctb', '-catch'], input.args, false, null, false, false);
-    if (ftemp.found) {
-        mode = 'fruits';
-        input.args = ftemp.args;
-    }
-    const mtemp = matchArgMultiple(['-m', '-mania'], input.args, false, null, false, false);
-    if (mtemp.found) {
-        mode = 'mania';
-        input.args = mtemp.args;
-    }
-    return {
-        args: input.args,
-        mode
-    };
-}
-
 export function getCmdId() {
     helper.vars.id++;
     return helper.vars.id;

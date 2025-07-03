@@ -20,7 +20,6 @@ export function checkConfig() {
             log.stdout("The bot cannot run without this property");
             process.exit(0);
         }
-
     } else {
         throw new Error('missing `osu` value in config');
     }

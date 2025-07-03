@@ -74,6 +74,57 @@ export class Command {
     }
     async setParamsMsg() {
     }
+    /**
+     * for message params only
+     */
+    protected setParam(param: any, flags: string[], type: 'string' | 'number' | 'bool', typeParams: {
+        bool_setValue?: any,
+        number_isInt?: boolean,
+        string_isMultiple?: boolean,
+    }) {
+        flags = this.setParamCheckFlags(flags);
+
+        switch (type) {
+            case 'string': {
+                const argFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'string', typeParams.string_isMultiple ?? false, false);
+                if (argFinder.found) {
+                    param = argFinder.output;
+                    this.input.args = argFinder.args;
+                }
+            }
+                break;
+            case 'number': {
+                const argFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, typeParams.number_isInt ?? false);
+                if (argFinder.found) {
+                    param = argFinder.output;
+                    this.input.args = argFinder.args;
+                }
+            }
+                break;
+            case 'bool': {
+                const argFinder = commandTools.matchArgMultiple(flags, this.input.args, false, null, false, false);
+                if (argFinder.found) {
+                    param = typeParams.bool_setValue ?? true;
+                    this.input.args = argFinder.args;
+                }
+            }
+                break;
+        }
+        return param;
+    };
+    setParamCheckFlags(flags: string[]) {
+        if (flags.length == 0) return [];
+        const nf: string[] = [];
+        for (const flag of flags) {
+            if (!flag.startsWith('-')) {
+                nf.push('-' + flag);
+            } else {
+                nf.push(flag);
+            }
+        }
+        return nf;
+    }
+
     async setParamsInteract() {
     }
     async setParamsBtn() {
@@ -117,8 +168,30 @@ export class Command {
 
 // gasp capitalised o
 export class OsuCommand extends Command {
+    protected setParamMode() {
+        const otemp = commandTools.matchArgMultiple(['-o', '-osu'], this.input.args, false, null, false, false);
+        if (otemp.found) {
+            this.params.mode = 'osu';
+            this.input.args = otemp.args;
+        }
+        const ttemp = commandTools.matchArgMultiple(['-t', '-taiko'], this.input.args, false, null, false, false);
+        if (ttemp.found) {
+            this.params.mode = 'taiko';
+            this.input.args = ttemp.args;
+        }
+        const ftemp = commandTools.matchArgMultiple(['-f', '-fruits', '-ctb', '-catch'], this.input.args, false, null, false, false);
+        if (ftemp.found) {
+            this.params.mode = 'fruits';
+            this.input.args = ftemp.args;
+        }
+        const mtemp = commandTools.matchArgMultiple(['-m', '-mania'], this.input.args, false, null, false, false);
+        if (mtemp.found) {
+            this.params.mode = 'mania';
+            this.input.args = mtemp.args;
+        }
+    }
     // if no user, use DB or disc name
-    async validUser(user: string, searchid: string, mode: osuapi.types_v2.GameMode) {
+    protected async validUser(user: string, searchid: string, mode: osuapi.types_v2.GameMode) {
         if (user == null) {
             const cuser = await data.searchUser(searchid, true);
             user = cuser?.username;
@@ -134,7 +207,7 @@ export class OsuCommand extends Command {
         return { user, mode };
     }
 
-    async getProfile(user: string, mode: osuapi.types_v2.GameMode) {
+    protected async getProfile(user: string, mode: osuapi.types_v2.GameMode) {
         let osudata: osuapi.types_v2.UserExtended;
 
         if (data.findFile(user, 'osudata', other.modeValidator(mode)) &&
@@ -161,7 +234,7 @@ export class OsuCommand extends Command {
 
         return osudata;
     }
-    async getMap(mapid: string | number) {
+    protected async getMap(mapid: string | number) {
         let mapdata: osuapi.types_v2.BeatmapExtended;
         if (data.findFile(mapid, 'mapdata') &&
             !('error' in data.findFile(mapid, 'mapdata')) &&
@@ -181,7 +254,7 @@ export class OsuCommand extends Command {
 
         return mapdata;
     }
-    getLatestMap() {
+    protected getLatestMap() {
         const tempMap = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
         const tempScore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
         const tmt = moment(tempMap.last_access ?? '1975-01-01');
