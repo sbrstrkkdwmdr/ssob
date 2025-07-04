@@ -86,7 +86,7 @@ export class Command {
         number_isInt?: boolean,
         string_isMultiple?: boolean,
     }) {
-        flags = this.setParamCheckFlags(flags)
+        flags = this.setParamCheckFlags(flags);
         switch (type) {
             case 'string': {
                 let temparg = this.argParser.getParam(flags);
@@ -114,9 +114,9 @@ export class Command {
         const nf: string[] = [];
         for (const flag of flags) {
             if (!flag.startsWith('-')) {
-                nf.push('-' + flag);
+                nf.push('-' + flag.toLowerCase());
             } else {
-                nf.push(flag);
+                nf.push(flag.toLowerCase());
             }
         }
         return nf;
@@ -403,7 +403,7 @@ export class ArgsParser {
     private args: string[];
     private used: Set<number>;
     constructor(args: string[]) {
-        this.args = args;
+        this.args = args.map(x => x.toLowerCase());
         this.used = new Set();
     }
     /**
