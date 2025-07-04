@@ -261,9 +261,8 @@ export class Ranking extends OsuCommand {
             this.input.args = pageArgFinder.args;
         }
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
         if (this.input.args.includes('-parse')) {
             this.params.parse = true;
@@ -514,9 +513,8 @@ export class Profile extends OsuCommand {
             this.input.args = graphArgFinder.args;
         }
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
 
         this.input.args = commandTools.cleanArgs(this.input.args);

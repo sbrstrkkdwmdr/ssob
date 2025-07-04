@@ -38,9 +38,7 @@ export class Compare extends OsuCommand {
 
     async setParamsMsg() {
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
         }
         if (this.input.message.mentions.users.size > 1) {
             this.params.firstsearchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
@@ -363,9 +361,8 @@ export class RankPP extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
         this.params.value = +(this.input.args[0] ?? 100);
     }
@@ -555,9 +552,7 @@ export class ServerLeaderboard extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode ?? 'osu';
+            this.setParamMode();
         }
         this.input.args = commandTools.cleanArgs(this.input.args);
         this.params.id = this.input.args[0];
@@ -741,9 +736,7 @@ export class Set extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
         }
 
         if (this.input.args.includes('-skin')) {
@@ -881,9 +874,7 @@ export class WhatIf extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
         }
 
         this.input.args = commandTools.cleanArgs(this.input.args);

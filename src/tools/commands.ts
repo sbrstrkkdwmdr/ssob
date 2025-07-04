@@ -118,54 +118,7 @@ export function checkFileLimit(files: any[]) {
         return files;
     }
 }
-export function parseArg(
-    args: string[],
-    searchString: string,
-    type: 'string' | 'number',
-    defaultValue: any,
-    multipleWords?: boolean,
-    asInt?: boolean,
-) {
-    let returnArg;
-    let temp;
-    temp = args[args.indexOf(searchString) + 1];
-    if (!temp || temp.startsWith('-')) {
-        returnArg = defaultValue;
-    } else {
-        switch (type) {
-            case 'string': {
-                returnArg = temp;
-                if (multipleWords == true && temp.includes('"')) {
-                    temp = args.join(' ').split(searchString)[1].split('"')[1];
-                    for (let i = 0; i < args.length; i++) {
-                        if (temp.includes(args[i].replaceAll('"', '')) && i > args.indexOf(searchString)) {
-                            args.splice(i, 1);
-                            i--;
-                        }
-                    }
-                    returnArg = temp;
-                } else {
-                    args.splice(args.indexOf(searchString), 2);
-                }
-            }
-                break;
-            case 'number': {
-                returnArg = +temp;
-                if (isNaN(+temp)) {
-                    returnArg = defaultValue;
-                } else if (asInt == true) {
-                    returnArg = parseInt(temp);
-                }
-                args.splice(args.indexOf(searchString), 2);
-            }
-                break;
-        }
-    }
-    return {
-        value: returnArg,
-        newArgs: args
-    };
-}
+
 // export function parseScoreListArgs() { }
 // export function parseScoreListArgs_message() { }
 // export function parseScoreListArgs_interaction() { }
@@ -289,188 +242,6 @@ export async function mapIdFromLink(url: string, callIfMapIdNull: boolean,) {
 }
 
 /**
- * get user id/name from a given string
- * 
- * patterns:
- * 
- * osu.ppy.sh/u/{id}
- * 
- * osu.ppy.sh/users/{id}
- * 
- * osu.ppy.sh/users/{id}/{mode}
- * 
- * "{username}"
- * 
- * {username}
- * 
- */
-export function fetchUser(args: string[]) {
-    let url = args.join(' ');
-    if (url.includes(' ')) {
-        const temp = url.split(' ');
-        //get arg that has osu.ppy.sh
-        for (let i = 0; i < temp.length; i++) {
-            const curarg = temp[i];
-            if (curarg.includes('osu.ppy.sh')) {
-                url = curarg;
-                break;
-            }
-        }
-    }
-    const object: {
-        id: string,
-        mode: osuapi.types_v2.GameMode,
-        args: string[];
-    } = {
-        id: '',
-        mode: null,
-        args
-    };
-    /**
-     * patterns:
-     * osu.ppy.sh/u/{id}
-     * osu.ppy.sh/users/{id}
-     * osu.ppy.sh/users/{id}/{mode}
-     * "{username}"
-     * {username}
-     * -u
-     */
-    const userArgFinder = matchArgMultiple(helper.argflags.user, args, true, 'string', true, false);
-    switch (true) {
-        case userArgFinder.found:
-            if (userArgFinder.found) {
-                object.id = userArgFinder.output;
-                object.args = userArgFinder.args;
-            }
-        case url.includes('osu.ppy.sh'):
-            switch (true) {
-                case url.includes('/u/'):
-                    object.id = url.split('/u/')[1];
-                    break;
-                case url.includes('/users/'):
-                    object.id = url.split('/users/')[1];
-                    if (url.split('/users/')[1].includes('/')) {
-                        object.id = url.split('/users/')[1].split('/')[0];
-                        object.mode = (url.split('/users/')[1].split('/')[1]) as osuapi.types_v2.GameMode;
-                    }
-                    break;
-            }
-            break;
-        case url.includes("\""):
-            object.id = url.split('"')[1];
-            break;
-        default:
-            object.id = url;
-            break;
-    }
-    if (object?.id?.trim() == "") {
-        object.id = null;
-    }
-    return object;
-}
-
-/**
- * fetchUser(), but explicitly for 2 users
- */
-export function parseUsers(input: string): [string | null, string | null] {
-    let foo: string | null = null;
-    let bar: string | null = null;
-    /**
-     * patterns:
-     * osu.ppy.sh/u/{id}
-     * osu.ppy.sh/users/{id}
-     * osu.ppy.sh/users/{id}/{mode}
-     * "{username}"
-     * {username}
-     */
-    let tempString;
-    let continues = false;
-    for (const string of input.split(' ')) {
-        if (continues) {
-            tempString += string + ' ';
-            if (string.includes('"')) {
-                continues = false;
-                tempString = tempString.replaceAll('"', '').trim();
-            } else {
-                continue;
-            }
-        } else {
-            switch (true) {
-                case string.includes('osu.ppy.sh/u/'):
-                    tempString = string.split('osu.ppy.sh/u/')[1];
-                    break;
-                case string.includes('osu.ppy.sh/users/'):
-                    tempString = string.split('osu.ppy.sh/users/')[1];
-                    if (tempString.includes('/')) {
-                        tempString = tempString.split('/')[0];
-                    }
-                    break;
-                case string.startsWith('"'):
-                    continues = true;
-                    tempString = string + ' ';
-                    continue;
-                    break;
-                default:
-                    tempString = string;
-                    break;
-            }
-        }
-        if (foo && bar) break;
-        if (foo) {
-            bar = tempString;
-        } else {
-            foo = tempString;
-        }
-
-    }
-
-    return [foo, bar];
-}
-
-/**
- * NOTE - using mode requires old ids, without mode uses new ids 
- * 
- * patterns:
- * 
- * osu.ppy.sh/scores/{mode}/{id}
- * 
- * osu.ppy.sh/scores/{id}
- */
-export function scoreIdFromLink(url: string) {
-    if (url.includes(' ')) {
-        const temp = url.split(' ');
-        //get arg that has osu.ppy.sh
-        for (let i = 0; i < temp.length; i++) {
-            const curarg = temp[i];
-            if (curarg.includes('osu.ppy.sh')) {
-                url = curarg;
-                break;
-            }
-        }
-    }
-    const object: {
-        id: string,
-        mode: osuapi.types_v2.GameMode,
-    } = {
-        id: null,
-        mode: null,
-    };
-    if (!(url.includes('osu.ppy.sh') && url.includes('/scores/'))) {
-        return object;
-    }
-
-    object.id = url.split('/scores/')[1];
-    if (url.split('/scores/')[1].includes('/')) {
-        object.id = url.split('/scores/')[1].split('/')[1];
-        object.mode = other.modeValidator(url.split('/scores/')[1].split('/')[0]);
-    }
-    if (object.id.trim() == "") {
-        object.id = null;
-    }
-    return object;
-}
-
-/**
  * @param noLinks ignore "button" and "link" command types
  * logs error, sends error to command user then promptly aborts the command
  */
@@ -488,34 +259,6 @@ export async function errorAndAbort(input: helper.bottypes.commandInput, command
         }
     }, input.canReply);
     return;
-}
-
-export function matchArgMultiple(argFlags: string[], inargs: string[], match: boolean, matchType: 'string' | 'number', isMultiple: boolean, isInt: boolean) {
-    let found = false;
-    let args: string[] = inargs;
-    let matchedValue = null;
-    let output = null;
-    if (inargs.some(x => {
-        if (argFlags.includes(x)) {
-            matchedValue = x;
-            return true;
-        }
-        return false;
-    })) {
-        found = true;
-        if (match) {
-            const temp = parseArg(inargs, matchedValue, matchType ?? 'number', null, isMultiple, isInt);
-            output = temp.value;
-            args = temp.newArgs;
-        } else {
-            output = true;
-            inargs.splice(inargs.indexOf(matchedValue), 1);
-            args = inargs;
-        }
-    }
-    return {
-        found, args, output,
-    };
 }
 
 export type params = {
@@ -823,7 +566,7 @@ export function disableAllButtons(msg: Discord.Message) {
 
 export function getCommand(query: string): helper.bottypes.commandInfo {
     return helper.commandData.cmds.find(
-        x => x.aliases.concat([x.name]).map(x=>x.toLowerCase()).includes(query.toLowerCase())
+        x => x.aliases.concat([x.name]).map(x => x.toLowerCase()).includes(query.toLowerCase())
     );
 
 

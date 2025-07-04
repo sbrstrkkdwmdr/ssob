@@ -16,6 +16,7 @@
 -   remove methods and commands from helper module (circular refs)
 -   move commands to separate helper module
 -   `Map` split `execute()` into multiple smaller methods
+-   rewrite how params are managed (move to a new class)
 
 ## [5.2.0] - 2025-07-02
 

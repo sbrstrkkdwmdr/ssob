@@ -1,5 +1,6 @@
 import * as Discord from 'discord.js';
 import moment from 'moment';
+import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../helper';
 import * as commandTools from '../tools/commands';
 import * as data from '../tools/data';
@@ -17,6 +18,7 @@ export abstract class InputHandler {
 
 export class Command {
     #name: string;
+    protected argParser: ArgsParser;
     protected set name(input: string) {
         this.#name = input[0] == input[0].toUpperCase() ? input : formatters.toCapital(input);
     }
@@ -34,11 +36,13 @@ export class Command {
     };
     protected params: { [id: string]: any; };
     protected input: helper.bottypes.commandInput;
+
     constructor() {
         this.voidcontent();
     }
     setInput(input: helper.bottypes.commandInput) {
         this.input = input;
+        this.argParser = new ArgsParser(this.input.args);
     }
     voidcontent() {
         this.ctn = {
@@ -82,31 +86,23 @@ export class Command {
         number_isInt?: boolean,
         string_isMultiple?: boolean,
     }) {
-        flags = this.setParamCheckFlags(flags);
-
         switch (type) {
             case 'string': {
-                const argFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'string', typeParams.string_isMultiple ?? false, false);
-                if (argFinder.found) {
-                    param = argFinder.output;
-                    this.input.args = argFinder.args;
-                }
+                let temparg = this.argParser.getParam(flags);
+                if (temparg) param = temparg;
             }
                 break;
             case 'number': {
-                const argFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, typeParams.number_isInt ?? false);
-                if (argFinder.found) {
-                    param = argFinder.output;
-                    this.input.args = argFinder.args;
-                }
+                let temparg = this.argParser.getParam(flags);
+                if (temparg) param =
+                    typeParams.number_isInt ?
+                        parseInt(temparg) :
+                        +temparg;
             }
                 break;
             case 'bool': {
-                const argFinder = commandTools.matchArgMultiple(flags, this.input.args, false, null, false, false);
-                if (argFinder.found) {
-                    param = typeParams.bool_setValue ?? true;
-                    this.input.args = argFinder.args;
-                }
+                let temparg = this.argParser.paramExists(flags);
+                if (temparg) param = typeParams?.bool_setValue ?? true;
             }
                 break;
         }
@@ -124,7 +120,9 @@ export class Command {
         }
         return nf;
     }
-
+    protected setParamPage() {
+        this.params.page = this.setParam(this.params.page, helper.argflags.pages, 'number', { number_isInt: true });
+    }
     async setParamsInteract() {
     }
     async setParamsBtn() {
@@ -169,27 +167,108 @@ export class Command {
 // gasp capitalised o
 export class OsuCommand extends Command {
     protected setParamMode() {
-        const otemp = commandTools.matchArgMultiple(['-o', '-osu'], this.input.args, false, null, false, false);
-        if (otemp.found) {
+        if (this.argParser.paramExists(['-o', '-osu', '-std'])) {
             this.params.mode = 'osu';
-            this.input.args = otemp.args;
+            return;
         }
-        const ttemp = commandTools.matchArgMultiple(['-t', '-taiko'], this.input.args, false, null, false, false);
-        if (ttemp.found) {
+        if (this.argParser.paramExists(['-t', '-taiko'])) {
             this.params.mode = 'taiko';
-            this.input.args = ttemp.args;
+            return;
         }
-        const ftemp = commandTools.matchArgMultiple(['-f', '-fruits', '-ctb', '-catch'], this.input.args, false, null, false, false);
-        if (ftemp.found) {
+        if (this.argParser.paramExists(['-f', '-fruits', '-ctb', '-catch'])) {
             this.params.mode = 'fruits';
-            this.input.args = ftemp.args;
+            return;
         }
-        const mtemp = commandTools.matchArgMultiple(['-m', '-mania'], this.input.args, false, null, false, false);
-        if (mtemp.found) {
+        if (this.argParser.paramExists(['-m', '-mania'])) {
             this.params.mode = 'mania';
-            this.input.args = mtemp.args;
+            return;
         }
     }
+    /**
+     * +{mods}
+     */
+    protected setParamMods() {
+        let mods: osumodcalc.types.Mod[] = null;
+        let apiMods: osuapi.types_v2.Mod[] = null;
+        if (this.input.args.join(' ').includes('+')) {
+            const temp = this.argParser.getParamFlexible(['+{param}']);
+            if (temp) {
+                mods = osumodcalc.mod.fromString(temp);
+                apiMods = mods.map(x => { return { acronym: x }; });
+            }
+            // this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
+        }
+        return { mods, apiMods };
+    }
+    protected setParamUser() {
+        const webpatterns = [
+            'osu.ppy.sh/users/{user}?*',
+            'osu.ppy.sh/users/{user}/{mode}',
+            'osu.ppy.sh/users/{user}',
+            'osu.ppy.sh/u/{user}?*',
+            'osu.ppy.sh/u/{user}',
+        ];
+        for (const pattern of webpatterns.slice()) {
+            webpatterns.push('https://' + pattern);
+        }
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp[0]) {
+                return temp[0].user;
+            }
+        }
+        return this.argParser.getParamFlexible(['-u', '-user']);
+    }
+    protected setParamMap() {
+        const webpatterns = [
+            'osu.ppy.sh/beatmapsets/{set}#{mode}/{map}',
+            'osu.ppy.sh/beatmapsets/{set}',
+            'osu.ppy.sh/beatmaps/{map}?m={mode}',
+            'osu.ppy.sh/beatmaps/{map}',
+            'osu.ppy.sh/s/{set}#{mode}/{map}',
+            'osu.ppy.sh/s/{set}',
+            'osu.ppy.sh/b/{map}?m={mode}',
+            'osu.ppy.sh/b/{map}',
+        ];
+        const res = [];
+        for (const pattern of webpatterns.slice()) {
+            webpatterns.push('https://' + pattern);
+        }
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp) res.push(temp);
+        }
+        const finalRes = {
+            set: null,
+            map: null,
+            mode: null,
+        };
+        for (const result of res) {
+            switch (Object.keys(result)[0]) {
+                case 'set':
+                    finalRes.set = +result.set;
+                    break;
+                case 'map':
+                    finalRes.map = +result.map;
+                    break;
+                case 'mode':
+                    finalRes.mode = result.mode;
+                    break;
+            }
+        }
+        return finalRes;
+    }
+    protected setParamScore() {
+        const webpatterns = [
+            'osu.ppy.sh/users/{param}?*',
+            'osu.ppy.sh/users/{param}/*',
+            'osu.ppy.sh/users/{param}',
+            'osu.ppy.sh/u/{param}?*',
+            'osu.ppy.sh/u/{param}',
+        ];
+        return this.argParser.getParamFlexible(['-u', '-user'].concat(webpatterns).concat(webpatterns.map(x => 'https://' + x)));
+    }
+
     // if no user, use DB or disc name
     protected async validUser(user: string, searchid: string, mode: osuapi.types_v2.GameMode) {
         if (user == null) {
@@ -271,6 +350,155 @@ export class OsuCommand extends Command {
             mods: tempScore?.mods,
             mode: tempScore?.mode,
         };
+    }
+}
+
+export class ArgsParser {
+    private args: string[];
+    private used: Set<number>;
+    constructor(args: string[]) {
+        this.args = args;
+        this.used = new Set();
+    }
+    /**
+     * assisted by ChatGPT
+     */
+    getParam(flags: string[]) {
+        for (let i = 0; i < this.args.length; i++) {
+            if (flags.includes(this.args[i]) && !this.used.has(i)) {
+                this.used.add(i);
+
+                const values: string[] = [];
+                let collecting = false;
+
+                for (let j = i + 1; j < this.args.length; j++) {
+                    const arg = this.args[j];
+                    if (this.used.has(j)) continue;
+
+                    if (!collecting && arg.startsWith('"')) {
+                        collecting = true;
+                        values.push(arg.slice(1));
+                        this.used.add(j);
+                    } else if (collecting && arg.endsWith('"')) {
+                        values.push(arg.slice(0, -1));
+                        this.used.add(j);
+                        break;
+                    } else if (collecting) {
+                        values.push(arg);
+                        this.used.add(j);
+                    } else if (!arg.startsWith('-')) {
+                        values.push(arg);
+                        this.used.add(j);
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+
+                return values.length > 0 ? values.join(' ') : null;
+            }
+        }
+
+        return null;
+    }
+    /**
+     * used for getting bools, but this can also be used to just check that a param exists
+     */
+    paramExists(flags: string[]) {
+        for (let i = 0; i < this.args.length; i++) {
+            if (flags.includes(this.args[i])) {
+                this.used.add(i);
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * assisted by ChatGPT
+     * 
+     * flags can be formatted as `-foo` or `*{param}*`
+     * 
+     * example of how to use:
+     * ```
+     * input.args = ['-u', '152'];
+     * getParamFlexible(['-u', 'osu.ppy.sh/u/{param}']); // 152
+     * 
+     * input.args = ['osu.ppy.sh/u/34'];
+     * getParamFlexible(['-u', 'osu.ppy.sh/u/{param}']); // 34
+     * 
+     *      * input.args = ['osu.ppy.sh/users/15222484/mania'];
+     * getParamFlexible(['-u', 'osu.ppy.sh/users/{param}/*']); // 15222484
+     * ```
+     */
+    getParamFlexible(flagsOrPatterns: string[]) {
+        for (let i = 0; i < this.args.length; i++) {
+            const arg = this.args[i];
+            if (this.used.has(i)) continue;
+
+            for (const pattern of flagsOrPatterns) {
+                // Case 1: CLI-style flag
+                if (!pattern.includes('{')) {
+                    if (arg === pattern) {
+                        this.used.add(i);
+                        const value = this.args[i + 1];
+                        if (value && !value.startsWith('-')) {
+                            this.used.add(i + 1);
+                            return value.replace(/^"|"$/g, '');
+                        }
+                        return null;
+                    }
+                }
+
+                // Case 2: Pattern with {param} and wildcards
+                else {
+                    const regex = new RegExp(
+                        '^' +
+                        pattern
+                            .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex characters
+                            .replace(/\\\*/g, '.*')                // turn \* into .*
+                            .replace(/\\{param\\}/g, '([^/#?]+)') + // capture {param}
+                        '$'
+                    );
+
+                    const match = arg.match(regex);
+                    if (match) {
+                        this.used.add(i);
+                        return match[1];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+    getRemaining(): string[] {
+        return this.args.filter((_, i) => !this.used.has(i));
+    }
+
+    getLink(pattern: string): { [key: string]: string; }[] | null {
+        const paramNames: string[] = [];
+
+        const regexPattern = pattern
+            .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+            .replace(/{(\w+)}/g, (_, paramName) => {
+                paramNames.push(paramName);
+                return '([^/#?]+)';
+            });
+
+        const regex = new RegExp('^' + regexPattern + '$');
+
+        for (let i = 0; i < this.args.length; i++) {
+            if (this.used.has(i)) continue;
+
+            const arg = this.args[i];
+            const match = arg.match(regex);
+            if (match) {
+                this.used.add(i);
+                return paramNames.map((name, index) => ({ [name]: match[index + 1] }));
+            }
+        }
+
+        return [];
     }
 }
 

@@ -96,9 +96,8 @@ export class ScoreListCommand extends OsuCommand {
             this.input.args = lessDetailArgFinder.args;
         }
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
         const reverseArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['rev', 'reverse',]), this.input.args, false, null, false, false);
         if (reverseArgFinder.found) {
@@ -1272,9 +1271,8 @@ export class Recent extends SingleScoreCommand {
         }
 
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
 
         this.input.args = commandTools.cleanArgs(this.input.args);
@@ -1886,9 +1884,8 @@ export class ScoreStats extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
         const firstArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['first', 'firsts', 'globals', 'global', 'f', 'g']), this.input.args, false, null, false, false);
         if (firstArgFinder.found) {

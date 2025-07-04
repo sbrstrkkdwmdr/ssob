@@ -66,11 +66,7 @@ export class Map extends OsuCommand {
 
         this.params.maptitleq = this.setParam(this.params.maptitleq, ['-?'], 'string', { string_isMultiple: true });
 
-        const isppCalcArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['pp', 'calc', 'performance']), this.input.args, false, null, false, false);
-        if (isppCalcArgFinder.found) {
-            this.params.isppCalc = true;
-            this.input.args = isppCalcArgFinder.args;
-        }
+        this.params.isppCalc = this.setParam(this.params.isppCalc, ['pp', 'calc', 'performance'], 'bool', {});
 
         this.setParamMode();
 
@@ -87,11 +83,16 @@ export class Map extends OsuCommand {
             }
             this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
         }
+        const tmod = this.setParamMods();
+        if (tmod) {
+            this.#apiMods = tmod.apiMods;
+            this.params.mapmods = tmod.mods;
+        }
 
         this.input.args = commandTools.cleanArgs(this.input.args);
         const mapTemp = await commandTools.mapIdFromLink(this.input.args.join(' '), true);
         this.params.mapid = mapTemp.map;
-        mapTemp.mode ? this.params.mode = mapTemp.mode : null;
+        mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;

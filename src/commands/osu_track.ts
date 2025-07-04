@@ -21,15 +21,10 @@ export class TrackAR extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            const temp = await commandTools.parseArgsMode(this.input);
-            this.input.args = temp.args;
-            this.params.mode = temp.mode;
+            this.setParamMode();
+
         }
-        const userArgFinder = commandTools.matchArgMultiple(helper.argflags.user, this.input.args, true, 'string', true, false);
-        if (userArgFinder.found) {
-            this.params.user = userArgFinder.output;
-            this.input.args = userArgFinder.args;
-        }
+        
         this.params.user = this.params.user ?? this.input.args[0];
     }
     async setParamsInteract() {

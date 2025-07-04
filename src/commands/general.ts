@@ -31,11 +31,7 @@ export class Changelog extends Command {
         };
     }
     async setParamsMsg() {
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
-        }
+        this.setParamPage();
         this.params.version = this.input.args[0] ?? null;
 
     }
