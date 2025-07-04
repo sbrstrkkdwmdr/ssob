@@ -16,10 +16,7 @@ You can also show a single score by using \`-parse <id>\` (eg. -parse 5)
 `;
 
 const range = (key: string): string[] => {
-    const temp = ['>foo', '<foo', 'foo..bar', '!foo'];
-    const temp2: string[] = [];
-    temp.forEach(t => temp2.push('-' + key + ' ' + t));
-    return temp2;
+    return ['>{min}', '<{max}', '{min}..{max}', '!{value}'].map(x => '-' + key + ' ' + x);
 };
 
 /**
@@ -32,7 +29,7 @@ const user: helper.bottypes.commandInfoOption = {
     type: 'string/integer/user mention',
     required: false,
     description: 'The user to show',
-    format: ['foo', '@foo', '-u foo', '-user foo', '-uid foo', 'osu.ppy.sh/u/foo', 'osu.ppy.sh/users/foo'],
+    format: ['{user}', '@{discord user}', '-u {user}', '-user {user}', '-uid {user}', 'osu.ppy.sh/u/{user}', 'osu.ppy.sh/users/{user}'],
     defaultValue: 'The user who ran the command',
 };
 const mode: helper.bottypes.commandInfoOption = {
@@ -41,7 +38,7 @@ const mode: helper.bottypes.commandInfoOption = {
     required: false,
     description: 'The mode to use',
     options: ['osu', 'taiko', 'fruits', 'mania'],
-    format: ['-foo'],
+    format: ['-{mode}'],
     defaultValue: 'osu',
 };
 const page: helper.bottypes.commandInfoOption = {
@@ -49,7 +46,7 @@ const page: helper.bottypes.commandInfoOption = {
     type: 'integer',
     required: false,
     description: 'The page to show',
-    format: ['-p foo', '-page foo'],
+    format: ['-p {page}', '-page {page}'],
     defaultValue: '1',
 };
 const userTrack: helper.bottypes.commandInfoOption = {
@@ -71,12 +68,14 @@ const userAdmin: helper.bottypes.commandInfoOption = {
 
 const scoreListArgs = '[user] [page] [mode] [mapper] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]';
 const mapformat = [
-    'foo',
-    'osu.ppy.sh/b/foo',
-    'osu.ppy.sh/s/SETID',
-    'osu.ppy.sh/beatmaps/foo',
-    'osu.ppy.sh/beatmapsets/SETID',
-    'osu.ppy.sh/beatmapsets/SETID#MODE/foo'
+    '{map id}',
+    'osu.ppy.sh/b/{map id}',
+    'osu.ppy.sh/s/{set id}',
+    'osu.ppy.sh/beatmaps/{map id}',
+    'osu.ppy.sh/beatmapsets/{set id}',
+    'osu.ppy.sh/beatmapsets/{set id}#{mode}/{map id}',
+    '-b {map ID}',
+    '-map {map ID}'
 ];
 const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
     user, mode,
@@ -86,7 +85,7 @@ const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
         required: false,
         description: 'The sort order of the scores',
         options: ['pp', 'score', 'recent', 'acc', 'combo', 'miss', 'rank'],
-        format: ['-foo'],
+        format: ['-{pp or recent}', '-sort {sort}'],
         defaultValue: 'pp',
     },
     {
@@ -104,7 +103,7 @@ const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
         type: 'string',
         required: false,
         description: 'The mapper to filter the scores by',
-        format: ['-mapper foo'],
+        format: ['-mapper {user}'],
         defaultValue: 'null',
     },
     {
@@ -112,7 +111,7 @@ const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
         type: 'string',
         required: false,
         description: `Filter scores including these mods. ${mods}`,
-        format: ['-mods foo', '+foo'],
+        format: ['+{mods}', '-mods {mods}'],
         defaultValue: 'null',
     },
     {
@@ -121,14 +120,14 @@ const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
         required: false,
         description: `Filter scores with these exact mods. ${mods}`,
         defaultValue: 'null',
-        format: ['-mx foo'],
+        format: ['-mx {mods}', '-modx {mods}'],
     },
     {
         name: 'exclude mods',
         type: 'string',
         required: false,
         description: `Filter scores to exclude these mods. ${mods}`,
-        format: ['-me foo'],
+        format: ['-me {mods}', '-exmod {mods}'],
         defaultValue: 'null',
     },
     {
@@ -144,24 +143,48 @@ const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
         type: 'integer',
         required: false,
         description: 'Parse the score with the specific index',
-        format: ['-parse foo'],
+        format: ['-parse {index}'],
         defaultValue: '0',
     },
     {
-        name: 'query',
+        name: 'filterTitle',
         type: 'string',
         required: false,
-        description: 'Filters all scores to only show maps with the specified string',
-        format: ['-? "foo"'],
+        description: 'Filters all scores to only show maps with the specified name',
+        format: ['-? {title}', '-title {title}'],
         defaultValue: 'null',
     },
     {
-        name: 'grade',
+        name: 'filteredMapper',
+        type: 'string',
+        required: false,
+        description: 'Filters all scores to only show maps with the specified creator',
+        format: ['-creator {creator}', '-mapper {creator}'],
+        defaultValue: 'null',
+    },
+    {
+        name: 'filterArtist',
+        type: 'string',
+        required: false,
+        description: 'Filters all scores to only show maps with the specified artist',
+        format: ['-artist {artist}', '-a {artist}'],
+        defaultValue: 'null',
+    },
+    {
+        name: 'filterDifficulty',
+        type: 'string',
+        required: false,
+        description: 'Filters all scores to only show maps with the specified difficulty name',
+        format: ['-version {difficulty}', '-v {difficulty}', '-difficulty {difficulty}', '-diff {difficulty}'],
+        defaultValue: 'null',
+    },
+    {
+        name: 'grade/rank',
         type: 'string',
         required: false,
         description: 'Filters all scores to only show scores matching the given grade/rank',
         options: ['XH', 'SSH', 'X', 'SS', 'SH', 'S', 'A', 'B', 'C', 'D', 'F'],
-        format: ['-foo'],
+        format: ['-{rank}'],
         defaultValue: 'null',
     },
     {
@@ -286,7 +309,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The command/category to get information about. Categories are always prefixed with `categoryX`.',
                 options: ['list', 'category(category)', '(command)'],
-                format: ['foo'],
+                format: ['{command}', 'category{category}'],
                 defaultValue: 'N/A',
             },
         ]
@@ -304,7 +327,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'Return just that specific value',
                 options: ['uptime', 'version', 'server', 'website', 'source'],
-                format: ['foo'],
+                format: ['{arg}'],
                 defaultValue: 'null',
             },
         ]
@@ -350,7 +373,6 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: true,
                 description: 'The time until the reminder',
                 options: [
-                    'format: [number][unit] or hh:mm:ss',
                     'units: s, m, h, d, w, y',
                 ],
                 format: ['[number][unit]...', 'hh:mm:ss'],
@@ -361,7 +383,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The reminder',
-                format: ['foo'],
+                format: ['{text}'],
                 defaultValue: 'null',
             },
             {
@@ -370,7 +392,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'Whether to send the reminder in the channel or in a DM. Admin only',
                 options: ['true', 'false'],
-                format: ['foo'],
+                format: ['{bool}'],
                 defaultValue: 'false',
             }
         ]
@@ -451,7 +473,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 options: [
                     'profile', 'top plays'
                 ],
-                format: ['foo'],
+                format: ['{type}'],
                 defaultValue: 'user stats (top plays if using "common")',
             },
             {
@@ -459,7 +481,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The first user to compare',
-                format: ['foo', '@foo', 'osu.ppy.sh/u/foo', 'osu.ppy.sh/users/foo'],
+                format: user.format,
                 defaultValue: 'The user who ran the command',
             },
             {
@@ -467,7 +489,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The second user to compare',
-                format: ['foo', '@foo', 'osu.ppy.sh/u/foo', 'osu.ppy.sh/users/foo'],
+                format: user.format,
                 defaultValue: 'most recent user fetched in the guild',
             },
             page
@@ -515,7 +537,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string/integer',
                 required: false,
                 description: 'The server to get the rankings of. Use global to combine the rankings of all servers the bot is in.',
-                format: ['foo'],
+                format: ['{guild ID}'],
                 defaultValue: 'Current server',
             },
             mode,
@@ -527,13 +549,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
         description: 'Shows information about a beatmap.',
         usage: 'map [query] [id] +[mods] [detailed] [bpm] [speed] [cs] [ar] [od] [hp] [ppcalc] [bg]',
         category: 'osu_map',
-        linkUsage: [
-            'osu.ppy.sh/b/<id> +[mods]',
-            'osu.ppy.sh/beatmapsets?q=<query> +[mods]',
-            'osu.ppy.sh/beatmapsets/<sid> +[mods]',
-            'osu.ppy.sh/beatmapsets/<sid>#<mode>/<id> +[mods]',
-            'osu.ppy.sh/s/<sid> +[mods]',
-        ],
+        linkUsage: mapformat.slice(0, -3).map(x => x + ' +[mods]'),
         examples: [
             {
                 text: 'map "kimi no shiranai monogatari"',
@@ -559,7 +575,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The map to search for',
-                format: ['-? "foo"'],
+                format: ['-? {search query}'],
                 defaultValue: 'null',
             },
             {
@@ -575,7 +591,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: `The mods to calculate the map with. ${mods}`,
-                format: ['+foo'],
+                format: ['+{mods}', '-mods {mods}'],
                 defaultValue: 'none',
             },
             {
@@ -593,7 +609,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The BPM to calculate the map with. This value is still affected by mods',
                 options: ['1-1000'],
-                format: ['-bpm foo'],
+                format: ['-bpm {bpm}'],
                 defaultValue: 'the map\'s BPM',
             },
             {
@@ -602,7 +618,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The speed multiplier to calculate the map with. Overrides BPM. This value is still affected by mods',
                 options: ['0.1-10'],
-                format: ['-speed foo'],
+                format: ['-speed {speed}'],
                 defaultValue: '1',
             },
             {
@@ -611,7 +627,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The circle size to calculate the map with. This value is still affected by mods',
                 options: ['0-11'],
-                format: ['-cs foo'],
+                format: ['-cs {circle size}'],
                 defaultValue: 'The current map\'s value',
             },
             {
@@ -620,7 +636,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The approach rate to calculate the map with. This value is still affected by mods',
                 options: ['0-11'],
-                format: ['-ar foo'],
+                format: ['-ar {approach rate}'],
                 defaultValue: 'The current map\'s value',
             },
             {
@@ -629,7 +645,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The overall difficulty to calculate the map with. This value is still affected by mods',
                 options: ['0-11'],
-                format: ['-od foo'],
+                format: ['-od {overall difficulty}'],
                 defaultValue: 'The current map\'s value',
             },
             {
@@ -638,7 +654,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The drain rate to calculate the map with. This value is still affected by mods',
                 options: ['0-11'],
-                format: ['-hp foo'],
+                format: ['-hp {drain rate}'],
                 defaultValue: 'The current map\'s value',
             },
             {
@@ -690,7 +706,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: `The mods to filter the leaderboard by. ${mods}`,
-                format: ['+foo'],
+                format: ['+{mods}', '-mods {mods}'],
                 defaultValue: 'none',
             },
             {
@@ -698,7 +714,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'Parse the score with the specific index',
-                format: ['-parse foo'],
+                format: ['-parse {index}'],
                 defaultValue: '0',
             },
         ]
@@ -725,7 +741,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             required: false,
             description: 'Filters to only pick from this type of map',
             options: ['ranked', 'loved', 'approved', 'qualified', 'pending', 'wip', 'graveyard'],
-            format: ['-foo'],
+            format: ['-{type}'],
             defaultValue: 'null',
         }]
     },
@@ -749,7 +765,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The maximum difference in star rating the recommended map can be',
                 options: ['range', 'r', 'diff'],
-                format: ['-range foo', '-r foo', '-diff foo'],
+                format: ['-range {range}', '-r {range}', '-diff {range}'],
                 defaultValue: '1',
             },
             {
@@ -758,7 +774,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'How to fetch the recommended map',
                 options: ['closest', 'random'],
-                format: ['-foo'],
+                format: ['-{type}'],
                 defaultValue: 'random',
             }
         ]
@@ -877,7 +893,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: true,
                 description: 'The osu! username to set',
-                format: ['foo'],
+                format: ['{username or ID}'],
                 defaultValue: 'null',
             },
             mode,
@@ -886,7 +902,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The skin to set',
-                format: ['-skin foo'],
+                format: ['-skin {skin name or link}'],
                 defaultValue: 'osu! default 2014',
             },
         ]
@@ -983,7 +999,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: true,
                 description: 'The pp to estimate the rank of',
-                format: ['foo'],
+                format: ['{points}'],
                 defaultValue: 'N/A',
             },
             mode
@@ -1011,7 +1027,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: true,
                 description: 'The rank to estimate the pp of',
-                format: ['foo'],
+                format: ['{global rank}'],
                 defaultValue: 'N/A',
             },
             mode
@@ -1042,7 +1058,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             type: 'string',
             required: false,
             description: 'The country code of the country to use',
-            format: ['+foo'],
+            format: ['-country {ISO 3166-1 alpha-2 country code}'],
             defaultValue: 'global',
         },
             mode,
@@ -1054,14 +1070,14 @@ export const cmds: helper.bottypes.commandInfo[] = [
             description: 'The type of leaderboard to show',
             options: ['performance', 'charts', 'score', 'country'],
             defaultValue: 'performance',
-            format: ['type:foo'],
+            format: ['-{type}'],
         },
         {
             name: 'spotlight',
             type: 'integer',
             required: false,
             description: 'The spotlight to show the scores of. Only works with type charts',
-            format: ['spotlight:foo'],
+            format: ['-spotlight {spotlight ID}'],
             defaultValue: 'latest',
         },
         {
@@ -1069,7 +1085,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             type: 'integer',
             required: false,
             description: 'Parses the user with the given index',
-            format: ['-parse foo'],
+            format: ['-parse {index}'],
             defaultValue: '1',
         },
         ]
@@ -1117,7 +1133,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'Filter scores by maps matching the given string',
-                format: ['-? "foo"'],
+                format: ['-? {filter query}'],
                 defaultValue: 'null',
             },
         ]
@@ -1210,7 +1226,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: true,
                 description: 'The id of the score',
-                format: ['foo', 'osu.ppy.sh/scores/foo'],
+                format: ['{score ID}', 'osu.ppy.sh/scores/{score ID}'],
                 defaultValue: 'null',
             },
             mode
@@ -1251,7 +1267,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                     type: 'integer/map link',
                     required: false,
                     description: 'The map ID to search for',
-                    format: mapformat.concat('-b foo', '-map foo'),
+                    format: mapformat,
                     defaultValue: 'the most recent map in the guild',
                 },
             ])
@@ -1281,7 +1297,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 description: 'The type of scores to use',
                 options: ['best', 'firsts', 'recent', 'pinned'],
                 defaultValue: 'best',
-                format: ['-foo',],
+                format: ['-{type}',],
             },
             {
                 name: 'all',
@@ -1321,7 +1337,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: `The mods to simulate the score with. ${mods}`,
                 defaultValue: 'none',
-                format: ['+foo',],
+                format: ['+{mods}', '-mods {mods}'],
             },
             {
                 name: 'accuracy',
@@ -1329,7 +1345,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The accuracy to simulate the score with',
                 options: ['0-100'],
-                format: ['-acc foo', '-accuracy foo', '-% foo'],
+                format: ['-acc {accuracy}', '-accuracy {accuracy}', '-% {accuracy}'],
                 defaultValue: '100',
             },
             {
@@ -1337,7 +1353,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The maximum combo to simulate the score with',
-                format: ['-combo foo', '-x foo', '-maxcombo foo'],
+                format: ['-combo {max combo}', '-x {max combo}', '-maxcombo {max combo}'],
                 defaultValue: 'map max combo',
             },
             {
@@ -1345,7 +1361,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The number of hit 300s to simulate the score with',
-                format: ['-n300 foo', '-300s foo'],
+                format: ['-n300 {hit greats/300s}', '-300s {hit greats/300s}', '-greats {hit greats/300s}'],
                 defaultValue: 'calculated from accuracy',
             },
             {
@@ -1353,7 +1369,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The number of hit 100s to simulate the score with',
-                format: ['-n100 foo', '-100s foo'],
+                format: ['-n100 {hit oks/100s}', '-100s {hit oks/100s}', '-ok {hit oks/100s}'],
                 defaultValue: 'calculated from accuracy',
             },
             {
@@ -1361,7 +1377,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The number of hit 50s to simulate the score with',
-                format: ['-n50 foo', '-50s foo'],
+                format: ['-n50 {hit mehs/50s}', '-50s {hit mehs/50s}', '-meh{hit mehs/50s}'],
                 defaultValue: 'calculated from accuracy',
             },
             {
@@ -1369,7 +1385,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The number of misses to simulate the score with',
-                format: ['-miss foo', '-misses foo', '-n0 foo', '-0s foo'],
+                format: ['-miss {misses}', '-misses {misses}', '-n0 {misses}', '-0s {misses}'],
                 defaultValue: '0',
             },
             {
@@ -1377,7 +1393,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: false,
                 description: 'The bpm to simulate the score with',
-                format: ['-bpm foo',],
+                format: ['-bpm {bpm}',],
                 defaultValue: 'map bpm',
             },
             {
@@ -1385,7 +1401,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: false,
                 description: 'The speed multiplier to simulate the score with',
-                format: ['-speed foo',],
+                format: ['-speed {speed}',],
                 defaultValue: '1 (or mod)',
             },
             {
@@ -1393,7 +1409,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: false,
                 description: 'The circle size to simulate the score with',
-                format: ['-cs foo',],
+                format: ['-cs {circle size}',],
                 defaultValue: 'Map CS',
             },
             {
@@ -1401,7 +1417,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: false,
                 description: 'The approach to simulate the score with',
-                format: ['-ar foo',],
+                format: ['-ar {approach rate}',],
                 defaultValue: 'Map AR',
             },
             {
@@ -1409,7 +1425,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: false,
                 description: 'The overall difficulty to simulate the score with',
-                format: ['-od foo',],
+                format: ['-od {overall difficulty}',],
                 defaultValue: 'Map OD',
             },
             {
@@ -1417,7 +1433,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: false,
                 description: 'The hp/drain to simulate the score with',
-                format: ['-hp foo',],
+                format: ['-hp {drain rate}',],
                 defaultValue: 'Map HP',
             },
         ]
@@ -1464,7 +1480,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'channel mention',
                 required: true,
                 description: 'The channel to send tracklist updates to',
-                format: ['foo',],
+                format: ['#{channel name or ID}',],
                 defaultValue: 'N/A',
             }
         ]
@@ -1522,7 +1538,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The type of beatmaps to show',
                 options: ['favourites', 'ranked', 'pending', 'graveyard', 'loved', 'most_played'],
-                format: ['-foo',],
+                format: ['-{type}',],
                 defaultValue: 'Favourites',
             },
             {
@@ -1541,7 +1557,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The way to sort the beatmaps',
                 options: ['Title', 'Artist', 'Difficulty', 'Status', 'Fails', 'Plays', 'Date Added', 'Favourites', 'BPM', 'CS', 'AR', 'OD', 'HP', 'Length'],
-                format: ['sort:foo',],
+                format: ['-sort {sort}',],
                 defaultValue: 'Date Added',
             },
             {
@@ -1549,7 +1565,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'Parses the beatmap with the given index',
-                format: ['-parse foo',],
+                format: ['-parse {index',],
                 defaultValue: '1',
             },
             {
@@ -1557,7 +1573,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'Filters the beatmaps by the given string',
-                format: ['-foo',],
+                format: ['-? {filter query}',],
                 defaultValue: 'N/A',
             },
         ]
@@ -1585,7 +1601,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'float',
                 required: true,
                 description: 'The amount of raw pp to gain',
-                format: ['foo',],
+                format: ['{points}',],
                 defaultValue: '0',
             },
         ]
@@ -1638,7 +1654,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'user mention',
                 required: true,
                 description: 'The user to target',
-                format: ['<@foo>',],
+                format: ['<@{user ID}>', '@{discord username}'],
                 defaultValue: 'N/A',
             }
         ]
@@ -1656,7 +1672,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: true,
                 description: 'Paper, scissors or rock.',
                 options: ['rock', 'paper', 'scissors', 'グー', 'チョキ', 'パー'],
-                format: ['foo',],
+                format: ['{choice}',],
                 defaultValue: 'N/A',
             }
         ],
@@ -1683,7 +1699,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The maximum number to roll',
-                format: ['foo',],
+                format: ['{maximum value}',],
                 defaultValue: '100',
             },
             {
@@ -1691,7 +1707,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The minimum number to roll',
-                format: ['bar',],
+                format: ['{minimum value}',],
                 defaultValue: '1',
             }
         ]
@@ -1726,7 +1742,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'the helper.bottypes of files to clear (read the options section)',
                 options: ['normal', 'all (only cmd data)', 'trueall', 'map', 'users', 'previous', 'pmaps', 'pscores', 'pusers', 'errors', 'graph'],
-                format: ['foo',],
+                format: ['{arg}',],
                 defaultValue: 'temporary files only',
             }
         ]
@@ -1786,7 +1802,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'The type of debug to perform',
                 options: ['commandfile', 'commandfiletype', 'servers', 'channels', 'users', 'forcetrack', 'curcmdid', 'logs', 'clear', 'maps', 'ls', 'memory'],
-                format: ['foo',],
+                format: ['{type}',],
                 defaultValue: 'list options',
             }, {
                 name: 'arg',
@@ -1794,7 +1810,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: false,
                 description: 'commandfile -> the id of the command to search for\ncommandfiletype -> the name of the command to search\nlogs -> the ID of the guild to send logs from',
                 options: ['normal', 'all (only cmd data)', 'trueall', 'map', 'users', 'previous', 'pmaps', 'pscores', 'pusers', 'errors', 'graph'],
-                format: ['bar',],
+                format: ['{arg}',],
                 defaultValue: 'commandfile -> latest command\ncommandfiletype -> list options\nlogs -> current server',
             }
         ]
@@ -1818,7 +1834,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 required: true,
                 description: 'The type of info to fetch',
                 options: ['user', 'guild', 'channel', 'role', 'emoji', 'sticker'],
-                format: ['foo',],
+                format: ['{type}',],
                 defaultValue: 'N/A',
             },
             {
@@ -1826,7 +1842,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: true,
                 description: 'The ID to fetch',
-                format: ['bar',],
+                format: ['{ID}',],
                 defaultValue: 'N/A',
             }
         ]
@@ -1849,14 +1865,14 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'integer',
                 required: false,
                 description: 'The id of the guild to leave',
-                format: ['foo',],
+                format: ['{guild ID}',],
                 defaultValue: 'the guild the command was sent in',
             }
         ]
     },
     {
         name: 'Prefix',
-        description: 'Set\'s the prefix of the current server.',
+        description: 'Sets/gets the prefix of the current server.',
         usage: 'prefix [prefix]',
         category: 'admin',
         examples: [
@@ -1872,7 +1888,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The prefix to set',
-                format: ['foo',],
+                format: ['{prefix}',],
                 defaultValue: 'N/A',
             }
         ]

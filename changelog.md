@@ -8,12 +8,13 @@
 
 ### Fixed
 
-- added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
+-   added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
 
 ### Changed
 
 -   updated osumodcalculator
 -   convert command handlers into classes
+-   edit parts of command data for clarity
 
 ### Refactor
 

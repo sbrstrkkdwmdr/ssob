@@ -262,7 +262,7 @@ export class Ranking extends OsuCommand {
             this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
             this.params.parse = Boolean(this.params.parseId);
         }
-
+        // TODO - ranking args
 
         
 
