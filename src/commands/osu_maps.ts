@@ -89,10 +89,33 @@ export class Map extends OsuCommand {
             this.params.mapmods = tmod.mods;
         }
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
-        const mapTemp = await commandTools.mapIdFromLink(this.input.args.join(' '), true);
-        this.params.mapid = mapTemp.map;
-        mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
+        
+        {
+            const mapTemp = this.setParamMap();
+            this.params.mapid = mapTemp.map;
+            mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
+
+            if (!(mapTemp.map || mapTemp.set)) {
+                this.voidcontent();
+                this.ctn.content = helper.errors.uErr.osu.map.url;
+                await this.send();
+                return;
+            }
+            //get map id via mapset if not in the given URL
+            if (!mapTemp.map && mapTemp.set) {
+                this.params.mapid = this.mapset?.beatmaps[0]?.id;
+                try {
+                    const bm = await this.getMapSet(mapTemp.set);
+                    this.mapset = bm;
+                    this.params.mapid = bm.beatmaps[0].id;
+                } catch (e) {
+                    this.voidcontent();
+                    this.ctn.content = helper.errors.uErr.osu.map.setonly;
+                    await this.send();
+                    return;
+                }
+            }
+        }
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -149,7 +172,7 @@ export class Map extends OsuCommand {
                     messagenohttp.split('q=')[1].split('&')[0] :
                     messagenohttp.split('q=')[1];
         } else {
-            const mapTemp = await commandTools.mapIdFromLink(messagenohttp, true,);
+            const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
             this.params.mode = mapTemp.mode ?? this.params.mode;
             if (!(mapTemp.map || mapTemp.set)) {
@@ -162,10 +185,13 @@ export class Map extends OsuCommand {
             if (!mapTemp.map && mapTemp.set) {
                 this.params.mapid = this.mapset?.beatmaps[0]?.id;
                 try {
-                    const bm = await this.getMapSet(this.map.beatmapset_id);
+                    const bm = await this.getMapSet(mapTemp.set);
                     this.mapset = bm;
                     this.params.mapid = bm.beatmaps[0].id;
                 } catch (e) {
+                    this.voidcontent();
+                    this.ctn.content = helper.errors.uErr.osu.map.setonly;
+                    await this.send();
                     return;
                 }
             }
@@ -270,25 +296,6 @@ export class Map extends OsuCommand {
     }
     map: osuapi.types_v2.BeatmapExtended;
     mapset: osuapi.types_v2.BeatmapsetExtended;
-
-    protected async getMapSet(mapsetid: number) {
-        let bmsdata: osuapi.types_v2.BeatmapsetExtended;
-        if (data.findFile(mapsetid, `bmsdata`) &&
-            !('error' in data.findFile(mapsetid, `bmsdata`)) &&
-            this.input.buttonType != 'Refresh') {
-            bmsdata = data.findFile(mapsetid, `bmsdata`);
-        } else {
-            bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
-        }
-        data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
-        if (bmsdata?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
-            return;
-        }
-        data.storeFile(bmsdata, mapsetid, `bmsdata`);
-
-        return bmsdata;
-    }
 
     protected checkNullParams() {
         if (!this.params.mapid && !this.params.maptitleq) {
@@ -1024,49 +1031,16 @@ export class RandomMap extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        if (this.input.args.includes('-leaderboard')) {
-            this.params.useRandomRanked = true;
-            this.input.args.splice(this.input.args.indexOf('-leaderboard'), 1);
-        }
-        if (this.input.args.includes('-lb')) {
-            this.params.useRandomRanked = true;
-            this.input.args.splice(this.input.args.indexOf('-lb'), 1);
-        }
-        const mapTypeRankedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapRanked, this.input.args, false, null, false, false);
-        if (mapTypeRankedArgFinder.found) {
-            this.params.mapType = 'Ranked';
-            this.input.args = mapTypeRankedArgFinder.args;
-        }
-        const mapTypeLovedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapLove, this.input.args, false, null, false, false);
-        if (mapTypeLovedArgFinder.found) {
-            this.params.mapType = 'Loved';
-            this.input.args = mapTypeLovedArgFinder.args;
-        }
-        const mapTypeApprovedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapApprove, this.input.args, false, null, false, false);
-        if (mapTypeApprovedArgFinder.found) {
-            this.params.mapType = 'Approved';
-            this.input.args = mapTypeApprovedArgFinder.args;
-        }
-        const mapTypeQualifiedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapQualified, this.input.args, false, null, false, false);
-        if (mapTypeQualifiedArgFinder.found) {
-            this.params.mapType = 'Qualified';
-            this.input.args = mapTypeQualifiedArgFinder.args;
-        }
-        const mapTypePendArgFinder = commandTools.matchArgMultiple(helper.argflags.mapPending, this.input.args, false, null, false, false);
-        if (mapTypePendArgFinder.found) {
-            this.params.mapType = 'Pending';
-            this.input.args = mapTypePendArgFinder.args;
-        }
-        const mapTypeWipArgFinder = commandTools.matchArgMultiple(helper.argflags.mapWip, this.input.args, false, null, false, false);
-        if (mapTypeWipArgFinder.found) {
-            this.params.mapType = 'WIP';
-            this.input.args = mapTypeWipArgFinder.args;
-        }
-        const mapTypeGraveyardArgFinder = commandTools.matchArgMultiple(helper.argflags.mapGraveyard, this.input.args, false, null, false, false);
-        if (mapTypeGraveyardArgFinder.found) {
-            this.params.mapType = 'Graveyard';
-            this.input.args = mapTypeGraveyardArgFinder.args;
-        }
+        this.params.useRandomRanked = this.setParam(this.params.useRandomRanked, ['-leaderboard', '-lb'], 'bool', {});
+        this.params.mapType = this.setParamBoolList(this.params.mapType,
+            { set: 'Ranked', flags: helper.argflags.mapRanked },
+            { set: 'Loved', flags: helper.argflags.mapLove },
+            { set: 'Approved', flags: helper.argflags.mapApprove },
+            { set: 'Qualified', flags: helper.argflags.mapQualified },
+            { set: 'Pending', flags: helper.argflags.mapPending },
+            { set: 'WIP', flags: helper.argflags.mapWip },
+            { set: 'Graveyard', flags: helper.argflags.mapGraveyard },
+        );
     }
     async setParamsInteract() {
     }
@@ -1136,22 +1110,15 @@ export class RecommendMap extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        const usetypeRandomArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['r', 'random', 'f2', 'rdm', 'range', 'diff']), this.input.args, true, 'number', false, false);
-        if (usetypeRandomArgFinder.found) {
-            this.params.maxRange = usetypeRandomArgFinder.output;
-            this.params.useType = 'random';
-            this.input.args = usetypeRandomArgFinder.args;
-        }
-        if (this.input.args.includes('-closest')) {
-            this.params.useType = 'closest';
-            this.input.args = this.input.args.splice(this.input.args.indexOf('-closest'), 1);
+        this.params.maxRange = this.setParam(this.params.maxRange, ['r', 'random', 'f2', 'rdm', 'range', 'diff'], 'number', {});
 
-        }
+
+        if (!this.params.maxRange) this.params.useType = this.setParam(this.params.useType, ['-closest'], 'bool', { bool_setValue: 'closest' });
         {
             this.setParamMode();
         }
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        
         this.params.user = this.input.args.join(' ')?.replaceAll('"', '');
         if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid)) {
             this.params.user = null;
@@ -1259,84 +1226,37 @@ export class UserBeatmaps extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
+        this.setParamPage();
+
+        this.params.detailed = this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 });
+
+        this.params.filter = this.setParamBoolList(this.params.filter,
+            { set: 'ranked', flags: helper.argflags.mapRanked },
+            { set: 'favourite', flags: helper.argflags.mapFavourite },
+            { set: 'graveyard', flags: helper.argflags.mapGraveyard },
+            { set: 'loved', flags: helper.argflags.mapLove },
+            { set: 'pending', flags: helper.argflags.mapPending },
+            { set: 'nominated', flags: helper.argflags.mapNominated },
+            { set: 'guest', flags: helper.argflags.mapGuest },
+            { set: 'most_played', flags: helper.argflags.mapMostPlayed },
+        );
+
+        this.params.reverse = this.setParam(this.params.reverse, ['-reverse', '-rev'], 'bool', {});
+
+        {
+            this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
+            this.params.parseMap = Boolean(this.params.parseId);
         }
 
-        const detailArgFinder = commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
-        if (detailArgFinder.found) {
-            this.params.detailed = 2;
-            this.input.args = detailArgFinder.args;
-        }
-        const filterRankArgFinder = commandTools.matchArgMultiple(helper.argflags.mapRanked, this.input.args, false, null, false, false);
-        if (filterRankArgFinder.found) {
-            this.params.filter = 'ranked';
-            this.input.args = filterRankArgFinder.args;
-        }
-        const filterFavouritesArgFinder = commandTools.matchArgMultiple(helper.argflags.mapFavourite, this.input.args, false, null, false, false);
-        if (filterFavouritesArgFinder.found) {
-            this.params.filter = 'favourite';
-            this.input.args = filterFavouritesArgFinder.args;
-        }
-        const filterGraveyardArgFinder = commandTools.matchArgMultiple(helper.argflags.mapGraveyard, this.input.args, false, null, false, false);
-        if (filterGraveyardArgFinder.found) {
-            this.params.filter = 'graveyard';
-            this.input.args = filterGraveyardArgFinder.args;
-        }
-        const filterLovedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapLove, this.input.args, false, null, false, false);
-        if (filterLovedArgFinder.found) {
-            this.params.filter = 'loved';
-            this.input.args = filterLovedArgFinder.args;
-        }
-        const filterPendingArgFinder = commandTools.matchArgMultiple(helper.argflags.mapPending, this.input.args, false, null, false, false);
-        if (filterPendingArgFinder.found) {
-            this.params.filter = 'pending';
-            this.input.args = filterPendingArgFinder.args;
-        }
-        const filterNominatedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapNominated, this.input.args, false, null, false, false);
-        if (filterNominatedArgFinder.found) {
-            this.params.filter = 'nominated';
-            this.input.args = filterNominatedArgFinder.args;
-        }
-        const filterGuestArgFinder = commandTools.matchArgMultiple(helper.argflags.mapGuest, this.input.args, false, null, false, false);
-        if (filterGuestArgFinder.found) {
-            this.params.filter = 'guest';
-            this.input.args = filterGuestArgFinder.args;
-        }
-        const filterMostPlayedArgFinder = commandTools.matchArgMultiple(helper.argflags.mapMostPlayed, this.input.args, false, null, false, false);
-        if (filterMostPlayedArgFinder.found) {
-            this.params.filter = 'most_played';
-            this.input.args = filterMostPlayedArgFinder.args;
-        }
-        const reverseArgFinder = commandTools.matchArgMultiple(['-reverse', '-rev'], this.input.args, false, null, false, false);
-        if (reverseArgFinder.found) {
-            this.params.reverse = true;
-            this.input.args = reverseArgFinder.args;
-        }
-        if (this.input.args.includes('-reverse')) {
-            this.params.reverse = true;
-            this.input.args.splice(this.input.args.indexOf('-reverse'), 1);
-        }
-        if (this.input.args.includes('-parse')) {
-            this.params.parseMap = true;
-            const temp = commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
-            this.params.parseId = temp.value;
-            this.input.args = temp.newArgs;
-        }
+        this.params.filterTitle = this.setParam(this.params.filterTitle, ['-?'], 'string', { string_isMultiple: true });
 
-        if (this.input.args.includes('-?')) {
-            const temp = commandTools.parseArg(this.input.args, '-?', 'string', this.params.filterTitle, true);
-            this.params.filterTitle = temp.value;
-            this.input.args = temp.newArgs;
+        
+
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
         }
-
-        this.input.args = commandTools.cleanArgs(this.input.args);
-
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }

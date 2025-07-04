@@ -49,11 +49,13 @@ export class Compare extends OsuCommand {
         } else {
             this.params.firstsearchid = this.input.message.author.id;
         }
-        const parseUsers = commandTools.parseUsers(this.input.args.join(' '));
-        this.params.second = parseUsers[0];
-        if (parseUsers[1]) {
-            this.params.first = parseUsers[0];
-            this.params.second = parseUsers[1];
+        {
+            const parseUsers = [this.setParamUser()?.user, this.setParamUser()?.user];
+            this.params.second = parseUsers[0];
+            if (parseUsers[1]) {
+                this.params.first = parseUsers[0];
+                this.params.second = parseUsers[1];
+            }
         }
         this.params.first != null && this.params.first.includes(this.params.firstsearchid) ? this.params.first = null : null;
         this.params.second != null && this.params.second.includes(this.params.secondsearchid) ? this.params.second = null : null;
@@ -554,7 +556,7 @@ export class ServerLeaderboard extends OsuCommand {
         {
             this.setParamMode();
         }
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        
         this.params.id = this.input.args[0];
     }
     async setParamsInteract() {
@@ -739,13 +741,9 @@ export class Set extends OsuCommand {
             this.setParamMode();
         }
 
-        if (this.input.args.includes('-skin')) {
-            const temp = commandTools.parseArg(this.input.args, '-skin', 'string', this.params.skin, true);
-            this.params.skin = temp.value;
-            this.input.args = temp.newArgs;
-        }
+        this.params.skin = this.setParam(this.params.skin, ['-skin'], 'string', { string_isMultiple: true });
 
-        this.params.name = this.input.args.join(' ');
+        this.params.name = this.argParser.getRemaining().join(' ');
 
     }
     async setParamsInteract() {
@@ -877,7 +875,7 @@ export class WhatIf extends OsuCommand {
             this.setParamMode();
         }
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        
 
         if (!isNaN(+this.input.args[0])) {
             this.params.pp = +this.input.args[0];
@@ -897,11 +895,10 @@ export class WhatIf extends OsuCommand {
             this.input.args.splice(this.input.args.indexOf(this.params.pp + ''), 1);
         }
 
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
-        if (usertemp.mode && !this.params.mode) {
-            this.params.mode = usertemp.mode;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
         }
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;

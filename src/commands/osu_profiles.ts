@@ -25,11 +25,10 @@ export class Badges extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        
 
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
@@ -130,11 +129,10 @@ export class BadgeWeightSeed extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        
 
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
@@ -255,23 +253,18 @@ export class Ranking extends OsuCommand {
 
     }
     async setParamsMsg() {
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
-        }
+        this.setParamPage();
         {
             this.setParamMode();
 
         }
-        if (this.input.args.includes('-parse')) {
-            this.params.parse = true;
-            const temp = commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
-            this.params.parseId = temp.value;
-            this.input.args = temp.newArgs;
+        {
+            this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
+            this.params.parse = Boolean(this.params.parseId);
         }
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
+
+        
 
         this.input.args[0] && this.input.args[0].length == 2 ? this.params.country = this.input.args[0].toUpperCase() : this.params.country = 'ALL';
     }
@@ -502,28 +495,15 @@ export class Profile extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const detailArgFinder = commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
-        if (detailArgFinder.found) {
-            this.params.detailed = 2;
-            this.input.args = detailArgFinder.args;
-        }
-        const graphArgFinder = commandTools.matchArgMultiple(['-g', '-graph',], this.input.args, false, null, false, false);
-        if (graphArgFinder.found) {
-            this.params.graphonly = true;
-            this.input.args = graphArgFinder.args;
-        }
-        {
-            this.setParamMode();
 
-        }
+        this.params.detailed = this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 });
+        this.params.graphonly = this.setParam(this.params.detailed, helper.argflags.details, 'bool', {});
+        this.setParamMode();
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
-
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
-        if (usertemp.mode && !this.params.mode) {
-            this.params.mode = usertemp.mode;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
         }
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
@@ -576,10 +556,14 @@ export class Profile extends OsuCommand {
         }
     }
     async setParamsLink() {
-        const usertemp = commandTools.fetchUser([this.input.message.content]);
-        this.params.user = usertemp.id;
-        if (usertemp.mode && !this.params.mode) {
-            this.params.mode = usertemp.mode;
+        this.input.args = this.input.message.content.split(' ');
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
+        }
+        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+            this.params.user = null;
         }
     }
     getOverrides(): void {
@@ -926,17 +910,12 @@ export class RecentActivity extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
-        }
+        this.setParamPage();
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        
 
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }

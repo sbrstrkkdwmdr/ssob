@@ -73,162 +73,62 @@ export class ScoreListCommand extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        if (this.input.args.includes('-parse')) {
-            this.params.parseScore = true;
-            const temp = commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
-            this.params.parseId = temp.value;
-            this.input.args = temp.newArgs;
+        {
+            this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
+            this.params.parseScore = Boolean(this.params.parseId);
         }
 
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
-        }
-        const detailArgFinder = commandTools.matchArgMultiple(helper.argflags.details, this.input.args, false, null, false, false);
-        if (detailArgFinder.found) {
-            this.params.detailed = 2;
-            this.input.args = detailArgFinder.args;
-        }
-        const lessDetailArgFinder = commandTools.matchArgMultiple(helper.argflags.compress, this.input.args, false, null, false, false);
-        if (lessDetailArgFinder.found) {
-            this.params.detailed = 0;
-            this.input.args = lessDetailArgFinder.args;
-        }
+        this.setParamPage();
+        this.params.detailed =
+            this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 }) ??
+            this.setParam(this.params.detailed, helper.argflags.compress, 'bool', { bool_setValue: 0 });
+
         {
             this.setParamMode();
 
         }
-        const reverseArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['rev', 'reverse',]), this.input.args, false, null, false, false);
-        if (reverseArgFinder.found) {
-            this.params.reverse = true;
-            this.input.args = reverseArgFinder.args;
-        }
-        if (this.input.args.includes('-mods')) {
-            const temp = commandTools.parseArg(this.input.args, '-mods', 'string', this.params.modsInclude, false);
-            this.params.modsInclude = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        const mxmodArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['mx', 'modx',]), this.input.args, true, 'string', false, false);
-        if (mxmodArgFinder.found) {
-            this.params.modsExact = mxmodArgFinder.output;
-            this.input.args = mxmodArgFinder.args;
-        }
-        if (this.input.args.includes('-exmod')) {
-            const temp = commandTools.parseArg(this.input.args, '-exmod', 'string', this.params.modsExclude, false);
-            this.params.modsExclude = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-me')) {
-            const temp = commandTools.parseArg(this.input.args, '-me', 'string', this.params.modsExclude, false);
-            this.params.modsExclude = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        const exmodArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['me', 'exmod',]), this.input.args, true, 'string', false, false);
-        if (exmodArgFinder.found) {
-            this.params.modsExclude = exmodArgFinder.output;
-            this.input.args = exmodArgFinder.args;
-        }
+        this.params.reverse = this.setParam(this.params.reverse, ['-reverse', '-rev'], 'bool', {});
 
-        if (this.input.args.includes('-sort')) {
-            const temp = commandTools.parseArg(this.input.args, '-sort', 'string', this.params.sort, false);
-            this.params.sort = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        const recentArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['r', 'recent',]), this.input.args, false, null, false, false);
-        if (recentArgFinder.found) {
-            this.params.sort = 'recent';
-            this.input.args = recentArgFinder.args;
-        }
-        if (this.input.args.includes('-performance')) {
-            this.params.sort = 'pp';
-            this.input.args.splice(this.input.args.indexOf('-performance'), 1);
-        }
-        if (this.input.args.includes('-pp')) {
-            const temp = commandTools.parseArg(this.input.args, '-pp', 'string', this.params.pp, false);
-            this.params.pp = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-score')) {
-            const temp = commandTools.parseArg(this.input.args, '-score', 'string', this.params.score, false);
-            this.params.score = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-acc')) {
-            const temp = commandTools.parseArg(this.input.args, '-acc', 'string', this.params.acc, false);
-            this.params.acc = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        const filterComboArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['combo', 'maxcombo']), this.input.args, true, 'string', false, true);
-        if (filterComboArgFinder.found) {
-            this.params.combo = filterComboArgFinder.output;
-            this.input.args = filterComboArgFinder.args;
-        }
-        const filterMissArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['miss', 'misses']), this.input.args, true, 'string', false, true);
-        if (filterMissArgFinder.found) {
-            this.params.miss = filterMissArgFinder.output;
-            this.input.args = filterMissArgFinder.args;
-        }
-        const fcArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['fc', 'fullcombo',]), this.input.args, false, null, false, false);
-        if (fcArgFinder.found) {
-            this.params.miss = '0';
-            this.input.args = fcArgFinder.args;
-        }
-        const filterRankArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['rank', 'grade', 'letter']), this.input.args, true, 'string', false, false);
-        if (filterRankArgFinder.found) {
-            this.params.filterRank = filterRankArgFinder.output;
-            this.input.args = filterRankArgFinder.args;
-        }
-        if (this.input.args.includes('-bpm')) {
-            const temp = commandTools.parseArg(this.input.args, '-bpm', 'string', this.params.bpm, false);
-            this.params.bpm = temp.value;
-            this.input.args = temp.newArgs;
-        }
+        this.params.modsInclude = this.setParam(this.params.modsInclude, ['-mods'], 'string', {});
+        this.params.modsExact = this.setParam(this.params.modsExact, ['-mx', '-modx'], 'string', {});
+        this.params.modsExclude = this.setParam(this.params.modsExclude, ['-exmod', '-me'], 'string', {});
 
-        const titleArgFinder = commandTools.matchArgMultiple(helper.argflags.filterTitle, this.input.args, true, 'string', true, false);
-        if (titleArgFinder.found) {
-            this.params.filterTitle = titleArgFinder.output;
-            this.input.args = titleArgFinder.args;
-        }
-        const mapperArgFinder = commandTools.matchArgMultiple(helper.argflags.filterCreator, this.input.args, true, 'string', true, false);
-        if (mapperArgFinder.found) {
-            this.params.filteredMapper = mapperArgFinder.output;
-            this.input.args = mapperArgFinder.args;
-        }
-        const artistArgFinder = commandTools.matchArgMultiple(helper.argflags.filterArtist, this.input.args, true, 'string', true, false);
-        if (artistArgFinder.found) {
-            this.params.filterArtist = artistArgFinder.output;
-            this.input.args = artistArgFinder.args;
-        }
-        const versionArgFinder = commandTools.matchArgMultiple(helper.argflags.filterVersion, this.input.args, true, 'string', true, false);
-        if (versionArgFinder.found) {
-            this.params.filterDifficulty = versionArgFinder.output;
-            this.input.args = versionArgFinder.args;
-        }
-        this.input.args = commandTools.cleanArgs(this.input.args);
-        if (this.input.args.join(' ').includes('+')) {
-            let temp = this.input.args.join(' ').split('+')[1].trim();
-            if (temp.includes(' ') && temp.split(' ').length > 1) {
-                temp = temp.split(' ')[0];
-            } else if (temp.length < 2) {
-                temp = null;
-            }
-            if (temp) {
-                this.params.modsInclude = osumodcalc.mod.fromString(temp);
-            }
-            this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
+        this.params.sort = this.setParam(this.params.sort, ['-sort',], 'string', {}) ??
+            this.setParamBoolList(this.params.sort,
+                { set: 'recent', flags: ['-r', '-recent'] },
+                { set: 'pp', flags: ['-performance', '-perf'] },
+            );
+
+        // range args
+        // these are 'foo' '>foo' '<foo' 'min..max'
+        this.params.pp = this.setParam(this.params.pp, ['-pp'], 'string', {});
+        this.params.score = this.setParam(this.params.score, ['-score'], 'string', {});
+        this.params.acc = this.setParam(this.params.acc, ['-acc'], 'string', {});
+        this.params.combo = this.setParam(this.params.combo, ['-combo', '-maxcombo'], 'string', {});
+        this.params.miss =
+            this.setParam(this.params.miss, ['-miss', '-misses', '-x'], 'string', {}) ??
+            this.setParam(this.params.miss, ['-fc', '-fullcombo'], 'bool', { bool_setValue: '0' });
+        this.params.bpm = this.setParam(this.params.bpm, ['-bpm', '-maxcombo'], 'string', {});
+
+
+        this.params.filterTitle = this.setParam(this.params.filterTitle, helper.argflags.filterTitle, 'string', { string_isMultiple: true });
+        this.params.filteredMapper = this.setParam(this.params.filteredMapper, helper.argflags.filterCreator, 'string', { string_isMultiple: true });
+        this.params.filterArtist = this.setParam(this.params.filterArtist, helper.argflags.filterArtist, 'string', { string_isMultiple: true });
+        this.params.filterDifficulty = this.setParam(this.params.filterDifficulty, helper.argflags.filterVersion, 'string', { string_isMultiple: true });
+
+
+        const tmod = this.setParamMods();
+        if (tmod) {
+            this.params.modsInclude = tmod.mods;
         }
 
         await this.paramsMsgExtra();
 
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.params.user = usertemp.id;
-        if (usertemp.mode && !this.params.mode) {
-            this.params.mode = usertemp.mode;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
         }
-        // if (!this.params.user || this.params.user.includes(this.params.searchid)) {
-        //     this.params.user = null;
-        // }
     }
     async setParamsInteract() {
         let interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -751,14 +651,8 @@ export class MapScores extends ScoreListCommand {
         this.name = 'MapScores';
     }
     async argsMsgExtra(): Promise<void> {
-        const mapIdArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['b', 'map']), this.input.args, true, 'string', false, true);
-        if (mapIdArgFinder.found) {
-            this.params.mapid = mapIdArgFinder.output;
-            this.input.args = mapIdArgFinder.args;
-        }
-        if (!this.params.mapid) {
-            this.params.mapid = (await commandTools.mapIdFromLink(this.input.args.join(' '), true,)).map;
-        }
+        const temp = this.setParamMap();
+        this.params.mapid = temp.map;
         if (this.params.mapid != null) {
             this.input.args.splice(this.input.args.indexOf(this.input.args.find(arg => arg.includes('https://osu.ppy.sh/'))), 1);
         }
@@ -1082,17 +976,18 @@ export class ScoreParse extends SingleScoreCommand {
     async setParamsMsg() {
         this.params.mode = this.input.args[1] as osuapi.types_v2.GameMode;
         this.params.scoreid = +this.input.args[0];
-        if (this.input?.args[0]?.includes('https://')) {
-            const temp = commandTools.scoreIdFromLink(this.input.args[0]);
+        if (this.input.message.content.includes('osu.ppy.sh/scores/')) {
+            this.input.args = this.input.message.content.split(' ');
+            const temp = this.setParamScore();
             this.params.mode = temp.mode;
-            this.params.scoreid = +temp.id;
+            this.params.scoreid = +temp.score;
         }
     }
     async setParamsLink() {
-        const messagenohttp = this.input.message.content.replace('https://', '').replace('http://', '').replace('www.', '');
-        const temp = commandTools.scoreIdFromLink(messagenohttp);
+        this.input.args = this.input.message.content.split(' ');
+        const temp = this.setParamScore();
         this.params.mode = temp.mode;
-        this.params.scoreid = +temp.id;
+        this.params.scoreid = +temp.score;
     }
 
     getOverrides(): void {
@@ -1254,33 +1149,15 @@ export class Recent extends SingleScoreCommand {
 
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        const passArgFinder = commandTools.matchArgMultiple(['-nf', '-nofail', '-pass', '-passes', 'passes=true'], this.input.args, false, null, false, false);
-        if (passArgFinder.found) {
-            this.params.showFails = 0;
-            this.input.args = passArgFinder.args;
-        }
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
-        }
-        const titleArgFinder = commandTools.matchArgMultiple(["-?"], this.input.args, true, 'string', true, false);
-        if (titleArgFinder.found) {
-            this.params.filter = titleArgFinder.output;
-            this.input.args = titleArgFinder.args;
-        }
+        this.params.showFails = this.setParam(this.params.showFails, ['-nf', '-nofail', '-pass', '-passes', 'passes=true'], 'bool', {});
+        this.setParamPage();
+        this.params.filter = this.setParam(this.params.filter, ['-?'], 'string', { string_isMultiple: true });
+        this.setParamMode();
 
-        {
-            this.setParamMode();
-
-        }
-
-        this.input.args = commandTools.cleanArgs(this.input.args);
-
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.params.user = usertemp.id;
-        if (usertemp.mode && !this.params.mode) {
-            this.params.mode = usertemp.mode;
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
         }
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
@@ -1485,34 +1362,31 @@ export class MapLeaderboard extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        const pageArgFinder = commandTools.matchArgMultiple(helper.argflags.pages, this.input.args, true, 'number', false, true);
-        if (pageArgFinder.found) {
-            this.params.page = pageArgFinder.output;
-            this.input.args = pageArgFinder.args;
+        this.setParamPage();
+
+        {
+            this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
+            this.params.parseScore = Boolean(this.params.parseId);
         }
 
-        if (this.input.args.includes('-parse')) {
-            this.params.parseScore = true;
-            const temp = commandTools.parseArg(this.input.args, '-parse', 'number', 1, null, true);
-            this.params.parseId = temp.value;
-            this.input.args = temp.newArgs;
+        const tmod = this.setParamMods();
+        if (tmod) {
+            this.params.mapmods = tmod.mods;
         }
 
-        if (this.input.args.join(' ').includes('+')) {
-            let temp = this.input.args.join(' ').split('+')[1].trim();
-            if (temp.includes(' ') && temp.split(' ').length > 1) {
-                temp = temp.split(' ')[0];
-            } else if (temp.length < 2) {
-                temp = null;
+        {
+            const mapTemp = this.setParamMap();
+            this.params.mapid = mapTemp.map;
+
+            if (!mapTemp.map && mapTemp.set) {
+                try {
+                    const bm = await this.getMapSet(mapTemp.set);
+                    this.params.mapid = bm.beatmaps[0].id;
+                } catch (e) {
+
+                }
             }
-            if (temp) {
-                this.params.mapmods = osumodcalc.mod.fromString(temp);
-            }
-            this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
         }
-        this.input.args = commandTools.cleanArgs(this.input.args);
-
-        this.params.mapid = (await commandTools.mapIdFromLink(this.input.args.join(' '), true)).map;
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -1887,39 +1761,20 @@ export class ScoreStats extends OsuCommand {
             this.setParamMode();
 
         }
-        const firstArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['first', 'firsts', 'globals', 'global', 'f', 'g']), this.input.args, false, null, false, false);
-        if (firstArgFinder.found) {
-            this.params.scoreTypes = 'firsts';
-            this.input.args = firstArgFinder.args;
-        }
-        const topArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['osutop', 'top', 'best', 't', 'b']), this.input.args, false, null, false, false);
-        if (topArgFinder.found) {
-            this.params.scoreTypes = 'best';
-            this.input.args = topArgFinder.args;
-        }
-        const recentArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['r', 'recent', 'rs']), this.input.args, false, null, false, false);
-        if (recentArgFinder.found) {
-            this.params.scoreTypes = 'recent';
-            this.input.args = recentArgFinder.args;
-        }
-        const pinnedArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['pinned', 'pins', 'pin', 'p']), this.input.args, false, null, false, false);
-        if (pinnedArgFinder.found) {
-            this.params.scoreTypes = 'pinned';
-            this.input.args = pinnedArgFinder.args;
-        }
-        const allFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['all', 'd', 'a', 'detailed']), this.input.args, false, null, false, false);
-        if (allFinder.found) {
-            this.params.all = true;
-            this.input.args = allFinder.args;
-        }
+        this.params.scoreTypes = this.setParamBoolList(this.params.scoreTypes,
+            { set: 'firsts', flags: ['first', 'firsts', 'globals', 'global', 'f', 'g'] },
+            { set: 'best', flags: ['osutop', 'top', 'best', 't', 'b'] },
+            { set: 'recent', flags: ['r', 'recent', 'rs'] },
+            { set: 'pinned', flags: ['pinned', 'pins', 'pin', 'p'] },
+        );
+        this.params.all = this.setParam(this.params.all, ['all', 'd', 'a', 'detailed'], 'bool', {});
 
-        this.input.args = commandTools.cleanArgs(this.input.args);
 
-        const usertemp = commandTools.fetchUser(this.input.args);
-        this.input.args = usertemp.args;
-        this.params.user = usertemp.id;
-        if (usertemp.mode && !this.params.mode) {
-            this.params.mode = usertemp.mode;
+
+        const usertemp = this.setParamUser();
+        this.params.user = usertemp.user;
+        if (usertemp?.mode && !this.params.mode) {
+            this.params.mode = usertemp?.mode;
         }
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
@@ -2265,85 +2120,39 @@ export class Simulate extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        const ctn = this.input.message.content;
-        if (ctn.includes('-mods')) {
-            const temp = commandTools.parseArg(this.input.args, '-mods', 'string', this.params.mods);
-            this.params.mods = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        const accArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['acc', 'accuracy', '%',]), this.input.args, true, 'number', false, false);
-        if (accArgFinder.found) {
-            this.params.acc = accArgFinder.output;
-            this.input.args = accArgFinder.args;
-        }
-        const comboArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['x', 'combo', 'maxcombo',]), this.input.args, true, 'number', false, true);
-        if (comboArgFinder.found) {
-            this.params.combo = comboArgFinder.output;
-            this.input.args = comboArgFinder.args;
-        }
-        const n300ArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['n300', '300s',]), this.input.args, true, 'number', false, true);
-        if (n300ArgFinder.found) {
-            this.params.n300 = n300ArgFinder.output;
-            this.input.args = n300ArgFinder.args;
-        }
-        const n100ArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['n100', '100s',]), this.input.args, true, 'number', false, true);
-        if (n100ArgFinder.found) {
-            this.params.n100 = n100ArgFinder.output;
-            this.input.args = n100ArgFinder.args;
-        }
-        const n50ArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['n50', '50s',]), this.input.args, true, 'number', false, true);
-        if (n50ArgFinder.found) {
-            this.params.n50 = n50ArgFinder.output;
-            this.input.args = n50ArgFinder.args;
-        }
-        const nMissArgFinder = commandTools.matchArgMultiple(helper.argflags.toFlag(['miss', 'misses', 'n0', '0s',]), this.input.args, true, 'number', false, true);
-        if (nMissArgFinder.found) {
-            this.params.nMiss = nMissArgFinder.output;
-            this.input.args = nMissArgFinder.args;
-        }
-        if (this.input.args.includes('-bpm')) {
-            const temp = commandTools.parseArg(this.input.args, '-bpm', 'number', this.params.overrideBpm);
-            this.params.overrideBpm = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-speed')) {
-            const temp = commandTools.parseArg(this.input.args, '-speed', 'number', this.params.overrideSpeed);
-            this.params.overrideSpeed = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-cs')) {
-            const temp = commandTools.parseArg(this.input.args, '-cs', 'number', this.params.customCS);
-            this.params.customCS = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-ar')) {
-            const temp = commandTools.parseArg(this.input.args, '-ar', 'number', this.params.customAR);
-            this.params.customAR = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-od')) {
-            const temp = commandTools.parseArg(this.input.args, '-od', 'number', this.params.customOD);
-            this.params.customOD = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        if (this.input.args.includes('-hp')) {
-            const temp = commandTools.parseArg(this.input.args, '-hp', 'number', this.params.customHP);
-            this.params.customHP = temp.value;
-            this.input.args = temp.newArgs;
-        }
-        this.input.args = commandTools.cleanArgs(this.input.args);
+        this.params.acc = this.setParam(this.params.acc, ['acc', 'accuracy', '%',], 'number', {});
+        this.params.combo = this.setParam(this.params.combo, ['x', 'combo', 'maxcombo',], 'number', { number_isInt: true });
+        this.params.n300 = this.setParam(this.params.n300, ['n300', '300s', 'great'], 'number', { number_isInt: true });
+        this.params.n100 = this.setParam(this.params.n100, ['n100', '100s', 'ok'], 'number', { number_isInt: true });
+        this.params.n50 = this.setParam(this.params.n50, ['n50', '50s', 'meh'], 'number', { number_isInt: true });
+        this.params.nMiss = this.setParam(this.params.nMiss, ['miss', 'misses', 'n0', '0s',], 'number', { number_isInt: true });
 
-        if (ctn.includes('+')) {
-            this.params.mods = ctn.split('+')[1].split(' ')[0];
-            let i = 0;
-            for (; i < this.input.args.length; i++) {
-                if (this.input.args[i].includes('+')) {
-                    break;
+        this.params.overrideBpm = this.setParam(this.params.overrideBpm, ['-bpm'], 'number', {});
+        this.params.overrideSpeed = this.setParam(this.params.overrideSpeed, ['-speed'], 'number', {});
+        this.params.customCS = this.setParam(this.params.customCS, ['-cs'], 'number', {});
+        this.params.customAR = this.setParam(this.params.customAR, ['-ar'], 'number', {});
+        this.params.customOD = this.setParam(this.params.customOD, ['-od', '-accuracy'], 'number', {});
+        this.params.customHP = this.setParam(this.params.customHP, ['-hp', '-drain', 'health'], 'number', {});
+
+        this.params.mods = this.setParam(this.params.mods, ['-mods'], 'string', {});
+
+        const tmod = this.setParamMods();
+        if (tmod) {
+            this.params.mods = tmod.mods.join('');
+        }
+        {
+            const mapTemp = this.setParamMap();
+            this.params.mapid = mapTemp.map;
+
+            if (!mapTemp.map && mapTemp.set) {
+                try {
+                    const bm = await this.getMapSet(mapTemp.set);
+                    this.params.mapid = bm.beatmaps[0].id;
+                } catch (e) {
+
                 }
             }
-            this.input.args = this.input.args.slice(0, i).concat(this.input.args.slice(i + 1, this.input.args.length));
         }
-        this.params.mapid = (await commandTools.mapIdFromLink(this.input.args.join(' '), true)).map;
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;

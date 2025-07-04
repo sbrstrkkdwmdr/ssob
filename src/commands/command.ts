@@ -86,6 +86,7 @@ export class Command {
         number_isInt?: boolean,
         string_isMultiple?: boolean,
     }) {
+        flags = this.setParamCheckFlags(flags)
         switch (type) {
             case 'string': {
                 let temparg = this.argParser.getParam(flags);
@@ -101,7 +102,7 @@ export class Command {
             }
                 break;
             case 'bool': {
-                let temparg = this.argParser.paramExists(flags);
+                let temparg = this.argParser.getParamBool(flags);
                 if (temparg) param = typeParams?.bool_setValue ?? true;
             }
                 break;
@@ -166,23 +167,35 @@ export class Command {
 
 // gasp capitalised o
 export class OsuCommand extends Command {
+    /**
+     * will think of a better name later
+     * 
+     * default value is what to return if args aren't found
+     * 
+     * basically the way this works is 
+     * set - what value to return if flag is found
+     * flags - what to search for
+     * 
+     * if multiple args are found, only the first one is returned
+     * 
+     * see this.setParamMode() for an example on how to use
+     */
+    protected setParamBoolList(defaultValue: any, ...args: { set: any, flags: string[]; }[]) {
+        for (const arg of args) {
+            const temp = this.setParam(false, arg.flags, 'bool', { bool_setValue: arg.set });
+            if (temp) {
+                return temp;
+            }
+        }
+        return defaultValue;
+    }
     protected setParamMode() {
-        if (this.argParser.paramExists(['-o', '-osu', '-std'])) {
-            this.params.mode = 'osu';
-            return;
-        }
-        if (this.argParser.paramExists(['-t', '-taiko'])) {
-            this.params.mode = 'taiko';
-            return;
-        }
-        if (this.argParser.paramExists(['-f', '-fruits', '-ctb', '-catch'])) {
-            this.params.mode = 'fruits';
-            return;
-        }
-        if (this.argParser.paramExists(['-m', '-mania'])) {
-            this.params.mode = 'mania';
-            return;
-        }
+        this.setParamBoolList('osu',
+            { set: 'osu', flags: ['-o', '-osu', '-std'] },
+            { set: 'taiko', flags: ['-t', '-taiko'] },
+            { set: 'fruits', flags: ['-f', '-fruits', '-ctb', '-catch'] },
+            { set: 'mania', flags: ['-m', '-mania'] }
+        );
     }
     /**
      * +{mods}
@@ -200,25 +213,35 @@ export class OsuCommand extends Command {
         }
         return { mods, apiMods };
     }
-    protected setParamUser() {
+    protected setParamUser(): { user: string, mode: osuapi.types_v2.GameMode; } {
         const webpatterns = [
-            'osu.ppy.sh/users/{user}?*',
             'osu.ppy.sh/users/{user}/{mode}',
             'osu.ppy.sh/users/{user}',
-            'osu.ppy.sh/u/{user}?*',
             'osu.ppy.sh/u/{user}',
         ];
         for (const pattern of webpatterns.slice()) {
             webpatterns.push('https://' + pattern);
         }
+        const res = [];
         for (const pattern of webpatterns) {
             let temp = this.argParser.getLink(pattern);
-            if (temp[0]) {
-                return temp[0].user;
-            }
+            if (temp) res.push(temp);
         }
-        return this.argParser.getParamFlexible(['-u', '-user']);
+        const finalRes = {
+            user: null,
+            mode: null,
+        };
+        for (const result of res) {
+            const key = Object.keys(result)[0];
+            finalRes[Object.keys(result)[0]] = result[key];
+        }
+        return finalRes?.user ?
+            finalRes :
+            { user: this.argParser.getParamFlexible(helper.argflags.user), mode: null };
     }
+    /**
+     * get map-related params
+     */
     protected setParamMap() {
         const webpatterns = [
             'osu.ppy.sh/beatmapsets/{set}#{mode}/{map}',
@@ -227,7 +250,7 @@ export class OsuCommand extends Command {
             'osu.ppy.sh/beatmaps/{map}',
             'osu.ppy.sh/s/{set}#{mode}/{map}',
             'osu.ppy.sh/s/{set}',
-            'osu.ppy.sh/b/{map}?m={mode}',
+            'osu.ppy.sh/b/{map}?m={modeInt}',
             'osu.ppy.sh/b/{map}',
         ];
         const res = [];
@@ -242,31 +265,36 @@ export class OsuCommand extends Command {
             set: null,
             map: null,
             mode: null,
+            modeInt: null,
         };
         for (const result of res) {
-            switch (Object.keys(result)[0]) {
-                case 'set':
-                    finalRes.set = +result.set;
-                    break;
-                case 'map':
-                    finalRes.map = +result.map;
-                    break;
-                case 'mode':
-                    finalRes.mode = result.mode;
-                    break;
-            }
+            const key = Object.keys(result)[0];
+            finalRes[Object.keys(result)[0]] = result[key];
         }
         return finalRes;
     }
     protected setParamScore() {
         const webpatterns = [
-            'osu.ppy.sh/users/{param}?*',
-            'osu.ppy.sh/users/{param}/*',
-            'osu.ppy.sh/users/{param}',
-            'osu.ppy.sh/u/{param}?*',
-            'osu.ppy.sh/u/{param}',
+            'osu.ppy.sh/scores/{mode}/{score}',
+            'osu.ppy.sh/scores/{score}',
         ];
-        return this.argParser.getParamFlexible(['-u', '-user'].concat(webpatterns).concat(webpatterns.map(x => 'https://' + x)));
+        const res = [];
+        for (const pattern of webpatterns.slice()) {
+            webpatterns.push('https://' + pattern);
+        }
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp) res.push(temp);
+        }
+        const finalRes = {
+            score: null,
+            mode: null,
+        };
+        for (const result of res) {
+            const key = Object.keys(result)[0];
+            finalRes[Object.keys(result)[0]] = result[key];
+        }
+        return finalRes;
     }
 
     // if no user, use DB or disc name
@@ -332,6 +360,24 @@ export class OsuCommand extends Command {
         data.storeFile(mapdata, mapid, 'mapdata');
 
         return mapdata;
+    }
+    protected async getMapSet(mapsetid: number) {
+        let bmsdata: osuapi.types_v2.BeatmapsetExtended;
+        if (data.findFile(mapsetid, `bmsdata`) &&
+            !('error' in data.findFile(mapsetid, `bmsdata`)) &&
+            this.input.buttonType != 'Refresh') {
+            bmsdata = data.findFile(mapsetid, `bmsdata`);
+        } else {
+            bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
+        }
+        data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
+        if (bmsdata?.hasOwnProperty('error')) {
+            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
+            return;
+        }
+        data.storeFile(bmsdata, mapsetid, `bmsdata`);
+
+        return bmsdata;
     }
     protected getLatestMap() {
         const tempMap = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
@@ -401,13 +447,18 @@ export class ArgsParser {
 
         return null;
     }
-    /**
-     * used for getting bools, but this can also be used to just check that a param exists
-     */
-    paramExists(flags: string[]) {
+    getParamBool(flags: string[]) {
         for (let i = 0; i < this.args.length; i++) {
             if (flags.includes(this.args[i])) {
                 this.used.add(i);
+                return true;
+            }
+        }
+        return false;
+    }
+    paramExists(flags: string[]) {
+        for (let i = 0; i < this.args.length; i++) {
+            if (flags.includes(this.args[i])) {
                 return true;
             }
         }
@@ -471,6 +522,9 @@ export class ArgsParser {
 
         return null;
     }
+    /**
+     * get remaining args that haven't already been parsed
+     */
     getRemaining(): string[] {
         return this.args.filter((_, i) => !this.used.has(i));
     }
