@@ -115,7 +115,19 @@ export class ScoreListCommand extends OsuCommand {
         this.params.filteredMapper = this.setParam(this.params.filteredMapper, helper.argflags.filterCreator, 'string', { string_isMultiple: true });
         this.params.filterArtist = this.setParam(this.params.filterArtist, helper.argflags.filterArtist, 'string', { string_isMultiple: true });
         this.params.filterDifficulty = this.setParam(this.params.filterDifficulty, helper.argflags.filterVersion, 'string', { string_isMultiple: true });
-
+        this.params.filterRank = this.setParamBoolList(this.params.filterRank,
+            { set: 'xh', flags: ['-xh'] },
+            { set: 'ssh', flags: ['-ssh'] },
+            { set: 'x', flags: ['-x'] },
+            { set: 'ss', flags: ['-ss'] },
+            { set: 'sh', flags: ['-sh'] },
+            { set: 's', flags: ['-s'] },
+            { set: 'a', flags: ['-a'] },
+            { set: 'b', flags: ['-b'] },
+            { set: 'c', flags: ['-c'] },
+            { set: 'd', flags: ['-d'] },
+            { set: 'f', flags: ['-f'] },
+        );
 
         const tmod = this.setParamMods();
         if (tmod) {

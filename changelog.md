@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Fixed
+
+- added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
+
 ### Changed
 
 -   updated osumodcalculator
