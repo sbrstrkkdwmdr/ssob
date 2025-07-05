@@ -251,7 +251,7 @@ export class OsuCommand extends Command {
             let temp = this.argParser.getLink(pattern);
             if (temp) {
                 res.user = temp.user ?? res.user;
-                res.mode = temp.mode ?? res.mode;
+                res.mode = this.argParser.paramFixMode(temp.mode ?? res.mode);
                 break;
             };
         }
@@ -279,7 +279,7 @@ export class OsuCommand extends Command {
         const res: {
             set: number,
             map: number,
-            mode: string,
+            mode: osuapi.types_v2.GameMode,
             modeInt: number,
         } = {
             set: null,
@@ -292,7 +292,7 @@ export class OsuCommand extends Command {
             if (temp) {
                 res.set = this.argParser.paramFixInt(temp.set ?? res.set);
                 res.map = this.argParser.paramFixInt(temp.map ?? res.map);
-                res.mode = temp.mode ?? res.mode;
+                res.mode = this.argParser.paramFixMode(temp.mode ?? res.mode);
                 res.modeInt = this.argParser.paramFixInt(temp.modeInt ?? res.modeInt);
                 break;
             };
@@ -309,7 +309,7 @@ export class OsuCommand extends Command {
         }
         const res: {
             score: number,
-            mode: string,
+            mode: osuapi.types_v2.GameMode,
         } = {
             score: null,
             mode: null,
@@ -318,7 +318,7 @@ export class OsuCommand extends Command {
             let temp = this.argParser.getLink(pattern);
             if (temp) {
                 res.score = this.argParser.paramFixInt(temp.score ?? res.score);
-                res.mode = temp.mode ?? res.mode;
+                res.mode = this.argParser.paramFixMode(temp.mode ?? res.mode);
                 break;
             };
         }
@@ -498,6 +498,10 @@ export class ArgsParser {
     }
     paramFixInt(value: any): number {
         if (value) return Math.floor(+value);
+        return null;
+    }
+    paramFixMode(value: any): osuapi.types_v2.GameMode {
+        if (value) return osumodcalc.mode.fromValue(value);
         return null;
     }
     /**
