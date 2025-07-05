@@ -25,8 +25,6 @@ export class Badges extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
 
-        
-
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
         if (!this.params.user || this.params.user.includes(this.params.searchid)) {
@@ -128,8 +126,6 @@ export class BadgeWeightSeed extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-
-        
 
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
@@ -258,13 +254,18 @@ export class Ranking extends OsuCommand {
             this.setParamMode();
 
         }
+        this.params.country = this.setParam(this.params.country, ['-country'], 'string', {});
+        this.params.type = this.setParamBoolList(this.params.type,
+            { set: 'charts', flags: ['-charts', '-chart'] },
+            { set: 'country', flags: ['-countries'] },
+            { set: 'performance', flags: ['-pp', '-performance'] },
+            { set: 'score', flags: ['-score'] },
+        );
+        this.params.spotlight = this.setParam(this.params.spotlight, ['-spotlight'], 'number', { number_isInt: true });
         {
             this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
             this.params.parse = Boolean(this.params.parseId);
         }
-        // TODO - ranking args
-
-        
 
         this.input.args[0] && this.input.args[0].length == 2 ? this.params.country = this.input.args[0].toUpperCase() : this.params.country = 'ALL';
     }
@@ -911,8 +912,6 @@ export class RecentActivity extends OsuCommand {
     async setParamsMsg() {
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
         this.setParamPage();
-
-        
 
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;

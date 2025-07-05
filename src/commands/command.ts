@@ -34,7 +34,7 @@ export class Command {
         edit?: boolean,
         editAsMsg?: boolean,
     };
-    protected params: { [id: string]: any; };
+    protected params: helper.tooltypes.Dict;
     protected input: helper.bottypes.commandInput;
 
     constructor() {
@@ -80,8 +80,18 @@ export class Command {
     }
     /**
      * for message params only
+     * 
+     * ```
+     * this.input.args = ['-p', '55.3',]
+     * const page = setParam(null, flags: ['-p'], 'number', { number_isInt:true });
+     * // => 55
+     * 
+     * this.input.args = ['-p', 'waow',]
+     * const page = setParam(null, flags: ['-p'], 'number', { number_isInt:true });
+     * // => NaN
+     * ```
      */
-    protected setParam(param: any, flags: string[], type: 'string' | 'number' | 'bool', typeParams: {
+    protected setParam(defaultValue: any, flags: string[], type: 'string' | 'number' | 'bool', typeParams: {
         bool_setValue?: any,
         number_isInt?: boolean,
         string_isMultiple?: boolean,
@@ -90,12 +100,12 @@ export class Command {
         switch (type) {
             case 'string': {
                 let temparg = this.argParser.getParam(flags);
-                if (temparg) param = temparg;
+                if (temparg) defaultValue = temparg;
             }
                 break;
             case 'number': {
                 let temparg = this.argParser.getParam(flags);
-                if (temparg) param =
+                if (temparg) defaultValue =
                     typeParams.number_isInt ?
                         parseInt(temparg) :
                         +temparg;
@@ -103,13 +113,13 @@ export class Command {
                 break;
             case 'bool': {
                 let temparg = this.argParser.getParamBool(flags);
-                if (temparg) param = typeParams?.bool_setValue ?? true;
+                if (temparg) defaultValue = typeParams?.bool_setValue ?? true;
             }
                 break;
         }
-        return param;
+        return defaultValue;
     };
-    setParamCheckFlags(flags: string[]) {
+    private setParamCheckFlags(flags: string[]) {
         if (flags.length == 0) return [];
         const nf: string[] = [];
         for (const flag of flags) {
@@ -173,8 +183,12 @@ export class OsuCommand extends Command {
      * default value is what to return if args aren't found
      * 
      * basically the way this works is 
+     * 
      * set - what value to return if flag is found
+     * 
      * flags - what to search for
+     * 
+     * if args includes flags, then return set
      * 
      * if multiple args are found, only the first one is returned
      * 
@@ -190,7 +204,7 @@ export class OsuCommand extends Command {
         return defaultValue;
     }
     protected setParamMode() {
-        this.setParamBoolList('osu',
+        this.params.mode = this.setParamBoolList('osu',
             { set: 'osu', flags: ['-o', '-osu', '-std'] },
             { set: 'taiko', flags: ['-t', '-taiko'] },
             { set: 'fruits', flags: ['-f', '-fruits', '-ctb', '-catch'] },
@@ -199,6 +213,10 @@ export class OsuCommand extends Command {
     }
     /**
      * +{mods}
+     * 
+     * ```
+     * 
+     * ```
      */
     protected setParamMods() {
         let mods: osumodcalc.types.Mod[] = null;

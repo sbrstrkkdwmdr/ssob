@@ -35,3 +35,5 @@ export type guildSettings = {
     osuParseScreenshots: boolean,
     osuParseReplays: boolean,
 };
+
+export type Dict = { [key: string]: any; };

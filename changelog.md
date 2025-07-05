@@ -9,11 +9,11 @@
 ### Fixed
 
 -   added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
+-   `Rankings` not missing all args in `setParamsMsg`
 
 ### Changed
 
 -   updated osumodcalculator
--   convert command handlers into classes
 -   edit parts of command data for clarity
 
 ### Refactor
@@ -21,7 +21,9 @@
 -   remove methods and commands from helper module (circular refs)
 -   move commands to separate helper module
 -   `Map` split `execute()` into multiple smaller methods
--   rewrite how params are managed (move to a new class)
+-   convert input handlers into classes
+-   rewrite how params are managed (added `ArgParser` class)
+-   `UserBeatmaps` rename `filter` to `filterType`
 
 ## [5.2.0] - 2025-07-02
 

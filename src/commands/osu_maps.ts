@@ -1193,7 +1193,7 @@ export class RecommendMap extends OsuCommand {
 
 export class UserBeatmaps extends OsuCommand {
     declare protected params: {
-        filter: helper.bottypes.ubmFilter;
+        filterType: helper.bottypes.ubmFilter;
         sort: helper.bottypes.ubmSort;
         reverse: boolean;
         user: string;
@@ -1210,7 +1210,7 @@ export class UserBeatmaps extends OsuCommand {
         super();
         this.name = 'UserBeatmaps';
         this.params = {
-            filter: 'favourite',
+            filterType: 'favourite',
             sort: 'dateadded',
             reverse: false,
             user: undefined,
@@ -1230,7 +1230,7 @@ export class UserBeatmaps extends OsuCommand {
 
         this.params.detailed = this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 });
 
-        this.params.filter = this.setParamBoolList(this.params.filter,
+        this.params.filterType = this.setParamBoolList(this.params.filterType,
             { set: 'ranked', flags: helper.argflags.mapRanked },
             { set: 'favourite', flags: helper.argflags.mapFavourite },
             { set: 'graveyard', flags: helper.argflags.mapGraveyard },
@@ -1250,8 +1250,6 @@ export class UserBeatmaps extends OsuCommand {
 
         this.params.filterTitle = this.setParam(this.params.filterTitle, ['-?'], 'string', { string_isMultiple: true });
 
-        
-
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
         if (usertemp?.mode && !this.params.mode) {
@@ -1267,7 +1265,7 @@ export class UserBeatmaps extends OsuCommand {
         this.params.searchid = this.commanduser.id;
 
         this.params.user = interaction.options.getString('user') ?? null;
-        this.params.filter = (interaction.options.getString('type') ?? 'favourite') as helper.bottypes.ubmFilter;
+        this.params.filterType = (interaction.options.getString('type') ?? 'favourite') as helper.bottypes.ubmFilter;
         this.params.sort = (interaction.options.getString('sort') ?? 'dateadded') as helper.bottypes.ubmSort;
         this.params.reverse = interaction.options.getBoolean('reverse') ?? false;
         this.params.filterTitle = interaction.options.getString('filter');
@@ -1293,7 +1291,7 @@ export class UserBeatmaps extends OsuCommand {
         }
         this.params.searchid = temp.searchid;
         this.params.user = temp.user;
-        this.params.filter = temp.mapType;
+        this.params.filterType = temp.mapType;
         this.params.sort = temp.sortMap;
         this.params.reverse = temp.reverse;
         this.params.page = commandTools.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
@@ -1312,28 +1310,28 @@ export class UserBeatmaps extends OsuCommand {
         if (this.input.overrides.ex) {
             switch (this.input.overrides.ex) {
                 case 'ranked':
-                    this.params.filter = 'ranked';
+                    this.params.filterType = 'ranked';
                     break;
                 case 'favourite':
-                    this.params.filter = 'favourite';
+                    this.params.filterType = 'favourite';
                     break;
                 case 'graveyard':
-                    this.params.filter = 'graveyard';
+                    this.params.filterType = 'graveyard';
                     break;
                 case 'loved':
-                    this.params.filter = 'loved';
+                    this.params.filterType = 'loved';
                     break;
                 case 'pending':
-                    this.params.filter = 'pending';
+                    this.params.filterType = 'pending';
                     break;
                 case 'nominated':
-                    this.params.filter = 'nominated';
+                    this.params.filterType = 'nominated';
                     break;
                 case 'guest':
-                    this.params.filter = 'guest';
+                    this.params.filterType = 'guest';
                     break;
                 case 'most_played':
-                    this.params.filter = 'most_played';
+                    this.params.filterType = 'most_played';
                     break;
             }
         }
@@ -1407,21 +1405,21 @@ export class UserBeatmaps extends OsuCommand {
             }
             return args;
         }
-        if (data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter) &&
-            !('error' in data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter)) &&
+        if (data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType) &&
+            !('error' in data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType)) &&
             this.input.buttonType != 'Refresh'
         ) {
-            maplistdata = data.findFile(this.osudata.id, 'maplistdata', null, this.params.filter);
+            maplistdata = data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType);
         } else {
             this.params = await getScoreCount(0, this.input, this.params, this.osudata);
         }
 
         data.debug(maplistdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
-        data.storeFile(maplistdata, this.osudata.id, 'maplistdata', null, this.params.filter);
+        data.storeFile(maplistdata, this.osudata.id, 'maplistdata', null, this.params.filterType);
 
         if (this.params.parseMap) {
             if (this.params.filterTitle) {
-                switch (this.params.filter) {
+                switch (this.params.filterType) {
                     case 'most_played':
                         maplistdata = formatters.filterMapPlays(maplistdata as osuapi.types_v2.BeatmapPlaycount[],
                             this.params.sort as any, {
@@ -1446,7 +1444,7 @@ export class UserBeatmaps extends OsuCommand {
             }
             this.input.overrides = {
                 id:
-                    this.params.filter == 'most_played' ?
+                    this.params.filterType == 'most_played' ?
                         (maplistdata as osuapi.types_v2.BeatmapPlayCountArr)[pid]?.beatmap_id :
                         (maplistdata as osuapi.types_v2.Beatmapset[])[pid]?.beatmaps[0]?.id,
                 commanduser: this.commanduser,
@@ -1471,7 +1469,7 @@ export class UserBeatmaps extends OsuCommand {
             maxPage: number;
         };
 
-        switch (this.params.filter) {
+        switch (this.params.filterType) {
             case 'most_played':
                 mapsarg = formatters.mapPlaysList(maplistdata as osuapi.types_v2.BeatmapPlayCountArr,
                     this.params.sort as any, {
@@ -1491,7 +1489,7 @@ export class UserBeatmaps extends OsuCommand {
         commandTools.storeButtonArgs(this.input.id, {
             searchid: this.params.searchid,
             user: this.params.user,
-            mapType: this.params.filter,
+            mapType: this.params.filterType,
             sortMap: this.params.sort,
             reverse: this.params.reverse,
             page: this.params.page,
@@ -1505,7 +1503,7 @@ export class UserBeatmaps extends OsuCommand {
             .setFooter({
                 text: `${mapsarg.curPage}/${mapsarg.maxPage}`
             })
-            .setTitle(`${this.osudata.username}'s ${formatters.toCapital(this.params.filter)} Maps`)
+            .setTitle(`${this.osudata.username}'s ${formatters.toCapital(this.params.filterType)} Maps`)
             .setThumbnail(`${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setURL(`https://osu.ppy.sh/users/${this.osudata.id}/${this.osudata.playmode}#beatmaps`)
             .setColor(helper.colours.embedColour.userlist.dec)
