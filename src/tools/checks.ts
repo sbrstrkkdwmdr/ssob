@@ -5,7 +5,8 @@ import * as path from '../path';
 import * as log from './log';
 
 export function checkConfig() {
-    const config = JSON.parse(fs.readFileSync(path.precomp + '/config/config.json', 'utf-8'));
+    const config = getcfg();
+
     if (!config.hasOwnProperty("token")) {
         throw new Error('missing `token` value in config');
     }
@@ -170,4 +171,27 @@ export function toHexadecimal(str: string | number) {
         .replaceAll(' ', '%20')
         .replace(/([^A-Za-z0-9 %])/g, '');
     return newstr;
+}
+
+function getcfg() {
+    try {
+        const p = JSON.parse(fs.readFileSync(path.precomp + '/config/config.json', 'utf-8'));
+        return p
+    } catch(err){
+        return {
+            "token": process.env.DISCORD_TOKEN,
+            "osu": {
+                "clientId": process.env.OSU_CLIENT_ID,
+                "clientSecret": process.env.OSU_CLIENT_SECRET
+            },
+            "prefix": "sbr-",
+            "owners": ["id1", "id2"],
+            "tenorKey": process.env.TENOR_KEY,
+            "enableTracking": true,
+            "logs": {
+                "console": true,
+                "file": true
+            }
+        }
+    }
 }

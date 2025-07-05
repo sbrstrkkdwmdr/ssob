@@ -37,3 +37,4 @@ export type guildSettings = {
 };
 
 export type Dict = { [key: string]: any; };
+export type DictEntry = { (key: string): any; };

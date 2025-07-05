@@ -547,18 +547,22 @@ export class ArgsParser {
         return this.args.filter((_, i) => !this.used.has(i));
     }
 
-    getLink(pattern: string): { [key: string]: string; }[] | null {
+    /**
+     * assisted by ChatGPT
+     */
+    getLink(pattern: string): helper.tooltypes.Dict | null {
         const paramNames: string[] = [];
 
-        const regexPattern = pattern
-            .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
-            .replace(/{(\w+)}/g, (_, paramName) => {
-                paramNames.push(paramName);
-                return '([^/#?]+)';
-            });
+        let rawRegex = pattern.replace(/{(\w+)}/g, (_, name) => {
+            paramNames.push(name);
+            return '<<<CAPTURE>>>';
+        });
+
+        rawRegex = rawRegex.replace(/([.+?^$()|[\]\\])/g, '\\$1');
+
+        const regexPattern = rawRegex.replace(/<<<CAPTURE>>>/g, '([^/#?]+)');
 
         const regex = new RegExp('^' + regexPattern + '$');
-
         for (let i = 0; i < this.args.length; i++) {
             if (this.used.has(i)) continue;
 
@@ -566,11 +570,24 @@ export class ArgsParser {
             const match = arg.match(regex);
             if (match) {
                 this.used.add(i);
-                return paramNames.map((name, index) => ({ [name]: match[index + 1] }));
+
+                const result: helper.tooltypes.Dict[] = paramNames.map((name, index) => ({
+                    [name]: match[index + 1],
+                }));
+
+                return this.kvToDict(result as helper.tooltypes.DictEntry[]);
             }
         }
 
-        return [];
+        return null;
+    }
+    kvToDict(array: { (key: string): any; }[]) {
+        const dictionary: helper.tooltypes.Dict = {};
+        for (const elem of array) {
+            const key = Object.keys(elem)[0];
+            dictionary[key] = elem[key];
+        }
+        return dictionary;
     }
 }
 
