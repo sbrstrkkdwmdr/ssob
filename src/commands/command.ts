@@ -240,21 +240,23 @@ export class OsuCommand extends Command {
         for (const pattern of webpatterns.slice()) {
             webpatterns.push('https://' + pattern);
         }
-        const res = [];
-        for (const pattern of webpatterns) {
-            let temp = this.argParser.getLink(pattern);
-            if (temp) res.push(temp);
-        }
-        const finalRes = {
+        const res: {
+            user: string,
+            mode: osuapi.types_v2.GameMode,
+        } = {
             user: null,
             mode: null,
         };
-        for (const result of res) {
-            const key = Object.keys(result)[0];
-            finalRes[Object.keys(result)[0]] = result[key];
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp) {
+                res.user = temp.user ?? res.user;
+                res.mode = temp.mode ?? res.mode;
+                break;
+            };
         }
-        return finalRes?.user ?
-            finalRes :
+        return res?.user ?
+            res :
             { user: this.argParser.getParamFlexible(helper.argflags.user), mode: null };
     }
     /**
@@ -271,48 +273,56 @@ export class OsuCommand extends Command {
             'osu.ppy.sh/b/{map}?m={modeInt}',
             'osu.ppy.sh/b/{map}',
         ];
-        const res = [];
         for (const pattern of webpatterns.slice()) {
             webpatterns.push('https://' + pattern);
         }
-        for (const pattern of webpatterns) {
-            let temp = this.argParser.getLink(pattern);
-            if (temp) res.push(temp);
-        }
-        const finalRes = {
+        const res: {
+            set: number,
+            map: number,
+            mode: string,
+            modeInt: number,
+        } = {
             set: null,
             map: null,
             mode: null,
             modeInt: null,
         };
-        for (const result of res) {
-            const key = Object.keys(result)[0];
-            finalRes[Object.keys(result)[0]] = result[key];
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp) {
+                res.set = this.argParser.paramFixInt(temp.set ?? res.set);
+                res.map = this.argParser.paramFixInt(temp.map ?? res.map);
+                res.mode = temp.mode ?? res.mode;
+                res.modeInt = this.argParser.paramFixInt(temp.modeInt ?? res.modeInt);
+                break;
+            };
         }
-        return finalRes;
+        return res;
     }
     protected setParamScore() {
         const webpatterns = [
             'osu.ppy.sh/scores/{mode}/{score}',
             'osu.ppy.sh/scores/{score}',
         ];
-        const res = [];
         for (const pattern of webpatterns.slice()) {
             webpatterns.push('https://' + pattern);
         }
-        for (const pattern of webpatterns) {
-            let temp = this.argParser.getLink(pattern);
-            if (temp) res.push(temp);
-        }
-        const finalRes = {
+        const res: {
+            score: number,
+            mode: string,
+        } = {
             score: null,
             mode: null,
         };
-        for (const result of res) {
-            const key = Object.keys(result)[0];
-            finalRes[Object.keys(result)[0]] = result[key];
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp) {
+                res.score = this.argParser.paramFixInt(temp.score ?? res.score);
+                res.mode = temp.mode ?? res.mode;
+                break;
+            };
         }
-        return finalRes;
+        return res;
     }
 
     // if no user, use DB or disc name
@@ -481,6 +491,14 @@ export class ArgsParser {
             }
         }
         return false;
+    }
+    paramFixNumber(value: any): number {
+        if (value) return +value;
+        return null;
+    }
+    paramFixInt(value: any): number {
+        if (value) return Math.floor(+value);
+        return null;
     }
     /**
      * assisted by ChatGPT
