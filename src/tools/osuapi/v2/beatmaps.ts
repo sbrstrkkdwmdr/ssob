@@ -176,10 +176,7 @@ export async function search(i: {
 
     const url = `/beatmapsets/search`;
 
-    const params: Dict = {
-        q: encodeURIComponent(i.query),
-        cursor_string: i?.cursor_string ?? ''
-    };
+    const params = helper.setParams(i, {q: encodeURIComponent(i.query)}, ['cursor_string',]);
 
     return await helper.requests.get_v2(
         url, params
