@@ -70,19 +70,6 @@ export class Map extends OsuCommand {
 
         this.setParamMode();
 
-        if (this.input.args.join(' ').includes('+')) {
-            let temp = this.input.args.join(' ').split('+')[1].trim();
-            if (temp.includes(' ') && temp.split(' ').length > 1) {
-                temp = temp.split(' ')[0];
-            } else if (temp.length < 2) {
-                temp = null;
-            }
-            if (temp) {
-                this.params.mapmods = osumodcalc.mod.fromString(temp);
-                this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
-            }
-            this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
-        }
         const tmod = this.setParamMods();
         if (tmod) {
             this.#apiMods = tmod.apiMods;
@@ -95,12 +82,6 @@ export class Map extends OsuCommand {
             this.params.mapid = mapTemp.map;
             mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
 
-            if (!(mapTemp.map || mapTemp.set || this.params.maptitleq)) {
-                this.voidcontent();
-                this.ctn.content = helper.errors.uErr.osu.map.url;
-                await this.send();
-                throw new Error(helper.errors.uErr.osu.map.url);
-            }
             //get map id via mapset if not in the given URL
             if (!mapTemp.map && mapTemp.set) {
                 this.params.mapid = this.mapset?.beatmaps[0]?.id;
@@ -153,25 +134,15 @@ export class Map extends OsuCommand {
     }
     async setParamsLink() {
         const messagenohttp = this.input.message.content.replace('https://', '').replace('http://', '').replace('www.', '');
-        if (this.input.args.join(' ').includes('+')) {
-            let temp = messagenohttp.split('+')[1].trim();
-            if (temp.includes(' ') && temp.split(' ').length > 1) {
-                temp = temp.split(' ')[0];
-            } else if (temp.length < 2) {
-                temp = null;
-            }
-            if (temp) {
-                this.params.mapmods = osumodcalc.mod.fromString(temp);
-                this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
-            }
+        const tmod = this.setParamMods();
+        if (tmod) {
+            this.#apiMods = tmod.apiMods;
+            this.params.mapmods = tmod.mods;
         }
         if (this.input.args[0] && this.input.args[0].startsWith('query')) {
             this.params.maptitleq = this.input.args[1];
         } else if (messagenohttp.includes('q=')) {
-            this.params.maptitleq =
-                messagenohttp.includes('&') ?
-                    messagenohttp.split('q=')[1].split('&')[0] :
-                    messagenohttp.split('q=')[1];
+            this.params.maptitleq = this.setParamMapSearch().query;
         } else {
             const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
@@ -197,6 +168,28 @@ export class Map extends OsuCommand {
                 }
             }
         }
+    }
+    protected setParamMapSearch() {
+        const webpatterns = [
+            'osu.ppy.sh/beatmapsets?q={query}&{other}',
+            'osu.ppy.sh/beatmapsets?q={query}',
+        ];
+        for (const pattern of webpatterns.slice()) {
+            webpatterns.push('https://' + pattern);
+        }
+        const res: {
+            query: string,
+        } = {
+            query: null,
+        };
+        for (const pattern of webpatterns) {
+            let temp = this.argParser.getLink(pattern);
+            if (temp) {
+                res.query = temp.query ?? res.query;
+                break;
+            };
+        }
+        return res;
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
