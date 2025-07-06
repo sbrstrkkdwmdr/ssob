@@ -89,17 +89,17 @@ export class Map extends OsuCommand {
             this.params.mapmods = tmod.mods;
         }
 
-        
+
         {
             const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
             mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
 
-            if (!(mapTemp.map || mapTemp.set)) {
+            if (!(mapTemp.map || mapTemp.set || this.params.maptitleq)) {
                 this.voidcontent();
                 this.ctn.content = helper.errors.uErr.osu.map.url;
                 await this.send();
-                return;
+                throw new Error(helper.errors.uErr.osu.map.url);
             }
             //get map id via mapset if not in the given URL
             if (!mapTemp.map && mapTemp.set) {
@@ -110,9 +110,10 @@ export class Map extends OsuCommand {
                     this.params.mapid = bm.beatmaps[0].id;
                 } catch (e) {
                     this.voidcontent();
+
                     this.ctn.content = helper.errors.uErr.osu.map.setonly;
                     await this.send();
-                    return;
+                    throw new Error(helper.errors.uErr.osu.map.setonly);
                 }
             }
         }
@@ -139,7 +140,7 @@ export class Map extends OsuCommand {
                 allowedMentions: { repliedUser: false }
             });
             commandTools.disableAllButtons(this.input.message);
-            return;
+            throw new Error('Buttons disabled');
         }
         this.params.mapid = temp.mapId;
         this.params.mode = temp.mode;
@@ -175,7 +176,7 @@ export class Map extends OsuCommand {
             const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
             this.params.mode = mapTemp.mode ?? this.params.mode;
-            if (!(mapTemp.map || mapTemp.set)) {
+            if (!(mapTemp.map || mapTemp.set || this.map || this.mapset)) {
                 this.voidcontent();
                 this.ctn.content = helper.errors.uErr.osu.map.url;
                 await this.send();
@@ -192,7 +193,7 @@ export class Map extends OsuCommand {
                     this.voidcontent();
                     this.ctn.content = helper.errors.uErr.osu.map.setonly;
                     await this.send();
-                    return;
+                    throw new Error(helper.errors.uErr.osu.map.setonly);
                 }
             }
         }
@@ -1118,7 +1119,7 @@ export class RecommendMap extends OsuCommand {
             this.setParamMode();
         }
 
-        
+
         this.params.user = this.input.args.join(' ')?.replaceAll('"', '');
         if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid)) {
             this.params.user = null;
@@ -1255,7 +1256,10 @@ export class UserBeatmaps extends OsuCommand {
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
     }
