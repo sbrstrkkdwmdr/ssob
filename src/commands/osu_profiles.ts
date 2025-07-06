@@ -27,7 +27,10 @@ export class Badges extends OsuCommand {
 
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
 
@@ -129,7 +132,10 @@ export class BadgeWeightSeed extends OsuCommand {
 
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
 
@@ -506,7 +512,10 @@ export class Profile extends OsuCommand {
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
     }
@@ -563,7 +572,10 @@ export class Profile extends OsuCommand {
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
     }
@@ -915,7 +927,10 @@ export class RecentActivity extends OsuCommand {
 
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
     }

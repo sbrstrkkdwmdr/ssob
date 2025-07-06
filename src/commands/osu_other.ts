@@ -900,7 +900,10 @@ export class WhatIf extends OsuCommand {
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user || this.params.user.includes(this.params.searchid)) {
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
+        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
             this.params.user = null;
         }
     }
