@@ -161,6 +161,26 @@ export class Command {
         );
     }
     getOverrides() { }
+    /**
+     * this.params[pKey] = this.input.overrides[oKey]
+     */
+    protected setParamOverride(paramKey: string, overrideKey?: string, type?: 'string' | 'number') {
+        const oKey = overrideKey ?? paramKey;
+        if (this.input.overrides[oKey]) {
+            this.params[paramKey] = this.forceType(this.input.overrides[oKey], type);
+        }
+    }
+    private forceType(value: any, type: 'string' | 'number') {
+        switch (type) {
+            case 'string':
+                value = value + '';
+                break;
+            case 'number':
+                value = +value;
+                break;
+        }
+        return value;
+    }
     async execute() {
         this.ctn.content = 'No execution method has been set';
         this.send();

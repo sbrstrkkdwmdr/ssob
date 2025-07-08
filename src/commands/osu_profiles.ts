@@ -306,9 +306,7 @@ export class Ranking extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page) {
-            this.params.page = this.input.overrides.page;
-        }
+        this.setParamOverride('page');
     }
     async execute() {
         await this.setParams();
@@ -581,19 +579,12 @@ export class Profile extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.mode) {
-            this.params.mode = this.input.overrides.mode;
-        }
-        if (this.input.overrides.id) {
-            this.params.user = this.input.overrides.id + '';
-        }
-        if (this.input.overrides.commandAs) {
+        this.setParamOverride('mode');
+        this.setParamOverride('user', 'id');
+        if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
         }
-        if (this.input.overrides.commanduser) {
-            this.commanduser = this.input.overrides.commanduser;
-            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
-        }
+        this.setParamOverride('commanduser');
     }
     async execute() {
         await this.setParams();
@@ -963,9 +954,7 @@ export class RecentActivity extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page != null) {
-            this.params.page = this.input.overrides.page;
-        }
+        this.setParamOverride('page');
     }
     async execute() {
         await this.setParams();

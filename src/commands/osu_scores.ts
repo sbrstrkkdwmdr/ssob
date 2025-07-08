@@ -257,24 +257,14 @@ export class ScoreListCommand extends OsuCommand {
 
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page != null) {
-            this.params.page = this.input.overrides.page;
-        }
-        if (this.input.overrides.sort != null) {
-            this.params.sort = this.input.overrides.sort as "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss";
-        }
-        if (this.input.overrides.reverse != null) {
-            this.params.reverse = this.input.overrides.reverse;
-        }
-        if (this.input.overrides.commandAs) {
+        this.setParamOverride('page');
+        this.setParamOverride('sort');
+        this.setParamOverride('reverse');
+        if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
         }
-        if (this.input.overrides.user) {
-            this.params.user = this.input.overrides.user;
-        }
-        if (this.input.overrides.mode) {
-            this.params.mode = this.input.overrides.mode;
-        }
+        this.setParamOverride('user');
+        this.setParamOverride('mode');
     }
 
     osudata: osuapi.types_v2.UserExtended;
@@ -685,28 +675,15 @@ export class MapScores extends ScoreListCommand {
 
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page != null) {
-            this.params.page = this.input.overrides.page;
-        }
-        if (this.input.overrides.sort != null) {
-            this.params.sort = this.input.overrides.sort as "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss";
-        }
-        if (this.input.overrides.reverse != null) {
-            this.params.reverse = this.input.overrides.reverse;
-        }
-        if (this.input.overrides.commandAs) {
+        this.setParamOverride('page');
+        this.setParamOverride('sort');
+        this.setParamOverride('reverse');
+        if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
         }
-        if (this.input.overrides.commanduser) {
-            this.commanduser = this.input.overrides.commanduser;
-            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
-        }
-        if (this.input.overrides.user) {
-            this.params.user = this.input.overrides.user;
-        }
-        if (this.input.overrides.id) {
-            this.params.mapid = this.input.overrides.id;
-        }
+        this.setParamOverride('commanduser');
+        this.setParamOverride('user');
+        this.setParamOverride('mode');
     }
 }
 
@@ -1010,20 +987,12 @@ export class ScoreParse extends SingleScoreCommand {
 
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides?.id != null) {
-            this.params.scoreid = +this.input.overrides.id;
-        }
-        if (this.input.overrides?.mode != null) {
-            this.params.mode = this.input.overrides.mode;
-        }
-        if (this.input.overrides?.commanduser != null) {
-            this.commanduser = this.input.overrides.commanduser;
-        }
+        this.setParamOverride('scoreid', 'id', 'number');
+        this.setParamOverride('mode');
+        this.setParamOverride('commanduser');
+        this.setParamOverride('overrideAuthor', 'ex', 'string');
         if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
-        }
-        if (this.input.overrides?.ex != null) {
-            this.params.overrideAuthor = this.input.overrides.ex as string;
         }
         if (this.input.overrides?.type == 'nochoke') {
             this.params.nochoke = true;
@@ -1213,12 +1182,9 @@ export class Recent extends SingleScoreCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page != null) {
-            this.params.page = +(`${this.input.overrides.page}`);
-        }
-        if (this.input.overrides.mode != null) {
-            this.params.mode = this.input.overrides.mode;
-        }
+        this.setParamOverride('page', 'number');
+        this.setParamOverride('mode',);
+
     }
     async execute() {
         await this.setParams();
@@ -1439,21 +1405,14 @@ export class MapLeaderboard extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page != null) {
-            this.params.page = this.input.overrides.page;
-        }
-        if (this.input.overrides.id) {
-            this.params.mapid = +this.input.overrides.id;
-        }
-        if (this.input.overrides.filterMods) {
-            this.params.mapmods = this.input.overrides.filterMods;
-        }
+        this.setParamOverride('page');
+        this.setParamOverride('mapid', 'id', 'number');
+        this.setParamOverride('mapmods', 'filterMods');
+        this.setParamOverride('commanduser');
+
+        this.setParamOverride('commanduser');
         if (this.input.overrides.commandAs) {
             this.input.type = this.input.overrides.commandAs;
-        }
-        if (this.input.overrides.commanduser) {
-            this.commanduser = this.input.overrides.commanduser;
-            // this.ctn.content = `Requested by <@${this.commanduser.id}>`;
         }
     }
     async execute() {

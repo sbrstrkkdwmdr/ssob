@@ -341,9 +341,7 @@ export class Help extends Command {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides?.ex != null) {
-            this.params.command = this.input?.overrides?.ex + '';
-        }
+        this.setParamOverride('command', 'ex');
     }
     async execute() {
         await this.setParams();

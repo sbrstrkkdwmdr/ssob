@@ -82,9 +82,7 @@ export class Gif extends Command {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input?.overrides?.ex != null) {
-            this.params.type = this.input?.overrides?.ex as giftype;
-        }
+        this.setParamOverride('type', 'ex')
     }
     async execute() {
         await this.setParams();

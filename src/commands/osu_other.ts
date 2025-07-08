@@ -94,9 +94,7 @@ export class Compare extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.type != null) {
-            this.params.type = this.input.overrides.type as any;
-        }
+        this.setParamOverride('type');
     }
     async execute() {
         await this.setParams();
@@ -375,7 +373,7 @@ export class RankPP extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        this.params.get = this.input?.overrides?.type as 'pp' | 'rank' ?? 'pp';
+        this.setParamOverride('get', 'type');
     }
     async execute() {
         await this.setParams();
@@ -556,7 +554,7 @@ export class ServerLeaderboard extends OsuCommand {
         {
             this.setParamMode();
         }
-        
+
         this.params.id = this.input.args[0];
     }
     async setParamsInteract() {
@@ -753,7 +751,7 @@ export class Set extends OsuCommand {
         this.params.skin = interaction.options.getString('skin');
     }
     getOverrides(): void {
-        if (this.input.overrides.type != null) {
+        if (this.input.overrides.type != null && this.input.type == 'message') {
             switch (this.input.overrides.type) {
                 case 'mode':
                     [this.params.mode, this.params.name] = [this.params.name as osuapi.types_v2.GameMode, this.params.mode];
@@ -875,7 +873,7 @@ export class WhatIf extends OsuCommand {
             this.setParamMode();
         }
 
-        
+
 
         if (!isNaN(+this.input.args[0])) {
             this.params.pp = +this.input.args[0];

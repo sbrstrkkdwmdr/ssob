@@ -193,25 +193,16 @@ export class Map extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides?.overwriteModal != null) {
-            this.params.overwriteModal = this.input?.overrides?.overwriteModal ?? this.params.overwriteModal;
-        }
-        if (this.input.overrides?.id != null) {
-            this.params.mapid = +(this.input?.overrides?.id ?? this.params.mapid);
-        }
-        if (this.input.overrides?.commanduser != null) {
-            this.commanduser = this.input.overrides.commanduser;
-            // this.ctn.content = `Requested by <@${this.commanduser.id}>\n`;
-        }
+        this.setParamOverride('overwriteModal');
+        this.setParamOverride('mapid', 'id', 'number');
+        this.setParamOverride('commanduser');
         if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
         }
+        this.setParamOverride('content', 'ex');
         if (this.input.overrides?.filterMods != null) {
             this.params.mapmods = this.input.overrides.filterMods;
             this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
-        }
-        if (this.input.overrides?.ex != null) {
-            this.ctn.content += this.input.overrides?.ex;
         }
         if (this.input.overrides?.type != null) {
             this.params.isppCalc = true;
@@ -1301,37 +1292,10 @@ export class UserBeatmaps extends OsuCommand {
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        if (this.input.overrides.page) {
-            this.params.page = this.input.overrides.page;
-        }
-        if (this.input.overrides.ex) {
-            switch (this.input.overrides.ex) {
-                case 'ranked':
-                    this.params.filterType = 'ranked';
-                    break;
-                case 'favourite':
-                    this.params.filterType = 'favourite';
-                    break;
-                case 'graveyard':
-                    this.params.filterType = 'graveyard';
-                    break;
-                case 'loved':
-                    this.params.filterType = 'loved';
-                    break;
-                case 'pending':
-                    this.params.filterType = 'pending';
-                    break;
-                case 'nominated':
-                    this.params.filterType = 'nominated';
-                    break;
-                case 'guest':
-                    this.params.filterType = 'guest';
-                    break;
-                case 'most_played':
-                    this.params.filterType = 'most_played';
-                    break;
-            }
-        }
+        this.setParamOverride('page');
+        this.setParamOverride('filterType', 'ex');
+
+
     }
     async execute() {
         await this.setParams();
