@@ -7,7 +7,6 @@ import * as data from '../tools/data';
 import * as log from '../tools/log';
 import * as osuapi from '../tools/osuapi';
 import * as track from '../tools/track';
-
 import { Command } from './command';
 
 export class CheckPerms extends Command {

@@ -215,6 +215,7 @@ export class ButtonHandler extends InputHandler {
             await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
             return true;
         }
+        return false;
     }
 
     commandSelect(cmd: string, interaction: Discord.ButtonInteraction) {

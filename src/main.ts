@@ -238,7 +238,7 @@ Client ID:        ${client.user?.id}
         const ch = new CommandHandler();
         const lh = new LinkHandler();
         ch.onMessage(message);
-        lh.onMessage(message); //{}
+        lh.onMessage(message);
 
         //if message mentions bot and no other args given, return prefix
         let settings: helper.tooltypes.guildSettings;
@@ -270,7 +270,7 @@ Client ID:        ${client.user?.id}
         const ch = new CommandHandler();
         const bh = new ButtonHandler();
         ch.onInteraction(interaction);
-        bh.onInteraction(interaction); //{}
+        bh.onInteraction(interaction); 
     });
     loops();
     slashcmds.main();
