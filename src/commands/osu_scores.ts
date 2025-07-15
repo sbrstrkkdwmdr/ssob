@@ -2038,7 +2038,6 @@ ${pp?.ignored > 0 ? `Skipped: ${pp?.ignored}` : ''}
 }
 
 export class Simulate extends OsuCommand {
-
     declare protected params: {
         mapid: number;
         mods: string;
@@ -2140,6 +2139,75 @@ export class Simulate extends OsuCommand {
 
         this.sendLoading();
 
+        this.fixParams();
+
+        try {
+            this.map = await this.getMap(this.params.mapid);
+        } catch (e) {
+            return;
+        }
+        if (!this.params.mods) {
+            this.params.mods = 'NM';
+        }
+        if (!this.params.combo) {
+            this.params.combo = this.map?.max_combo ?? undefined;
+        }
+
+        this.fixSpeedParams();
+
+        const scorestat: osuapi.types_v2.ScoreStatistics = {
+            great: this.params.n300,
+            ok: this.params.n100,
+            meh: this.params.n50,
+            miss: this.params.nMiss ?? 0,
+        };
+
+        let use300s = (this.params.n300 ?? 0);
+        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
+        if (gotTot != this.map.count_circles + this.map.count_sliders + this.map.count_spinners) {
+            use300s += (this.map.count_circles + this.map.count_sliders + this.map.count_spinners) - use300s;
+        }
+        const useAcc = this.params.acc ?? osumodcalc.accuracy.standard(
+            use300s,
+            this.params.n100 ?? 0,
+            this.params.n50 ?? 0,
+            this.params.nMiss ?? 0
+        ).accuracy;
+
+        const perfs = await performance.fullPerformance(
+            this.params.mapid,
+            0,
+            osumodcalc.mod.fromString(this.params.mods),
+            useAcc / 100,
+            this.params.overrideSpeed,
+            scorestat,
+            this.params.combo,
+            null,
+            new Date(this.map.last_updated),
+            this.params.customCS,
+            this.params.customAR,
+            this.params.customOD,
+            this.params.customHP,
+        );
+        data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
+
+        const mapPerf = await performance.calcMap({
+            mods: osumodcalc.mod.fromString(this.params.mods),
+            mode: 0,
+            mapid: this.params.mapid,
+            clockRate: this.params.overrideSpeed,
+            mapLastUpdated: new Date(this.map.last_updated)
+        });
+        this.ctn.embeds = [this.setEmbed(
+            perfs, mapPerf,
+            `${this.map.beatmapset.artist} - ${this.map.beatmapset.title} [${this.map.version}]`,
+            useAcc
+        )];
+
+        this.send();
+    }
+    map: osuapi.types_v2.BeatmapExtended;
+    fixParams() {
         const tempscore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
         if (tempscore?.apiData && tempscore?.apiData.beatmap.id == this.params.mapid) {
             if (!this.params.n300 && !this.params.n100 && !this.params.n50 && !this.params.acc) {
@@ -2158,26 +2226,14 @@ export class Simulate extends OsuCommand {
                 this.params.mods = tempscore.apiData.mods.map(x => x.acronym).join('');
             }
         }
-
-        let mapdata: osuapi.types_v2.BeatmapExtended;
-        try {
-            const m = await this.getMap(this.params.mapid);
-            mapdata = m;
-        } catch (e) {
-            return;
-        }
-        if (!this.params.mods) {
-            this.params.mods = 'NM';
-        }
-        if (!this.params.combo) {
-            this.params.combo = undefined;
-        }
-
+        return tempscore;
+    }
+    fixSpeedParams() {
         if (this.params.overrideBpm && !this.params.overrideSpeed) {
-            this.params.overrideSpeed = this.params.overrideBpm / mapdata.bpm;
+            this.params.overrideSpeed = this.params.overrideBpm / this.map.bpm;
         }
         if (this.params.overrideSpeed && !this.params.overrideBpm) {
-            this.params.overrideBpm = this.params.overrideSpeed * mapdata.bpm;
+            this.params.overrideBpm = this.params.overrideSpeed * this.map.bpm;
         }
 
         if (this.params.mods.includes('DT') || this.params.mods.includes('NC')) {
@@ -2188,65 +2244,22 @@ export class Simulate extends OsuCommand {
             this.params.overrideSpeed *= 0.75;
             this.params.overrideBpm *= 1.5;
         }
-        const scorestat: osuapi.types_v2.ScoreStatistics = {
-            great: this.params.n300,
-            ok: this.params.n100,
-            meh: this.params.n50,
-            miss: this.params.nMiss ?? 0,
-        };
+    }
 
-        let use300s = (this.params.n300 ?? 0);
-        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
-        if (gotTot != mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) {
-            use300s += (mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners) - use300s;
-        }
-        const useAcc = this.params.acc ?? osumodcalc.accuracy.standard(
-            use300s,
-            this.params.n100 ?? 0,
-            this.params.n50 ?? 0,
-            this.params.nMiss ?? 0
-        ).accuracy;
-
-        const perfs = await performance.fullPerformance(
-            this.params.mapid,
-            0,
-            osumodcalc.mod.fromString(this.params.mods),
-            useAcc / 100,
-            this.params.overrideSpeed,
-            scorestat,
-            this.params.combo,
-            null,
-            new Date(mapdata.last_updated),
-            this.params.customCS,
-            this.params.customAR,
-            this.params.customOD,
-            this.params.customHP,
-        );
-        data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
-
-        const mapPerf = await performance.calcMap({
-            mods: osumodcalc.mod.fromString(this.params.mods),
-            mode: 0,
-            mapid: this.params.mapid,
-            clockRate: this.params.overrideSpeed,
-            mapLastUpdated: new Date(mapdata.last_updated)
-        });
-
-        const title = `${mapdata.beatmapset.artist} - ${mapdata.beatmapset.title} [${mapdata.version}]`;
-        const mxCombo = perfs[0].difficulty.maxCombo;
+    setEmbed(perfs: rosu.PerformanceAttributes[], mapPerf: rosu.PerformanceAttributes[], title: string, useAcc: number) {
         const scoreEmbed = new Discord.EmbedBuilder()
             .setTitle(`Simulated play on \n\`${title}\``)
             .setURL(`https://osu.ppy.sh/b/${this.params.mapid}`)
-            .setThumbnail(mapdata?.beatmapset_id ? `https://b.ppy.sh/thumb/${mapdata.beatmapset_id}l.jpg` : `https://osu.ppy.sh/images/layout/avatar-guest@2x.png`)
+            .setThumbnail(this.map?.beatmapset_id ? osuapi.other.beatmapImages(this.map.beatmapset_id).thumbnailLarge : `https://osu.ppy.sh/images/layout/avatar-guest@2x.png`)
             .addFields([
                 {
                     name: 'Score Details',
                     value:
                         `${(useAcc)?.toFixed(2)}% | ${this.params.nMiss ?? 0}x misses
-    ${this.params.combo ?? mxCombo}x/**${mxCombo}**x
+    ${this.params.combo ?? this.map.max_combo}x/**${this.map.max_combo}**x
     ${this.params.mods ?? 'No mods'}
     \`${this.params.n300}/${this.params.n100}/${this.params.n50}/${this.params.nMiss}\`
-    Speed: ${this.params.overrideSpeed ?? 1}x @ ${this.params.overrideBpm ?? mapdata.bpm}BPM
+    Speed: ${this.params.overrideSpeed ?? 1}x @ ${this.params.overrideBpm ?? this.map.bpm}BPM
     `,
                     inline: false
                 },
@@ -2267,11 +2280,11 @@ export class Simulate extends OsuCommand {
                     name: 'Map Details',
                     value:
                         `
-    CS${mapdata.cs.toString().padEnd(5, ' ')}
-    AR${mapdata.ar.toString().padEnd(5, ' ')}
-    OD${mapdata.accuracy.toString().padEnd(5, ' ')}
-    HP${mapdata.drain.toString().padEnd(5, ' ')}
-    ${helper.emojis.mapobjs.total_length}${calculate.secondsToTime(mapdata.total_length)}
+    CS${this.map.cs.toString().padEnd(5, ' ')}
+    AR${this.map.ar.toString().padEnd(5, ' ')}
+    OD${this.map.accuracy.toString().padEnd(5, ' ')}
+    HP${this.map.drain.toString().padEnd(5, ' ')}
+    ${helper.emojis.mapobjs.total_length}${calculate.secondsToTime(this.map.total_length)}
                     `,
                     inline: true
                 },
@@ -2279,19 +2292,15 @@ export class Simulate extends OsuCommand {
                     name: helper.defaults.invisbleChar,
                     value:
                         `
-    ${helper.emojis.mapobjs.circle}${mapdata.count_circles}
-    ${helper.emojis.mapobjs.slider}${mapdata.count_sliders}
-    ${helper.emojis.mapobjs.spinner}${mapdata.count_spinners}
-    ${helper.emojis.mapobjs.bpm}${mapdata.bpm}
-    ${helper.emojis.mapobjs.star}${(perfs[0]?.difficulty?.stars ?? mapdata.difficulty_rating)?.toFixed(2)}
+    ${helper.emojis.mapobjs.circle}${this.map.count_circles}
+    ${helper.emojis.mapobjs.slider}${this.map.count_sliders}
+    ${helper.emojis.mapobjs.spinner}${this.map.count_spinners}
+    ${helper.emojis.mapobjs.bpm}${this.map.bpm}
+    ${helper.emojis.mapobjs.star}${(perfs[0]?.difficulty?.stars ?? this.map.difficulty_rating)?.toFixed(2)}
                     `,
                     inline: true
                 },
             ]);
-
-        this.ctn.embeds = [scoreEmbed];
-
-        this.send();
+        return scoreEmbed;
     }
-
 }
