@@ -1766,6 +1766,53 @@ export class ScoreStats extends OsuCommand {
         this.logInput();
         // do stuff
 
+        this.fixParams();
+
+        this.sendLoading();
+
+        try {
+            this.user = await this.getProfile(this.params.user, this.params.mode);
+        } catch (e) {
+            return;
+        }
+
+        const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder()
+            .addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.user.id}+${this.user.playmode}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
+            );
+
+        let scoresdata: osuapi.types_v2.Score[] = [];
+
+        const dataFilename =
+            this.params.scoreTypes == 'firsts' ?
+                'firstscoresdata' :
+                `${this.params.scoreTypes}scoresdata`;
+
+        if (data.findFile(this.user.id, dataFilename) &&
+            !('error' in data.findFile(this.user.id, dataFilename)) &&
+            this.input.buttonType != 'Refresh'
+        ) {
+            scoresdata = data.findFile(this.user.id, dataFilename);
+        } else {
+            this.params.reachedMaxCount = await this.getScoreCount(0, this.params, this.input);
+        }
+        data.storeFile(scoresdata, this.user.id, dataFilename);
+
+        // let useFiles: string[] = [];
+
+        this.ctn.embeds = [await this.setEmbed()];
+        this.ctn.components = [buttons];
+
+        this.send();
+    }
+
+    scores: osuapi.types_v2.Score[] = [];
+    user: osuapi.types_v2.UserExtended;
+
+    async fixParams() {
         {
             const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
             this.params.user = t.user;
@@ -1774,267 +1821,206 @@ export class ScoreStats extends OsuCommand {
 
         this.params.mode = this.params.mode ? other.modeValidator(this.params.mode) : null;
 
-        this.sendLoading();
+    }
 
-        let osudata: osuapi.types_v2.UserExtended;
-
-        try {
-            const u = await this.getProfile(this.params.user, this.params.mode);
-            osudata = u;
-        } catch (e) {
+    async getScoreCount(cinitnum: number, args = this.params, input = this.input): Promise<boolean> {
+        let fd: osuapi.types_v2.Score[];
+        const defArgs = {
+            user_id: this.user.id,
+            mode: other.modeValidator(args.mode),
+            offset: cinitnum
+        };
+        switch (args.scoreTypes) {
+            case 'firsts':
+                fd = await osuapi.v2.scores.first(defArgs);
+                break;
+            case 'best':
+                fd = await osuapi.v2.scores.best(defArgs);
+                break;
+            case 'recent':
+                fd = await osuapi.v2.scores.recent({ include_fails: 1, ...defArgs });
+                break;
+            case 'pinned':
+                fd = await osuapi.v2.scores.pinned(defArgs);
+                break;
+        }
+        if (fd?.hasOwnProperty('error')) {
+            await commandTools.errorAndAbort(input, this.name, true, helper.errors.uErr.osu.scores.best.replace('[ID]', args.user).replace('top', args.scoreTypes == 'best' ? 'top' : args.scoreTypes), true);
             return;
         }
-
-        const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder()
-            .addComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.user),
-            );
-
-        let scoresdata: osuapi.types_v2.Score[] = [];
-
-        async function getScoreCount(cinitnum: number, args = this.params, input = this.input): Promise<boolean> {
-            let fd: osuapi.types_v2.Score[];
-            const defArgs = {
-                user_id: osudata.id,
-                mode: other.modeValidator(args.mode),
-                offset: cinitnum
-            };
-            switch (args.scoreTypes) {
-                case 'firsts':
-                    fd = await osuapi.v2.scores.first(defArgs);
-                    break;
-                case 'best':
-                    fd = await osuapi.v2.scores.best(defArgs);
-                    break;
-                case 'recent':
-                    fd = await osuapi.v2.scores.recent({ include_fails: 1, ...defArgs });
-                    break;
-                case 'pinned':
-                    fd = await osuapi.v2.scores.pinned(defArgs);
-                    break;
-            }
-            if (fd?.hasOwnProperty('error')) {
-                await commandTools.errorAndAbort(input, this.name, true, helper.errors.uErr.osu.scores.best.replace('[ID]', args.user).replace('top', args.scoreTypes == 'best' ? 'top' : args.scoreTypes), true);
-                return;
-            }
-            for (let i = 0; i < fd.length; i++) {
-                if (!fd[i] || typeof fd[i] == 'undefined') { break; }
-                scoresdata.push(fd[i]);
-            }
-            if (scoresdata.length == 500 && args.scoreTypes == 'firsts') {
-                args.reachedMaxCount = true;
-            } else if (args.scoreTypes == 'firsts') {
-                return await getScoreCount(cinitnum + 100, args);
-            }
-            return args.reachedMaxCount;
+        for (let i = 0; i < fd.length; i++) {
+            if (!fd[i] || typeof fd[i] == 'undefined') { break; }
+            this.scores.push(fd[i]);
         }
-
-        const dataFilename =
-            this.params.scoreTypes == 'firsts' ?
-                'firstscoresdata' :
-                `${this.params.scoreTypes}scoresdata`;
-
-        if (data.findFile(osudata.id, dataFilename) &&
-            !('error' in data.findFile(osudata.id, dataFilename)) &&
-            this.input.buttonType != 'Refresh'
-        ) {
-            scoresdata = data.findFile(osudata.id, dataFilename);
-        } else {
-            this.params.reachedMaxCount = await getScoreCount(0, this.params, this.input);
+        if (this.scores.length == 500 && args.scoreTypes == 'firsts') {
+            args.reachedMaxCount = true;
+        } else if (args.scoreTypes == 'firsts') {
+            return await this.getScoreCount(cinitnum + 100, args);
         }
-        data.storeFile(scoresdata, osudata.id, dataFilename);
+        return args.reachedMaxCount;
+    }
 
-        // let useFiles: string[] = [];
-
+    async setEmbed() {
         const embed: Discord.EmbedBuilder = new Discord.EmbedBuilder()
-            .setTitle(`Statistics for ${osudata.username}'s ${this.params.scoreTypes} scores`)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`);
-        formatters.userAuthor(osudata, embed);
-        if (scoresdata.length == 0) {
+            .setTitle(`Statistics for ${this.user.username}'s ${this.params.scoreTypes} scores`)
+            .setThumbnail(`${this.user?.avatar_url ?? helper.defaults.images.any.url}`);
+        if (this.scores.length == 0) {
             embed.setDescription('No scores found');
         } else {
-            embed.setDescription(`${calculate.separateNum(scoresdata.length)} scores found\n${this.params.reachedMaxCount ? 'Only first 100 scores are calculated' : ''}`);
+            embed.setDescription(`${calculate.separateNum(this.scores.length)} scores found\n${this.params.reachedMaxCount ? 'Only first 100 scores are calculated' : ''}`);
+            await this.embedData(embed);
         }
-
-        await this.setEmbed(embed, scoresdata);
-
-        this.ctn.embeds = [embed];
-        this.ctn.components = [buttons];
-
-        this.send();
+        formatters.userAuthor(this.user, embed);
+        return embed;
     }
-    async setEmbed(embed: Discord.EmbedBuilder, scoresdata: osuapi.types_v2.Score[]) {
-        const mappers = calculate.findMode(scoresdata.map(x => x.beatmapset.creator));
-        const mods = calculate.findMode(scoresdata.map(x => {
+
+    async embedData(embed: Discord.EmbedBuilder) {
+        const mappers = calculate.findMode(this.scores.map(x => x.beatmapset.creator));
+        const mods = calculate.findMode(this.scores.map(x => {
             return x.mods.length == 0 ?
                 'NM' :
                 x.mods.map(x => x.acronym).join('');
         }));
-        const grades = calculate.findMode(scoresdata.map(x => x.rank));
-        const acc = calculate.stats(scoresdata.map(x => x.accuracy));
-        const combo = calculate.stats(scoresdata.map(x => x.max_combo));
-        let pp = calculate.stats(scoresdata.map(x => x.pp));
+        const grades = calculate.findMode(this.scores.map(x => x.rank));
+        const acc = calculate.stats(this.scores.map(x => x.accuracy));
+        const combo = calculate.stats(this.scores.map(x => x.max_combo));
+        let pp = calculate.stats(this.scores.map(x => x.pp));
         let totpp = '';
         let weighttotpp = '';
 
         if (this.params.all) {
-            //do pp calc
-            const calculations: rosu.PerformanceAttributes[] = [];
-            for (const score of scoresdata) {
-                calculations.push(
-                    await performance.calcScore({
-                        mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
-                        mode: score.ruleset_id,
-                        mapid: score.beatmap.id,
-                        stats: score.statistics,
-                        accuracy: score.accuracy,
-                        maxcombo: score.max_combo,
-                        mapLastUpdated: new Date(score.beatmap.last_updated)
-                    }));
-            }
-
-            pp = calculate.stats(calculations.map(x => x.pp));
-            calculations.sort((a, b) => b.pp - a.pp);
-
-            const ppcalc = {
-                total: calculations.map(x => x.pp).reduce((a, b) => a + b, 0),
-                acc: calculations.map(x => x.ppAccuracy).reduce((a, b) => a + b, 0),
-                aim: calculations.map(x => x.ppAim).reduce((a, b) => a + b, 0),
-                diff: calculations.map(x => x.ppDifficulty).reduce((a, b) => a + b, 0),
-                speed: calculations.map(x => x.ppSpeed).reduce((a, b) => a + b, 0),
-            };
-            const weightppcalc = {
-                total: calculate.weightPerformance(calculations.map(x => x.pp)).reduce((a, b) => a + b, 0),
-                acc: calculate.weightPerformance(calculations.map(x => x.ppAccuracy)).reduce((a, b) => a + b, 0),
-                aim: calculate.weightPerformance(calculations.map(x => x.ppAim)).reduce((a, b) => a + b, 0),
-                diff: calculate.weightPerformance(calculations.map(x => x.ppDifficulty)).reduce((a, b) => a + b, 0),
-                speed: calculate.weightPerformance(calculations.map(x => x.ppSpeed)).reduce((a, b) => a + b, 0),
-            };
-            totpp = `Total: ${ppcalc.total.toFixed(2)}`;
-            ppcalc.acc ? totpp += `\nAccuracy: ${ppcalc.acc.toFixed(2)}` : '';
-            ppcalc.aim ? totpp += `\nAim: ${ppcalc.aim.toFixed(2)}` : '';
-            ppcalc.diff ? totpp += `\nDifficulty: ${ppcalc.diff.toFixed(2)}` : '';
-            ppcalc.speed ? totpp += `\nSpeed: ${ppcalc.speed.toFixed(2)}` : '';
-
-            weighttotpp = `Total: ${weightppcalc.total.toFixed(2)}`;
-            ppcalc.acc ? weighttotpp += `\nAccuracy: ${weightppcalc.acc.toFixed(2)}` : '';
-            ppcalc.aim ? weighttotpp += `\nAim: ${weightppcalc.aim.toFixed(2)}` : '';
-            ppcalc.diff ? weighttotpp += `\nDifficulty: ${weightppcalc.diff.toFixed(2)}` : '';
-            ppcalc.speed ? weighttotpp += `\nSpeed: ${weightppcalc.speed.toFixed(2)}` : '';
+            const temp = await this.embedData_isAll();
+            pp = temp.pp;
+            totpp = temp.totpp;
+            weighttotpp = temp.weighttotpp;
         }
-        if (this.input.type == 'button') {
-            let mappersStr = '';
-            for (let i = 0; i < mappers.length; i++) {
-                mappersStr += `#${i + 1}. ${mappers[i].string} - ${calculate.separateNum(mappers[i].count)} | ${mappers[i].percentage.toFixed(2)}%\n`;
-            }
-            let modsStr = '';
-            for (let i = 0; i < mods.length; i++) {
-                modsStr += `#${i + 1}. ${mods[i].string} - ${calculate.separateNum(mods[i].count)} | ${mods[i].percentage.toFixed(2)}%\n`;
-            }
-            let gradesStr = '';
-            for (let i = 0; i < grades.length; i++) {
-                gradesStr += `#${i + 1}. ${grades[i].string} - ${calculate.separateNum(grades[i].count)} | ${grades[i].percentage.toFixed(2)}%\n`;
-            }
-
-            // const Mapperspath = `${helper.path.cache}/commandData/${input.id}Mappers.txt`;
-            // const Modspath = `${helper.path.cache}/commandData/${input.id}Mods.txt`;
-            // const Rankspath = `${helper.path.cache}/commandData/${input.id}Ranks.txt`;
-
-            // fs.writeFileSync(Mapperspath, mappersStr, 'utf-8');
-            // fs.writeFileSync(Modspath, modsStr, 'utf-8');
-            // fs.writeFileSync(Rankspath, gradesStr, 'utf-8');
-            // useFiles = [Mapperspath, Modspath, Rankspath];
-        } else {
-            let mappersStr = '';
-            for (let i = 0; i < mappers.length && i < 5; i++) {
-                mappersStr += `#${i + 1}. ${mappers[i].string} - ${calculate.separateNum(mappers[i].count)} | ${mappers[i].percentage.toFixed(2)}%\n`;
-            }
-            let modsStr = '';
-            for (let i = 0; i < mods.length && i < 5; i++) {
-                modsStr += `#${i + 1}. ${mods[i].string} - ${calculate.separateNum(mods[i].count)} | ${mods[i].percentage.toFixed(2)}%\n`;
-            }
-            let gradesStr = '';
-            for (let i = 0; i < grades.length && i < 5; i++) {
-                gradesStr += `#${i + 1}. ${grades[i].string} - ${calculate.separateNum(grades[i].count)} | ${grades[i].percentage.toFixed(2)}%\n`;
-            }
-
-
-            embed.setFields([{
-                name: 'Mappers',
-                value: mappersStr.length == 0 ?
-                    'No data available' :
-                    mappersStr,
-                inline: true,
-            },
-            {
-                name: 'Mods',
-                value: modsStr.length == 0 ?
-                    'No data available' :
-                    modsStr,
-                inline: true
-            },
-            {
-                name: 'Ranks',
-                value: gradesStr.length == 0 ?
-                    'No data available' :
-                    gradesStr,
-                inline: true
-            },
-            {
-                name: 'Accuracy',
-                value: `
-Highest: ${(acc?.highest * 100)?.toFixed(2)}%
-Lowest: ${(acc?.lowest * 100)?.toFixed(2)}%
-Average: ${(acc?.mean * 100)?.toFixed(2)}%
-Median: ${(acc?.median * 100)?.toFixed(2)}%
-${acc?.ignored > 0 ? `Skipped: ${acc?.ignored}` : ''}
-`,
-                inline: true
-            },
-            {
-                name: 'Combo',
-                value: `
-                Highest: ${combo?.highest}
-                Lowest: ${combo?.lowest}
-                Average: ${Math.floor(combo?.mean)}
-                Median: ${combo?.median}
-                ${combo?.ignored > 0 ? `Skipped: ${combo?.ignored}` : ''}
-                `,
-                inline: true
-            },
-            {
-                name: 'PP',
-                value: `
-Highest: ${pp?.highest?.toFixed(2)}pp
-Lowest: ${pp?.lowest?.toFixed(2)}pp
-Average: ${pp?.mean?.toFixed(2)}pp
-Median: ${pp?.median?.toFixed(2)}pp
-${pp?.ignored > 0 ? `Skipped: ${pp?.ignored}` : ''}
-`,
-                inline: true
-            },
+        embed.setFields([
+            this.embedData_statFieldStr('Mappers', mappers),
+            this.embedData_statFieldStr('Mods', mods),
+            this.embedData_statFieldStr('Ranks', grades),
+            this.embedData_statFieldRange('Accuracy', acc, '%'),
+            this.embedData_statFieldRange('Combo', combo),
+        ]);
+        if (this.params.all) {
+            const temp = await this.embedData_isAll();
+            pp = temp.pp;
+            totpp = temp.totpp;
+            weighttotpp = temp.weighttotpp;
+            embed.addFields([
+                this.embedData_statFieldRange('Performance', pp, 'pp'),
+                {
+                    name: 'Total PP',
+                    value: totpp,
+                    inline: true
+                },
+                {
+                    name: '(Weighted)',
+                    value: weighttotpp,
+                    inline: true
+                },
             ]);
-            if (this.params.all) {
-                embed.addFields([
-                    {
-                        name: 'Total PP',
-                        value: totpp,
-                        inline: true
-                    },
-                    {
-                        name: '(Weighted)',
-                        value: weighttotpp,
-                        inline: true
-                    },
-                ]);
-            }
+        } else {
+            embed.addFields(
+                this.embedData_statFieldRange('Performance', pp, 'pp'),
+            );
         }
-
     }
+    async embedData_isAll() {
+        const calculations = await this.embedData_isAll_calc();
+        const pp = calculate.stats(calculations.map(x => x.pp));
+        calculations.sort((a, b) => b.pp - a.pp);
 
+        const ppcalc = {
+            total: calculations.map(x => x.pp).reduce((a, b) => a + b, 0),
+            acc: calculations.map(x => x.ppAccuracy).reduce((a, b) => a + b, 0),
+            aim: calculations.map(x => x.ppAim).reduce((a, b) => a + b, 0),
+            diff: calculations.map(x => x.ppDifficulty).reduce((a, b) => a + b, 0),
+            speed: calculations.map(x => x.ppSpeed).reduce((a, b) => a + b, 0),
+        };
+        const weightppcalc = {
+            total: calculate.weightPerformance(calculations.map(x => x.pp)).reduce((a, b) => a + b, 0),
+            acc: calculate.weightPerformance(calculations.map(x => x.ppAccuracy)).reduce((a, b) => a + b, 0),
+            aim: calculate.weightPerformance(calculations.map(x => x.ppAim)).reduce((a, b) => a + b, 0),
+            diff: calculate.weightPerformance(calculations.map(x => x.ppDifficulty)).reduce((a, b) => a + b, 0),
+            speed: calculate.weightPerformance(calculations.map(x => x.ppSpeed)).reduce((a, b) => a + b, 0),
+        };
+        let totpp = `Total: ${ppcalc.total.toFixed(2)}`;
+        ppcalc.acc ? totpp += `\nAccuracy: ${ppcalc.acc.toFixed(2)}` : '';
+        ppcalc.aim ? totpp += `\nAim: ${ppcalc.aim.toFixed(2)}` : '';
+        ppcalc.diff ? totpp += `\nDifficulty: ${ppcalc.diff.toFixed(2)}` : '';
+        ppcalc.speed ? totpp += `\nSpeed: ${ppcalc.speed.toFixed(2)}` : '';
+
+        let weighttotpp = `Total: ${weightppcalc.total.toFixed(2)}`;
+        ppcalc.acc ? weighttotpp += `\nAccuracy: ${weightppcalc.acc.toFixed(2)}` : '';
+        ppcalc.aim ? weighttotpp += `\nAim: ${weightppcalc.aim.toFixed(2)}` : '';
+        ppcalc.diff ? weighttotpp += `\nDifficulty: ${weightppcalc.diff.toFixed(2)}` : '';
+        ppcalc.speed ? weighttotpp += `\nSpeed: ${weightppcalc.speed.toFixed(2)}` : '';
+        return {
+            pp, totpp, weighttotpp
+        };
+    }
+    async embedData_isAll_calc() {
+        const calculations: rosu.PerformanceAttributes[] = [];
+        for (const score of this.scores) {
+            calculations.push(
+                await performance.calcScore({
+                    mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+                    mode: score.ruleset_id,
+                    mapid: score.beatmap.id,
+                    stats: score.statistics,
+                    accuracy: score.accuracy,
+                    maxcombo: score.max_combo,
+                    mapLastUpdated: new Date(score.beatmap.last_updated)
+                }));
+        }
+        return calculations;
+    }
+    embedData_statFieldStr(name: string, stats: {
+        string: string;
+        count: number;
+        percentage: number;
+    }[]): Discord.EmbedField {
+        const str = this.embedData_statStr(stats);
+        return {
+            name,
+            value: str.length == 0 ?
+                'No data available' :
+                str,
+            inline: true
+        };
+    }
+    embedData_statStr(stats: {
+        string: string;
+        count: number;
+        percentage: number;
+    }[]) {
+        let str = '';
+        for (let i = 0; i < stats.length && i < 5; i++) {
+            str += `#${i + 1}. ${stats[i].string} - ${calculate.separateNum(stats[i].count)} | ${stats[i].percentage.toFixed(2)}%\n`;
+        }
+        return str;
+    }
+    embedData_statFieldRange(name: string, stat: {
+        highest: number;
+        mean: number;
+        lowest: number;
+        median: number;
+        ignored: number;
+        calculated: number;
+        total: number;
+    }, suffix: string = ''): Discord.EmbedField {
+        return {
+            name,
+            value: `
+Highest: ${(stat?.highest * 100)?.toFixed(2)}${suffix}
+Lowest: ${(stat?.lowest * 100)?.toFixed(2)}${suffix}
+Average: ${(stat?.mean * 100)?.toFixed(2)}${suffix}
+Median: ${(stat?.median * 100)?.toFixed(2)}${suffix}
+${stat?.ignored > 0 ? `Skipped: ${stat?.ignored}` : ''}
+`,
+            inline: true
+        };
+    }
 }
 
 export class Simulate extends OsuCommand {

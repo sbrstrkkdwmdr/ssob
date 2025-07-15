@@ -214,31 +214,7 @@ export class Map extends OsuCommand {
         this.getOverrides();
         // do stuff
         const buttons = new Discord.ActionRowBuilder();
-        if (this.params.isppCalc) {
-            buttons.addComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-Map-${this.name}-${this.commanduser.id}-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.map)
-            );
-        } else {
-            if (this.params.detailed == 2) {
-                buttons.addComponents(
-                    new Discord.ButtonBuilder()
-                        .setCustomId(`${helper.versions.releaseDate}-DetailDisable-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                        .setStyle(helper.buttons.type.current)
-                        .setEmoji(helper.buttons.label.main.detailLess)
-                );
-            } else {
-                buttons.addComponents(
-                    new Discord.ButtonBuilder()
-                        .setCustomId(`${helper.versions.releaseDate}-DetailEnable-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                        .setStyle(helper.buttons.type.current)
-                        .setEmoji(helper.buttons.label.main.detailMore)
-                );
-            }
-        }
-
+        this.init_buttons(buttons);
         if (this.checkNullParams()) {
             return;
         }
@@ -250,7 +226,7 @@ export class Map extends OsuCommand {
             .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
             .setPlaceholder('Select a map');
 
-            this.sendLoading();
+        this.sendLoading();
 
         if (await this.checkQueryType(inputModalSearch)) {
             return;
@@ -277,6 +253,31 @@ export class Map extends OsuCommand {
     map: osuapi.types_v2.BeatmapExtended;
     mapset: osuapi.types_v2.BeatmapsetExtended;
 
+    init_buttons(buttons: Discord.ActionRowBuilder) {
+        if (this.params.isppCalc) {
+            buttons.addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-Map-${this.name}-${this.commanduser.id}-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.map)
+            );
+        } else if (this.params.detailed == 2) {
+            buttons.addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-DetailDisable-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.main.detailLess)
+            );
+        } else {
+            buttons.addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-DetailEnable-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.main.detailMore)
+            );
+        }
+
+    }
     protected checkNullParams() {
         if (!this.params.mapid && !this.params.maptitleq) {
             const temp = this.getLatestMap();
