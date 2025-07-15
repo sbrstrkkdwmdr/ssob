@@ -54,12 +54,7 @@ export class Badges extends OsuCommand {
             this.params.user = t.user;
         }
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 
@@ -159,12 +154,7 @@ export class BadgeWeightSeed extends OsuCommand {
             this.params.user = t.user;
         }
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 
@@ -636,12 +626,7 @@ export class Profile extends OsuCommand {
         }
 
         this.params.mode = this.params.mode ? other.modeValidator(this.params.mode) : null;
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 
@@ -973,12 +958,7 @@ export class RecentActivity extends OsuCommand {
             this.params.page = 1;
         }
         this.params.page--;
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 

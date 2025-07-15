@@ -607,12 +607,7 @@ export class ServerLeaderboard extends OsuCommand {
         // do stuff
         const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         if (this.params.page < 2 || typeof this.params.page != 'number') {
             this.params.page = 1;

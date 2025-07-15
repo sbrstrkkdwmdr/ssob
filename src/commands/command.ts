@@ -193,6 +193,14 @@ export class Command {
             args: this.ctn,
         }, this.input.canReply);
     }
+    sendLoading() {
+        if (this.input.type == 'interaction') {
+            this.ctn.content = 'Loading...';
+            this.send();
+            this.voidcontent();
+            this.ctn.edit = true;
+        }
+    }
 }
 
 // gasp capitalised o

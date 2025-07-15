@@ -531,12 +531,7 @@ export class ScoreListCommand extends OsuCommand {
         this.pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         this.buttons = new Discord.ActionRowBuilder();
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
             this.params.page = 1;
@@ -1016,13 +1011,7 @@ export class ScoreParse extends SingleScoreCommand {
             }
         }
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
-
+        this.sendLoading();
 
         if (data.findFile(this.params.scoreid, 'scoredata') &&
             !('error' in data.findFile(this.params.scoreid, 'scoredata')) &&
@@ -1209,12 +1198,7 @@ export class Recent extends SingleScoreCommand {
 
         const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         try {
             const u = await this.getProfile(this.params.user, this.params.mode);
@@ -1430,12 +1414,7 @@ export class MapLeaderboard extends OsuCommand {
             commandTools.missingPrevID_map(this.input, this.name);
             return;
         }
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         let mapdata: osuapi.types_v2.BeatmapExtended;
 
@@ -1795,12 +1774,7 @@ export class ScoreStats extends OsuCommand {
 
         this.params.mode = this.params.mode ? other.modeValidator(this.params.mode) : null;
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 
@@ -2164,12 +2138,7 @@ export class Simulate extends OsuCommand {
             }
         }
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         const tempscore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
         if (tempscore?.apiData && tempscore?.apiData.beatmap.id == this.params.mapid) {
@@ -2324,4 +2293,5 @@ export class Simulate extends OsuCommand {
 
         this.send();
     }
+
 }

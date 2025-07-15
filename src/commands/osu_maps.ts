@@ -250,12 +250,7 @@ export class Map extends OsuCommand {
             .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
             .setPlaceholder('Select a map');
 
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+            this.sendLoading();
 
         if (await this.checkQueryType(inputModalSearch)) {
             return;
@@ -1310,12 +1305,7 @@ export class UserBeatmaps extends OsuCommand {
             const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
             this.params.user = t.user;
         }
-        if (this.input.type == 'interaction') {
-            this.ctn.content = 'Loading...';
-            this.send();
-            this.voidcontent();
-            this.ctn.edit = true;
-        }
+        this.sendLoading();
 
         try {
             const u = await this.getProfile(this.params.user, this.params.mode);
