@@ -49,10 +49,7 @@ export class Badges extends OsuCommand {
         this.logInput();
         // do stuff
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, 'osu');
-            this.params.user = t.user;
-        }
+        this.fixUser(false);
 
         this.sendLoading();
 
@@ -149,10 +146,7 @@ export class BadgeWeightSeed extends OsuCommand {
         this.logInput();
         // do stuff
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, 'osu');
-            this.params.user = t.user;
-        }
+        this.fixUser(false);
 
         this.sendLoading();
 
@@ -306,10 +300,7 @@ export class Ranking extends OsuCommand {
         this.params.mode = other.modeValidator(this.params.mode);
         const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
-        if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
-            this.params.page = 1;
-        }
-        this.params.page--;
+        this.fixPage();
 
         const extras = {};
         if (this.params.country != 'ALL') {
@@ -619,13 +610,8 @@ export class Profile extends OsuCommand {
             );
         }
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-            this.params.mode = t.mode;
-        }
+        await this.fixUser();
 
-        this.params.mode = this.params.mode ? other.modeValidator(this.params.mode) : null;
         this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
@@ -949,15 +935,9 @@ export class RecentActivity extends OsuCommand {
         const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder();
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, 'osu');
-            this.params.user = t.user;
-        }
+        this.fixUser(false);
 
-        if (this.params.page < 2 || typeof this.params.page != 'number') {
-            this.params.page = 1;
-        }
-        this.params.page--;
+        this.fixPage();
         this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;

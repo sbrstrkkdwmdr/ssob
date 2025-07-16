@@ -76,28 +76,12 @@ export class Map extends OsuCommand {
             this.params.mapmods = tmod.mods;
         }
 
+        const mapTemp = this.setParamMap();
+        this.params.mapid = mapTemp.map;
+        mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
 
-        {
-            const mapTemp = this.setParamMap();
-            this.params.mapid = mapTemp.map;
-            mapTemp.mode && !this.params.mode ? this.params.mode = mapTemp.mode : null;
-
-            //get map id via mapset if not in the given URL
-            if (!mapTemp.map && mapTemp.set) {
-                this.params.mapid = this.mapset?.beatmaps[0]?.id;
-                try {
-                    const bm = await this.getMapSet(mapTemp.set);
-                    this.mapset = bm;
-                    this.params.mapid = bm.beatmaps[0].id;
-                } catch (e) {
-                    this.voidcontent();
-
-                    this.ctn.content = helper.errors.uErr.osu.map.setonly;
-                    await this.send();
-                    throw new Error(helper.errors.uErr.osu.map.setonly);
-                }
-            }
-        }
+        //get map id via mapset if not in the given URL
+        await this.setParamMapGone(mapTemp);
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -148,25 +132,26 @@ export class Map extends OsuCommand {
             this.params.mapid = mapTemp.map;
             this.params.mode = mapTemp.mode ?? this.params.mode;
             if (!(mapTemp.map || mapTemp.set || this.map || this.mapset)) {
-                this.voidcontent();
-                this.ctn.content = helper.errors.uErr.osu.map.url;
-                await this.send();
-                return;
+                await this.sendError(helper.errors.uErr.osu.map.url);
             }
             //get map id via mapset if not in the given URL
-            if (!mapTemp.map && mapTemp.set) {
-                this.params.mapid = this.mapset?.beatmaps[0]?.id;
-                try {
-                    const bm = await this.getMapSet(mapTemp.set);
-                    this.mapset = bm;
-                    this.params.mapid = bm.beatmaps[0].id;
-                } catch (e) {
-                    this.voidcontent();
-                    this.ctn.content = helper.errors.uErr.osu.map.setonly;
-                    await this.send();
-                    throw new Error(helper.errors.uErr.osu.map.setonly);
-                }
+            await this.setParamMapGone(mapTemp);
+        }
+    }
+    async setParamMapGone(mapTemp: {
+        set: number;
+        map: number;
+        mode: osuapi.types_v2.GameMode;
+        modeInt: number;
+    }) {
+        if (!mapTemp.map && mapTemp.set) {
+            this.params.mapid = this.mapset?.beatmaps[0]?.id;
+
+            this.mapset = await this.getMapSet(mapTemp.set);
+            if (!this.mapset?.beatmaps?.[0] || this.mapset?.beatmaps?.length == 0) {
+                await this.sendError(helper.errors.uErr.osu.map.setonly);
             }
+            this.params.mapid = this.mapset.beatmaps[0].id;
         }
     }
     protected setParamMapSearch() {
@@ -1121,11 +1106,7 @@ export class RecommendMap extends OsuCommand {
         this.logInput();
         // do stuff
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-            this.params.mode = t.mode;
-        }
+        await this.fixUser();
 
         if (this.params.maxRange < 0.5 || !this.params.maxRange) {
             this.params.maxRange = 0.5;
@@ -1298,14 +1279,11 @@ export class UserBeatmaps extends OsuCommand {
         this.logInput();
         // do stuff
 
-        if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
-            this.params.page = 1;
-        }
+        this.fixPage();
+        this.params.page++;
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-        }
+        await this.fixUser(false);
+
         this.sendLoading();
 
         try {

@@ -193,6 +193,12 @@ export class Command {
             args: this.ctn,
         }, this.input.canReply);
     }
+    async sendError(err: string) {
+        this.voidcontent();
+        this.ctn.content = err;
+        await this.send();
+        throw new Error(err);
+    }
     sendLoading() {
         if (this.input.type == 'interaction') {
             this.ctn.content = 'Loading...';
@@ -200,6 +206,12 @@ export class Command {
             this.voidcontent();
             this.ctn.edit = true;
         }
+    }
+    fixPage() {
+        if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
+            this.params.page = 1;
+        }
+        this.params.page--;
     }
 }
 
@@ -369,6 +381,13 @@ export class OsuCommand extends Command {
         }
         return { user, mode };
     }
+    async fixUser(doMode = true) {
+        const t = await this.validUser(this.params.user, this.params.searchid, this.params?.mode ?? 'osu');
+        this.params.user = t.user;
+        if (doMode) {
+            this.params.mode = t.mode ? other.modeValidator(this.params?.mode) : null;
+        }
+    }
 
     protected async getProfile(user: string, mode: osuapi.types_v2.GameMode) {
         let osudata: osuapi.types_v2.UserExtended;
@@ -383,10 +402,7 @@ export class OsuCommand extends Command {
         }
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
-            const err = helper.errors.uErr.osu.profile.user.replace('[ID]', user);
-            await commandTools.errorAndAbort(this.input, this.name, true, err, false);
-            throw new Error(err);
-
+           await this.sendError(helper.errors.uErr.osu.profile.user.replace('[ID]', user));
         }
         data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
@@ -408,9 +424,7 @@ export class OsuCommand extends Command {
         }
 
         if (mapdata?.hasOwnProperty('error')) {
-            const err = helper.errors.uErr.osu.map.m.replace('[ID]', mapid + '');
-            await commandTools.errorAndAbort(this.input, this.name, true, err, true);
-            throw new Error(err);
+            await this.sendError(helper.errors.uErr.osu.map.m.replace('[ID]', mapid + ''))
         }
 
         data.storeFile(mapdata, mapid, 'mapdata');

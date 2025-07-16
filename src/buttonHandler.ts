@@ -301,7 +301,7 @@ export class ButtonHandler extends InputHandler {
                 type: overrideType ?? "button",
                 buttonType
             });
-            await this.selected.execute();
+            await this.selected.execute().catch(() => { });
         } else {
             this.runFail(interaction);
         }

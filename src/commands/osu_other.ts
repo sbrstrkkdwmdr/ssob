@@ -103,86 +103,77 @@ export class Compare extends OsuCommand {
         // do stuff
 
         let embedescription: string = null;
-        if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
-            this.params.page = 1;
-        }
-        this.params.page--;
+        this.fixPage();
+
         let footer = '';
         let embed = new Discord.EmbedBuilder();
-        try {
-            if (this.params.second == null) {
-                if (this.params.secondsearchid) {
-                    const cuser = await data.searchUser(this.params.secondsearchid, true);
-                    this.params.second = cuser.username;
-                    if (cuser.error != null && (cuser.error.includes('no user') || cuser.error.includes('type'))) {
-                        if (this.input.type != 'button') {
-                            throw new Error('Second user not found');
-                        }
-                        return;
-                    }
-                } else {
-                    if (data.getPreviousId('user', `${this.input.message?.guildId ?? this.input.interaction?.guildId}`).id == false) {
-                        throw new Error(`Could not find second user - ${helper.errors.uErr.osu.profile.user_msp}`);
-                    }
-                    this.params.second = data.getPreviousId('user', `${this.input.message?.guildId ?? this.input.interaction?.guildId}`).id as string;
-                }
-            }
-            if (this.params.first == null) {
-                if (this.params.firstsearchid) {
-                    const cuser = await data.searchUser(this.params.firstsearchid, true);
-                    this.params.first = cuser.username;
-                    if (this.params.mode == null) {
-                        this.params.mode = cuser.gamemode;
-                    }
-                    if (cuser.error != null && (cuser.error.includes('no user') || cuser.error.includes('type'))) {
-                        if (this.input.type != 'button') {
-                            throw new Error('First user not found');
-                        }
-                        return;
-                    }
-                } else {
-                    throw new Error('first user not found');
-                }
-            }
-            if (!this.params.first || this.params.first.length == 0 || this.params.first == '') {
-                throw new Error('Could not find the first user');
-            }
-            if (!this.params.second || this.params.second.length == 0 || this.params.second == '') {
-                throw new Error('Could not find the second user');
-            }
-            let firstuser: osuapi.types_v2.User;
-            let seconduser: osuapi.types_v2.User;
-            try {
-                firstuser = await this.getProfile(this.params.first, this.params.mode);
-                seconduser = await this.getProfile(this.params.second, this.params.mode);
-            } catch (e) {
-                return;
-            }
-            switch (this.params.type) {
-                case 'profile': {
-                    this.profiles(firstuser, seconduser, embed);
-                }
-                    break;
-                case 'top': {
-                    embed = await this.plays(firstuser, seconduser, embed);
-                }
-                    break;
 
-                case 'mapscore': {
-                    this.mapscores(firstuser, seconduser, embed);
+        if (this.params.second == null) {
+            if (this.params.secondsearchid) {
+                const cuser = await data.searchUser(this.params.secondsearchid, true);
+                this.params.second = cuser.username;
+                if (cuser.error != null && (cuser.error.includes('no user') || cuser.error.includes('type'))) {
+                    if (this.input.type != 'button') {
+                        await this.sendError('Second user not found');
+                    }
+                    return;
                 }
-                    break;
-
+            } else {
+                if (data.getPreviousId('user', `${this.input.message?.guildId ?? this.input.interaction?.guildId}`).id == false) {
+                    await this.sendError(`Could not find second user - ${helper.errors.uErr.osu.profile.user_msp}`);
+                }
+                this.params.second = data.getPreviousId('user', `${this.input.message?.guildId ?? this.input.interaction?.guildId}`).id as string;
             }
-            data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${seconduser.id}`, apiData: null, mods: null });
-        } catch (error) {
-            embed.setTitle('Error');
-            embed.setFields([{
-                name: 'Error',
-                value: `${error}`,
-                inline: false
-            }]);
         }
+        if (this.params.first == null) {
+            if (this.params.firstsearchid) {
+                const cuser = await data.searchUser(this.params.firstsearchid, true);
+                this.params.first = cuser.username;
+                if (this.params.mode == null) {
+                    this.params.mode = cuser.gamemode;
+                }
+                if (cuser.error != null && (cuser.error.includes('no user') || cuser.error.includes('type'))) {
+                    if (this.input.type != 'button') {
+                        await this.sendError('First user not found');
+                    }
+                    return;
+                }
+            } else {
+                await this.sendError('First user not found');
+            }
+        }
+        if (!this.params.first || this.params.first.length == 0 || this.params.first == '') {
+            await this.sendError('First user not found');
+        }
+        if (!this.params.second || this.params.second.length == 0 || this.params.second == '') {
+            await this.sendError('Second user not found');
+        }
+        let firstuser: osuapi.types_v2.User;
+        let seconduser: osuapi.types_v2.User;
+        try {
+            firstuser = await this.getProfile(this.params.first, this.params.mode);
+            seconduser = await this.getProfile(this.params.second, this.params.mode);
+        } catch (e) {
+            return;
+        }
+        switch (this.params.type) {
+            case 'profile': {
+                this.profiles(firstuser, seconduser, embed);
+            }
+                break;
+            case 'top': {
+                embed = await this.plays(firstuser, seconduser, embed);
+            }
+                break;
+
+            case 'mapscore': {
+                this.mapscores(firstuser, seconduser, embed);
+            }
+                break;
+
+        }
+        data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${seconduser.id}`, apiData: null, mods: null });
+
         if (footer.length > 0) {
             embed.setFooter({
                 text: footer
@@ -211,7 +202,7 @@ export class Compare extends OsuCommand {
 
         if (topdata?.hasOwnProperty('error')) {
             if (this.input.type != 'button' && this.input.type != 'link') {
-                throw new Error(`could not fetch ${n} user\'s top scores`);
+                await this.sendError(`could not fetch ${n} user\'s top scores`);
             }
             return;
         }
@@ -609,10 +600,8 @@ export class ServerLeaderboard extends OsuCommand {
 
         this.sendLoading();
 
-        if (this.params.page < 2 || typeof this.params.page != 'number') {
-            this.params.page = 1;
-        }
-        this.params.page--;
+        this.fixPage();
+
         let global = false;
         let guild = this.input.message.guild ?? this.input.interaction.guild;
         if (this.params.id == 'global') {
@@ -921,11 +910,7 @@ export class WhatIf extends OsuCommand {
             this.input.message.reply("Please define a valid PP value to calculate");
         }
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-            this.params.mode = t.mode;
-        }
+        await this.fixUser();
 
         let osudata: osuapi.types_v2.UserExtended;
         try {
@@ -1017,10 +1002,7 @@ export class WhatIf extends OsuCommand {
         }
 
         if (topdata?.hasOwnProperty('error')) {
-            const err = helper.errors.uErr.osu.scores.best.replace('[ID]', user + '');
-            await commandTools.errorAndAbort(this.input, this.name, true, err, false);
-            throw new Error(err);
-            return;
+            await this.sendError(helper.errors.uErr.osu.scores.best.replace('[ID]', user + ''));
         }
         data.storeFile(topdata, this.input.id, 'osutopdata');
         return topdata;

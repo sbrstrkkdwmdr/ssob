@@ -336,7 +336,7 @@ export class ScoreListCommand extends OsuCommand {
         }
 
         if (req?.hasOwnProperty('error')) {
-            await commitError(this?.type, this.input, this.params);
+            await this.commitError(this?.type);
         }
 
         const tempscores: osuapi.types_v2.Score[] =
@@ -348,7 +348,7 @@ export class ScoreListCommand extends OsuCommand {
         data.storeFile(req, getid, fname);
 
         if (tempscores?.hasOwnProperty('error') || tempscores.length == 0 || !(tempscores[0]?.user?.username || tempscores[0]?.user_id)) {
-            await commitError(this?.type, this.input, this.params);
+            await this.commitError(this?.type);
         }
 
         if (this.type == 'nochokes') {
@@ -365,27 +365,28 @@ export class ScoreListCommand extends OsuCommand {
 
         this.scores = tempscores;
 
-        async function commitError(type: string, input, args) {
-            switch (type) {
-                case 'osutop': case 'nochokes':
-                    await commandTools.errorAndAbort(input, type, true, helper.errors.uErr.osu.scores.best.replace('[ID]', args.user), true);
-                    break;
-                case 'recent':
-                    await commandTools.errorAndAbort(input, type, true, helper.errors.uErr.osu.scores.recent.replace('[ID]', args.user), true);
-                    break;
-                case 'map':
-                    await commandTools.errorAndAbort(input, type, true, helper.errors.uErr.osu.scores.map.replace('[ID]', args.user).replace('[MID]', args.mapid + ''), true);
-                    break;
-                case 'firsts':
-                    await commandTools.errorAndAbort(input, type, true, helper.errors.uErr.osu.scores.first.replace('[ID]', args.user), true);
-                    break;
-                case 'pinned':
-                    await commandTools.errorAndAbort(input, type, true, helper.errors.uErr.osu.scores.pinned.replace('[ID]', args.user), true);
-                    break;
-            }
-            throw new Error('Get scores error');
-        }
     };
+    async commitError(type: string) {
+        let err = '';
+        const errList = helper.errors.uErr.osu.scores;
+        switch (type) {
+            case 'osutop': case 'nochokes':
+                await this.sendError(errList.best);
+                break;
+            case 'recent':
+                await this.sendError(errList.recent);
+                break;
+            case 'map':
+                await this.sendError(errList.map.replace('[MID]', this.params.mapid + ''));
+                break;
+            case 'firsts':
+                await this.sendError(errList.first);
+                break;
+            case 'pinned':
+                break;
+        }
+        await this.sendError(err.replace('[ID]', this.params.user));
+    }
     protected toName(map?: osuapi.types_v2.Beatmap) {
         switch (this.type) {
             case 'osutop':
@@ -508,13 +509,7 @@ export class ScoreListCommand extends OsuCommand {
         this.getOverrides();
         this.logInput();
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-            this.params.mode = t.mode;
-        }
-
-        this.params.mode = other.modeValidator(this.params.mode);
+        await this.fixUser();
 
         if (this.type == 'map') {
             if (!this.params.mapid) {
@@ -601,6 +596,19 @@ export class ScoreListCommand extends OsuCommand {
         this.ctn.edit = true;
 
         this.send();
+    }
+
+    fixParamMap() {
+        if (this.type == 'map') {
+            if (!this.params.mapid) {
+                const temp = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
+                this.params.mapid = temp.id;
+            }
+            if (this.params.mapid == false) {
+                commandTools.missingPrevID_map(this.input, this.name);
+                throw new Error('');
+            }
+        }
     }
 }
 
@@ -1183,18 +1191,9 @@ export class Recent extends SingleScoreCommand {
 
         const buttons = new Discord.ActionRowBuilder();
 
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-            this.params.mode = t.mode;
-        }
+        await this.fixUser();
 
-        this.params.mode = other.modeValidator(this.params.mode);
-
-        if (this.params.page < 2 || typeof this.params.page != 'number') {
-            this.params.page = 1;
-        }
-        this.params.page--;
+        this.fixPage();
 
         const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
@@ -1766,7 +1765,7 @@ export class ScoreStats extends OsuCommand {
         this.logInput();
         // do stuff
 
-        this.fixParams();
+        await this.fixUser();
 
         this.sendLoading();
 
@@ -1811,17 +1810,6 @@ export class ScoreStats extends OsuCommand {
 
     scores: osuapi.types_v2.Score[] = [];
     user: osuapi.types_v2.UserExtended;
-
-    async fixParams() {
-        {
-            const t = await this.validUser(this.params.user, this.params.searchid, this.params.mode);
-            this.params.user = t.user;
-            this.params.mode = t.mode;
-        }
-
-        this.params.mode = this.params.mode ? other.modeValidator(this.params.mode) : null;
-
-    }
 
     async getScoreCount(cinitnum: number, args = this.params, input = this.input): Promise<boolean> {
         let fd: osuapi.types_v2.Score[];
