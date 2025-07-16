@@ -8,6 +8,8 @@ import * as log from './tools/log';
 import * as osuapi from './tools/osuapi';
 import * as track from './tools/track';
 
+const totalTrackTime = 60 * 1000 * 60; //requests every 60 min
+
 export function loops() {
     setInterval(() => {
         clearMapFiles();
@@ -38,7 +40,7 @@ export function loops() {
         a();
         setInterval(() => {
             a();
-        }, totalTime);
+        }, totalTrackTime);
     }
 
     clearMapFiles();
@@ -278,16 +280,15 @@ async function createGuildSettings(guild: Discord.Guild) {
 
 // osu track
 let enableTrack = helper.vars.config.enableTracking;
-const totalTime = 60 * 1000 * 60; //requests every 60 min
 function a() {
     try {
-        track.trackUsers(totalTime);
+        track.trackUsers(totalTrackTime);
     } catch (err) {
         log.stdout(err);
         log.stdout('temporarily disabling tracking for an hour');
         enableTrack = false;
         setTimeout(() => {
             enableTrack = true;
-        }, totalTime);
+        }, totalTrackTime);
     }
 }
