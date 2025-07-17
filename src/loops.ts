@@ -48,24 +48,27 @@ export function loops() {
     }, timer);
 }
 
-checkHeap();
-setInterval(async () => {
+export function heapLoop(){
     checkHeap();
-    try {
-        if (global?.gc) {
-            log.stdout('Calling garbage collector...');
-            global.gc();
+    setInterval(async () => {
+        checkHeap();
+        try {
+            if (global?.gc) {
+                log.stdout('Calling garbage collector...');
+                global.gc();
+            }
+        } catch (err) {
+            
         }
-    } catch (err) {
-
-    }
-}, 1000 * 60 * 1);
+    }, 1000 * 60 * 1);
+}
 
 function checkHeap() {
     const sl = v8.getHeapStatistics();
     log.stdout(toMiB(sl.heap_size_limit) + ' MiB Heap Limit');
     log.stdout(toMiB(sl.used_heap_size).toFixed(2) + ' MiB Heap Used');
 }
+
 function toMiB(number: number) {
     return number / (1024 * 1024);
 }

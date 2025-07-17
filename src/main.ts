@@ -5,7 +5,7 @@ import fs from 'fs';
 import Sequelize from 'sequelize';
 
 import * as helper from './helper';
-import { loops } from './loops';
+import { heapLoop, loops } from './loops';
 import * as slashcmds from './slashCommands';
 import * as log from './tools/log';
 import * as osuapi from './tools/osuapi';
@@ -273,6 +273,7 @@ Client ID:        ${client.user?.id}
         bh.onInteraction(interaction); 
     });
     // loops();
+    heapLoop();
     slashcmds.main();
 });
 
