@@ -272,7 +272,7 @@ Client ID:        ${client.user?.id}
         ch.onInteraction(interaction);
         bh.onInteraction(interaction); 
     });
-    // loops();
+    loops();
     heapLoop();
     slashcmds.main();
 });

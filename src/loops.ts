@@ -14,11 +14,8 @@ export function loops() {
     setInterval(() => {
         clearMapFiles();
         clearParseArgs();
-    }, 60 * 60 * 1000);
-
-    setInterval(() => {
         clearCommandCache();
-    }, 1000 * 60);
+    }, 60 * 60 * 1000);
 
     setInterval(async () => {
         getOnlineChangelog();
@@ -39,16 +36,11 @@ export function loops() {
     helper.vars.client.on('guildCreate', async (guild) => {
         createGuildSettings(guild);
     });
-    
-    let timer = 60 * 1000;
-    updateStatus(timer);
-    
-    setInterval(() => {
-        timer = updateStatus(timer);
-    }, timer);
+
+    statusTimer();
 }
 
-export function heapLoop(){
+export function heapLoop() {
     checkHeap();
     setInterval(async () => {
         checkHeap();
@@ -58,7 +50,7 @@ export function heapLoop(){
                 global.gc();
             }
         } catch (err) {
-            
+
         }
     }, 1000 * 60 * 1);
 }
@@ -110,7 +102,8 @@ function setActivity() {
 
 //seasonal status updates
 
-function updateStatus(timer: number) {
+function updateStatus() {
+    let timer = 60 * 1000;
     let activities = [];
     const date = new Date();
     const day = date.getDate();
@@ -177,6 +170,12 @@ function updateStatus(timer: number) {
     }
     return timer;
 }
+
+function statusTimer() {
+    const timer = updateStatus();
+    setTimeout(statusTimer, timer);
+    return;
+};
 
 // clear cache
 
