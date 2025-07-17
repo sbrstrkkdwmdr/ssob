@@ -24,18 +24,6 @@ export function loops() {
         getOnlineChangelog();
     }, 1000 * 60 * 60 * 6);
 
-    setInterval(async () => {
-        checkHeap();
-        try {
-            if (global?.gc) {
-                log.stdout('Calling garbage collector...');
-                global.gc();
-            }
-        } catch (err) {
-
-        }
-    }, 1000 * 60 * 1);
-
     if (enableTrack == true) {
         a();
         setInterval(() => {
@@ -60,6 +48,18 @@ export function loops() {
         timer = updateStatus(timer);
     }, timer);
 }
+
+setInterval(async () => {
+    checkHeap();
+    try {
+        if (global?.gc) {
+            log.stdout('Calling garbage collector...');
+            global.gc();
+        }
+    } catch (err) {
+
+    }
+}, 1000 * 60 * 1);
 
 function checkHeap() {
     const sl = v8.getHeapStatistics();
