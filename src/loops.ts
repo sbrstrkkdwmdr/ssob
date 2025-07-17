@@ -37,7 +37,8 @@ export function loops() {
         createGuildSettings(guild);
     });
 
-    statusTimer();
+    // statusTimer();
+    updateStatus();
 }
 
 export function heapLoop() {
