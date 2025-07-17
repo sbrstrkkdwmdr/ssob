@@ -11,6 +11,7 @@
 -   added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
 -   `Rankings` not missing all args in `setParamsMsg`
 -   `osuapi` cached oauthkey not updating when expired
+-   temporarily disabled status updater (causes memory leaks on ubuntu)
 
 ### Changed
 
@@ -25,6 +26,8 @@
 -   convert input handlers into classes
 -   rewrite how params are managed (added `ArgParser` class)
 -   `UserBeatmaps` rename `filter` to `filterType`
+-   change how command errors are handled
+-   add separate method(s) for disabling pages
 
 ## [5.2.0] - 2025-07-02
 

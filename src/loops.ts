@@ -172,6 +172,11 @@ function updateStatus() {
     return timer;
 }
 
+/**
+ * WARNING - can cause memory leaks on some operating systems
+ * 
+ * doesn't seem to affect windows tho
+ */
 function statusTimer() {
     const timer = updateStatus();
     setTimeout(statusTimer, timer);

@@ -213,6 +213,31 @@ export class Command {
         }
         this.params.page--;
     }
+    disableButtons(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+        for (const component of builder.components) {
+            component.setDisabled(true);
+        }
+    }
+    disablePageButtons_check(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>, allCondition: boolean, startCondition: boolean, endCondition: boolean) {
+        if (allCondition || (startCondition && endCondition)) {
+            this.disableButtons(builder);
+        } else {
+            if (startCondition) {
+                this.disablePageButtons_start(builder);
+            }
+            if (endCondition) {
+                this.disablePageButtons_end(builder);
+            }
+        }
+    }
+    disablePageButtons_start(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+        builder.components[0].setDisabled(true);
+        builder.components[1].setDisabled(true);
+    }
+    disablePageButtons_end(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+        builder.components[3].setDisabled(true);
+        builder.components[4].setDisabled(true);
+    }
 }
 
 // gasp capitalised o
@@ -402,7 +427,7 @@ export class OsuCommand extends Command {
         }
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
-           await this.sendError(helper.errors.uErr.osu.profile.user.replace('[ID]', user));
+            await this.sendError(helper.errors.uErr.osu.profile.user.replace('[ID]', user));
         }
         data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
@@ -424,7 +449,7 @@ export class OsuCommand extends Command {
         }
 
         if (mapdata?.hasOwnProperty('error')) {
-            await this.sendError(helper.errors.uErr.osu.map.m.replace('[ID]', mapid + ''))
+            await this.sendError(helper.errors.uErr.osu.map.m.replace('[ID]', mapid + ''));
         }
 
         data.storeFile(mapdata, mapid, 'mapdata');

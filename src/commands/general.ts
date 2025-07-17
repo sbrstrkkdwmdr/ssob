@@ -90,7 +90,6 @@ export class Changelog extends Command {
     async execute() {
         await this.setParams();
         this.logInput();
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         const buttons = new Discord.ActionRowBuilder();
         //get version
         let found: string | number = null;
@@ -275,15 +274,12 @@ Total of ${changesList.filter(x => !x.includes('### ')).length} changes.${txt}
                 );
         }
 
-        if (this.params.useNum == 0) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-        }
-        if ((this.params.useNum + 1 >= helper.versions.versions.length && !this.params.isList) || (this.params.useNum + 1 >= Math.ceil(helper.versions.versions.length / 10) && this.params.isList)) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
-
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            false,
+            this.params.useNum == 0,
+            (this.params.useNum + 1 >= helper.versions.versions.length && !this.params.isList) || (this.params.useNum + 1 >= Math.ceil(helper.versions.versions.length / 10) && this.params.isList)
+        );
         this.ctn.embeds = [Embed];
         this.ctn.components = [pgbuttons, buttons];
         this.send();

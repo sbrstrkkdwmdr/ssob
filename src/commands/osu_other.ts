@@ -303,7 +303,7 @@ export class Compare extends OsuCommand {
             searchIdFirst: this.params.firstsearchid,
             searchIdSecond: this.params.secondsearchid
         });
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         this.ctn.components = [pgbuttons];
         embed.setTitle('Comparing Top Scores')
             .setDescription(`**[${firstuser.username}](https://osu.ppy.sh/users/${firstuser.id})** and **[${seconduser.username}](https://osu.ppy.sh/users/${seconduser.id})** have ${filterfirst.length} shared scores`)
@@ -596,7 +596,6 @@ export class ServerLeaderboard extends OsuCommand {
         await this.setParams();
         this.logInput();
         // do stuff
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         this.sendLoading();
 
@@ -655,15 +654,12 @@ export class ServerLeaderboard extends OsuCommand {
         // const endofcommand = new Date().getTime();
         // const timeelapsed = endofcommand - input.currentDate.getTime();
 
-        if (this.params.page < 1) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-        }
-        if (this.params.page + 1 >= Math.ceil(users.length / 10)) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
-
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            users.length <= 10,
+            this.params.page < 1,
+            this.params.page + 1 >= Math.ceil(users.length / 10)
+        );
         this.ctn.embeds = [serverlb];
         this.ctn.components = [pgbuttons];
 

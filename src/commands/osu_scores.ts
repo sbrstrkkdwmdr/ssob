@@ -271,8 +271,8 @@ export class ScoreListCommand extends OsuCommand {
     scores: osuapi.types_v2.Score[];
     map: osuapi.types_v2.BeatmapExtended;
 
-    pgbuttons: Discord.ActionRowBuilder;
-    buttons: Discord.ActionRowBuilder;
+    pgbuttons: Discord.ActionRowBuilder<Discord.ButtonBuilder>;
+    buttons: Discord.ActionRowBuilder<Discord.ButtonBuilder>;
 
     protected async getScores() {
         let req: osuapi.types_v2.Score[] | osuapi.types_v2.ScoreArrA;
@@ -472,14 +472,6 @@ export class ScoreListCommand extends OsuCommand {
         scoresEmbed.setFooter({
             text: `${scoresFormat.curPage}/${scoresFormat.maxPage} | ${this.params.mode ?? osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}`
         });
-        if (scoresFormat.text.includes('ERROR')) {
-            scoresEmbed.setDescription('**ERROR**\nNo scores found');
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[2].setDisabled(true);
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
         scoresEmbed.setDescription(scoresFormat.text);
         data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${this.osudata.id}`, apiData: null, mods: null });
         if (this.type == 'map') {
@@ -491,14 +483,15 @@ export class ScoreListCommand extends OsuCommand {
                 }
             );
         }
-        if (scoresFormat.curPage <= 1) {
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
+        if (scoresFormat.text.includes('ERROR')) {
+            scoresEmbed.setDescription('**ERROR**\nNo scores found');
         }
-        if (scoresFormat.curPage >= scoresFormat.maxPage) {
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (this.pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
+        this.pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(this.pgbuttons,
+            scoresFormat.text.includes('ERROR'),
+            scoresFormat.curPage <= 1,
+            scoresFormat.curPage >= scoresFormat.maxPage
+        );
 
         this.ctn.embeds = [scoresEmbed];
         this.ctn.components = [this.pgbuttons, this.buttons];
@@ -523,7 +516,6 @@ export class ScoreListCommand extends OsuCommand {
         }
 
 
-        this.pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         this.buttons = new Discord.ActionRowBuilder();
 
         this.sendLoading();
@@ -1060,10 +1052,10 @@ export class ScoreParse extends SingleScoreCommand {
             await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.score.wrong + ` - osu.ppy.sh/scores/${this.params.mode}/${this.params.scoreid}`, true);
             return;
         }
-        if (data.findFile(this.score.beatmap.id, 'mapdata') &&
-            !('error' in data.findFile(this.score.beatmap.id, 'mapdata')) &&
+        if (data.findFile(this.score.beatmap.id, 'this.map') &&
+            !('error' in data.findFile(this.score.beatmap.id, 'this.map')) &&
             this.input.buttonType != 'Refresh') {
-            this.map = data.findFile(this.score.beatmap.id, 'mapdata');
+            this.map = data.findFile(this.score.beatmap.id, 'this.map');
         } else {
             this.map = await osuapi.v2.beatmaps.map({ id: this.score?.beatmap?.id ?? this.score?.beatmap_id });
         }
@@ -1073,7 +1065,7 @@ export class ScoreParse extends SingleScoreCommand {
             return;
         }
 
-        data.storeFile(this.map, this.score.beatmap.id, 'mapdata');
+        data.storeFile(this.map, this.score.beatmap.id, 'this.map');
 
         this.mapset = this.map.beatmapset;
 
@@ -1195,8 +1187,6 @@ export class Recent extends SingleScoreCommand {
 
         this.fixPage();
 
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
-
         this.sendLoading();
 
         try {
@@ -1239,6 +1229,7 @@ export class Recent extends SingleScoreCommand {
             this.scores = other.filterScoreQuery(this.scores, this.params.filter);
         }
 
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         this.ctn.components = [pgbuttons, buttons];
 
         this.params.page = this.scores[this.params.page] ? this.params.page : 0;
@@ -1398,12 +1389,13 @@ export class MapLeaderboard extends OsuCommand {
             this.input.type = this.input.overrides.commandAs;
         }
     }
+    map: osuapi.types_v2.BeatmapExtended;
+    scores: osuapi.types_v2.Score[];
     async execute() {
         await this.setParams();
         this.logInput();
         // do stuff
         const buttons = new Discord.ActionRowBuilder();
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         if (!this.params.mapid) {
             const temp = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
@@ -1415,16 +1407,13 @@ export class MapLeaderboard extends OsuCommand {
         }
         this.sendLoading();
 
-        let mapdata: osuapi.types_v2.BeatmapExtended;
-
         try {
-            const m = await this.getMap(this.params.mapid);
-            mapdata = m;
+            this.map = await this.getMap(this.params.mapid);
         } catch (e) {
             return;
         }
 
-        const fulltitle = `${mapdata.beatmapset.artist} - ${mapdata.beatmapset.title} [${mapdata.version}]`;
+        const fulltitle = `${this.map.beatmapset.artist} - ${this.map.beatmapset.title} [${this.map.version}]`;
 
         let mods: string;
         if (this.params.mapmods) {
@@ -1441,8 +1430,8 @@ export class MapLeaderboard extends OsuCommand {
             lbdataf = data.findFile(this.input.id, 'lbdata');
         } else {
             lbdataf = await osuapi.v2.beatmaps.scores({
-                id: mapdata.id,
-                ruleset: mapdata.mode,
+                id: this.map.id,
+                ruleset: this.map.mode,
                 legacy_only: 0,
                 mods: this.params.mapmods,
             });
@@ -1487,13 +1476,13 @@ export class MapLeaderboard extends OsuCommand {
             .setColor(helper.colours.embedColour.scorelist.dec)
             .setTitle(`Score leaderboard of \`${fulltitle}\``)
             .setURL(`https://osu.ppy.sh/b/${this.params.mapid}`)
-            .setThumbnail(osuapi.other.beatmapImages(mapdata.beatmapset_id).list2x);
+            .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x);
 
         let scoretxt: string;
         if (lbdata.length < 1) {
             scoretxt = 'Error - no scores found ';
         }
-        if (mapdata.status == 'graveyard' || mapdata.status == 'pending') {
+        if (this.map.status == 'graveyard' || this.map.status == 'pending') {
             scoretxt = 'Error - map is unranked';
         }
 
@@ -1501,7 +1490,7 @@ export class MapLeaderboard extends OsuCommand {
             this.params.page = Math.ceil(lbdata.length / 5) - 1;
         }
 
-        const scoresarg = await formatters.scoreList(lbdata, 'score', null, false, 1, this.params.page, true, 'map_leaderboard', mapdata);
+        const scoresarg = await formatters.scoreList(lbdata, 'score', null, false, 1, this.params.page, true, 'map_leaderboard', this.map);
 
         commandTools.storeButtonArgs(this.input.id + '', {
             mapId: this.params.mapid,
@@ -1509,34 +1498,23 @@ export class MapLeaderboard extends OsuCommand {
             maxPage: scoresarg.maxPage,
             sortScore: 'score',
             reverse: false,
-            mode: mapdata.mode,
+            mode: this.map.mode,
             parse: this.params.parseScore,
             parseId: this.params.parseId,
         });
-        if (scoresarg.text.includes('ERROR')) {
-
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[2].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-
-        }
         lbEmbed.setDescription(scoresarg.text)
             .setFooter({ text: `${scoresarg.curPage}/${scoresarg.maxPage}` });
 
-        if (scoresarg.curPage <= 1) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-        }
-        if (scoresarg.curPage >= scoresarg.maxPage) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            scoresarg.text.includes('ERROR'),
+            scoresarg.curPage <= 1,
+            scoresarg.curPage >= scoresarg.maxPage
+        );
 
         data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
-                id: `${mapdata.id}`,
+                id: `${this.map.id}`,
                 apiData: null,
                 mods: this.params?.mapmods?.map(x => { return { acronym: x }; }) ?? []
             }
@@ -1615,27 +1593,27 @@ export class ReplayParse extends SingleScoreCommand {
         this.ctn.files = [chartFile];
         this.send();
     }
+    map: osuapi.types_v2.BeatmapExtended;
     /**
      * mapid should be beatmapHash
      */
     async getMap(hash: string) {
-        let mapdata: osuapi.types_v2.BeatmapExtended;
-        if (data.findFile(hash, 'mapdata') &&
-            !('error' in data.findFile(hash, 'mapdata')) &&
+        if (data.findFile(hash, 'this.map') &&
+            !('error' in data.findFile(hash, 'this.map')) &&
             this.input.buttonType != 'Refresh') {
-            mapdata = data.findFile(hash, 'mapdata');
+            this.map = data.findFile(hash, 'this.map');
         } else {
-            mapdata = await osuapi.v2.beatmaps.mapLookup({ checksum: hash });
+            this.map = await osuapi.v2.beatmaps.mapLookup({ checksum: hash });
         }
-        if (mapdata?.hasOwnProperty('error')) {
+        if (this.map?.hasOwnProperty('error')) {
             const err = helper.errors.uErr.osu.map.m.replace('[ID]', hash + '');
             await commandTools.errorAndAbort(this.input, this.name, true, err, true);
             throw new Error(err);
         }
-        data.debug(mapdata, 'fileparse', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapData');
-        data.storeFile(mapdata, mapdata.id, 'mapdata');
-        data.storeFile(mapdata, hash, 'mapdata');
-        return mapdata;
+        data.debug(this.map, 'fileparse', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
+        data.storeFile(this.map, this.map.id, 'this.map');
+        data.storeFile(this.map, hash, 'this.map');
+        return this.map;
     }
     setScore(score: osuclasses.Score) {
         const tmods =

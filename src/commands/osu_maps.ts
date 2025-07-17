@@ -1293,7 +1293,6 @@ export class UserBeatmaps extends OsuCommand {
             return;
         }
 
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         const buttons = new Discord.ActionRowBuilder()
             .addComponents(
                 new Discord.ButtonBuilder()
@@ -1442,21 +1441,13 @@ export class UserBeatmaps extends OsuCommand {
 
         if (mapsarg.text.length == 0) {
             mapList.setDescription('No mapsets found');
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[2].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
         }
-        if (mapsarg.curPage <= 1) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-        }
-        if (mapsarg.curPage >= mapsarg.maxPage) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
-
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            mapsarg.text.length <= 5,
+            mapsarg.curPage <= 1,
+            mapsarg.curPage >= mapsarg.maxPage
+        );
         this.ctn.embeds = [mapList];
         this.ctn.components = [pgbuttons, buttons];
 

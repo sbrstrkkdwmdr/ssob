@@ -298,7 +298,6 @@ export class Ranking extends OsuCommand {
         this.getOverrides();
         // do stuff
         this.params.mode = other.modeValidator(this.params.mode);
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         this.fixPage();
 
@@ -417,14 +416,12 @@ export class Ranking extends OsuCommand {
             spotlight: this.params.spotlight
         });
 
-        if (this.params.page + 1 >= Math.ceil(rankingdata.ranking.length / 5)) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-        }
-        if (this.params.page == 0) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-        }
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            rankingdata.ranking.length <= 5,
+            this.params.page == 0,
+            this.params.page + 1 >= Math.ceil(rankingdata.ranking.length / 5)
+        );
 
         this.ctn.embeds = [embed];
         this.ctn.components = [pgbuttons];
@@ -932,7 +929,6 @@ export class RecentActivity extends OsuCommand {
         this.logInput();
         this.getOverrides();
         // do stuff
-        const pgbuttons: Discord.ActionRowBuilder = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
 
         const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder();
         this.fixUser(false);
@@ -998,17 +994,12 @@ export class RecentActivity extends OsuCommand {
 
         const pageLength = 10;
 
-        if (this.params.page < 1) {
-            (pgbuttons.components as Discord.ButtonBuilder[])[0].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[1].setDisabled(true);
-
-        }
-        if (this.params.page >= Math.ceil(rsactData.length / pageLength) - 1) {
-            this.params.page = Math.ceil(rsactData.length / pageLength) - 1;
-            (pgbuttons.components as Discord.ButtonBuilder[])[3].setDisabled(true);
-            (pgbuttons.components as Discord.ButtonBuilder[])[4].setDisabled(true);
-
-        }
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            rsactData.length <= 5,
+            this.params.page >= Math.ceil(rsactData.length / pageLength) - 1,
+            this.params.page >= Math.ceil(rsactData.length / pageLength) - 1
+        );
 
         const curEmbed = new Discord.EmbedBuilder()
             .setTitle(`Recent Activity for ${osudata.username}`)

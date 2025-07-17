@@ -251,7 +251,7 @@ export function buttonDetail(level: number, button: helper.bottypes.buttonType) 
 }
 
 export async function pageButtons(command: string, commanduser: Discord.User | Discord.APIUser, commandId: string | number) {
-    const pgbuttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder()
+    const pgbuttons= new Discord.ActionRowBuilder()
         .addComponents(
             new Discord.ButtonBuilder()
                 .setCustomId(`${helper.versions.releaseDate}-BigLeftArrow-${command}-${commanduser.id}-${commandId}`)
@@ -274,7 +274,7 @@ export async function pageButtons(command: string, commanduser: Discord.User | D
                 .setStyle(helper.buttons.type.current)
                 .setEmoji(helper.buttons.label.page.last),
         );
-    return pgbuttons;
+    return pgbuttons as Discord.ActionRowBuilder<Discord.ButtonBuilder>;
 }
 
 export async function buttonsAddDetails(command: string, commanduser: Discord.User | Discord.APIUser, commandId: string | number, buttons: Discord.ActionRowBuilder, detailed: number,
