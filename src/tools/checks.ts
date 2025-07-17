@@ -176,8 +176,8 @@ export function toHexadecimal(str: string | number) {
 function getcfg() {
     try {
         const p = JSON.parse(fs.readFileSync(path.precomp + '/config/config.json', 'utf-8'));
-        return p
-    } catch(err){
+        return p;
+    } catch (err) {
         return {
             "token": process.env.DISCORD_TOKEN,
             "osu": {
@@ -192,6 +192,6 @@ function getcfg() {
                 "console": true,
                 "file": true
             }
-        }
+        };
     }
 }
