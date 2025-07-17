@@ -35,20 +35,20 @@ export function loops() {
     clearParseArgs();
     clearCommandCache();
     getOnlineChangelog();
-    checkHeap();
     // guild stuff
     helper.vars.client.on('guildCreate', async (guild) => {
         createGuildSettings(guild);
     });
-
+    
     let timer = 60 * 1000;
     updateStatus(timer);
-
+    
     setInterval(() => {
         timer = updateStatus(timer);
     }, timer);
 }
 
+checkHeap();
 setInterval(async () => {
     checkHeap();
     try {
