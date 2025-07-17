@@ -52,6 +52,13 @@ export function loops() {
     helper.vars.client.on('guildCreate', async (guild) => {
         createGuildSettings(guild);
     });
+
+    let timer = 60 * 1000;
+    updateStatus(timer);
+
+    setInterval(() => {
+        timer = updateStatus(timer);
+    }, timer);
 }
 
 function checkHeap() {
@@ -99,16 +106,8 @@ function setActivity() {
 }
 
 //seasonal status updates
-const Events = ['None', 'New Years', 'Halloween', 'Christmas'];
 
-let timer = 60 * 1000;
-updateStatus();
-
-setInterval(() => {
-    updateStatus();
-}, timer);
-
-function updateStatus() {
+function updateStatus(timer: number) {
     let activities = [];
     const date = new Date();
     const day = date.getDate();
@@ -173,6 +172,7 @@ function updateStatus() {
         timer = temp > 60 * 1000 * 30 ?
             60 * 1000 : temp * 1000;
     }
+    return timer;
 }
 
 // clear cache
