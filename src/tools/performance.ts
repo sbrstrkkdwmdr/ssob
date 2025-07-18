@@ -2,6 +2,7 @@ import * as fs from 'fs';
 import * as osumodcalc from 'osumodcalculator';
 import * as rosu from 'rosu-pp-js';
 import * as helper from '../helper';
+import { Dict } from '../types/tools';
 import * as api from './api';
 import * as formatters from './formatters';
 import * as log from './log';
@@ -34,56 +35,32 @@ export async function calcScore(input: {
     if (data.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(data.mode);
     }
-    if (isNaN(data.accuracy)) {
-        data.accuracy = 100;
-    }
-    if (data.accuracy <= 1) {
-        data.accuracy *= 100;
-    }
-    if (data.accuracy > 100) {
-        data.accuracy /= 100;
-    }
+    data.accuracy = fixAcc(data.accuracy);
+
     const baseScore: rosu.PerformanceArgs = {
         mods: input.mods,
         accuracy: data.accuracy ?? 100,
     };
     const oldStats = other.lazerToOldStatistics(data.stats, data.mode, true);
-    if (data.maxcombo != null && !isNaN(data.maxcombo)) {
-        baseScore.combo = data.maxcombo;
-    }
-    if (data.passedObjects != null && !isNaN(data.passedObjects)) {
-        baseScore.passedObjects = data.passedObjects;
-    }
-    if (oldStats.count_300 != null && !isNaN(oldStats.count_300)) {
-        baseScore.n300 = oldStats.count_300;
-    }
-    if (oldStats.count_100 != null && !isNaN(oldStats.count_100)) {
-        baseScore.n100 = oldStats.count_100;
-    }
-    if (oldStats.count_50 != null && !isNaN(oldStats.count_50)) {
-        baseScore.n50 = oldStats.count_50;
-    }
-    if (oldStats.count_miss != null && !isNaN(oldStats.count_miss)) {
-        baseScore.misses = oldStats.count_miss;
-    }
-    if (oldStats.count_katu != null && !isNaN(oldStats.count_katu)) {
-        baseScore.nKatu = oldStats.count_katu;
-    }
-    if (input.customCS != null && !isNaN(input.customCS)) {
-        baseScore.cs = input.customCS;
-    }
-    if (input.customAR != null && !isNaN(input.customAR)) {
-        baseScore.ar = input.customAR;
-    }
-    if (input.customOD != null && !isNaN(input.customOD)) {
-        baseScore.od = input.customOD;
-    }
-    if (input.customHP != null && !isNaN(input.customHP)) {
-        baseScore.hp = input.customHP;
-    }
-    if (input.clockRate != null && !isNaN(input.clockRate)) {
-        baseScore.clockRate = input.clockRate;
-    }
+    scoreIterateKeys(data, baseScore, {
+        maxcombo: 'combo',
+        passedObjects: 'passedObjects'
+    });
+    scoreIterateKeys(oldStats, baseScore, {
+        count_300: 'n300',
+        count_100: 'n100',
+        count_50: 'n50',
+        count_miss: 'misses',
+        count_katu: 'nKatu',
+    });
+    scoreIterateKeys(input, baseScore, {
+        'cs': 'customCS',
+        'ar': 'customAR',
+        'od': 'customOD',
+        'hp': 'customHP',
+        'clockRate': 'clockRate',
+    });
+
     if (input.mods.includes('CL')) {
         baseScore.lazer = false;
     }
@@ -353,4 +330,29 @@ export function getModSpeed(mods: osuapi.types_v2.Mod[]) {
         }
     }
     return rate;
+}
+
+function fixAcc(n: number) {
+    if (isNaN(n)) {
+        n = 100;
+    }
+    if (n <= 1) {
+        n *= 100;
+    }
+    if (n > 100) {
+        n /= 100;
+    }
+    return n;
+}
+
+function setBaseScoreValue(data: Dict, baseScore: rosu.PerformanceArgs, dKey: string, bKey: string = dKey) {
+    if (data[dKey] != null && !isNaN(data[dKey])) {
+        baseScore[bKey] = data[dKey];
+    }
+}
+
+function scoreIterateKeys(data: Dict, baseScore: rosu.PerformanceArgs, keys: Dict<string>) {
+    for (const key in keys) {
+        setBaseScoreValue(data, baseScore, key, keys[key]);
+    }
 }
