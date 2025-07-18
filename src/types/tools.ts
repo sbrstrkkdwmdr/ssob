@@ -36,5 +36,5 @@ export type guildSettings = {
     osuParseReplays: boolean,
 };
 
-export type Dict = { [key: string]: any; };
+export type Dict<T = any> = { [key: string]: T; };
 export type DictEntry = { (key: string): any; };

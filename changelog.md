@@ -28,6 +28,7 @@
 -   `UserBeatmaps` rename `filter` to `filterType`
 -   change how command errors are handled
 -   add separate method(s) for disabling pages
+-   config checker
 
 ## [5.2.0] - 2025-07-02
 
