@@ -11,12 +11,12 @@
 -   added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
 -   `Rankings` not missing all args in `setParamsMsg`
 -   `osuapi` cached oauthkey not updating when expired
--   temporarily disabled status updater (causes memory leaks on ubuntu)
 
 ### Changed
 
 -   updated osumodcalculator
 -   edit parts of command data for clarity
+-   status changer updates every 5 minutes instead of using song length (caused memory leaks)
 
 ### Refactor
 

@@ -12,6 +12,9 @@ const totalTrackTime = 60 * 1000 * 60; //requests every 60 min
 
 export function loops() {
     setInterval(() => {
+        updateStatus();
+    }, 5 * 60 * 1000);
+    setInterval(() => {
         clearMapFiles();
         clearParseArgs();
         clearCommandCache();
@@ -28,6 +31,7 @@ export function loops() {
         }, totalTrackTime);
     }
 
+    updateStatus();
     clearMapFiles();
     clearParseArgs();
     clearCommandCache();
