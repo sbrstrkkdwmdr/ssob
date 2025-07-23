@@ -37,4 +37,4 @@ export type guildSettings = {
 };
 
 export type Dict<T = any> = { [key: string]: T; };
-export type DictEntry = { (key: string): any; };
+export type DictEntry<T = any> = { (key: string): T; };

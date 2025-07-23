@@ -124,26 +124,6 @@ export function checkFileLimit(files: any[]) {
 // export function parseScoreListArgs_interaction() { }
 // export function parseScoreListArgs_button() { }
 
-/**
- * @param noLinks ignore "button" and "link" command types
- * logs error, sends error to command user then promptly aborts the command
- */
-export async function errorAndAbort(input: helper.bottypes.commandInput, commandName: string, interactionEdit: boolean, err: string, noLinks: boolean) {
-    if (!err) {
-        err = 'undefined error';
-    }
-    await sendMessage({
-        type: 'message',
-        message: input.message,
-        interaction: input.interaction,
-        args: {
-            content: err,
-            edit: interactionEdit
-        }
-    }, input.canReply);
-    return;
-}
-
 export type params = {
     error?: boolean,
     searchid?: string,
@@ -382,13 +362,13 @@ export async function missingPrevID_map(input: helper.bottypes.commandInput, nam
             message: input.message,
             interaction: input.interaction,
             args: {
-                content: helper.errors.uErr.osu.map.m_msp,
+                content: helper.errors.map.m_msp,
                 edit: true
             }
         }, input.canReply);
     }
     log.commandErr(
-        helper.errors.uErr.osu.map.m_msp,
+        helper.errors.map.m_msp,
         input.id,
         name,
         input.message,

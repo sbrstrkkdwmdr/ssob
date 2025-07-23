@@ -16,7 +16,7 @@ export class Map extends OsuCommand {
     declare protected params: {
         mapid: number;
         mapmods: osumodcalc.types.Mod[];
-        maptitleq: string;
+        query: string;
         detailed: number;
         isppCalc: boolean;
         searchRestrict: string;
@@ -37,7 +37,7 @@ export class Map extends OsuCommand {
         this.params = {
             mapid: undefined,
             mapmods: [],
-            maptitleq: null,
+            query: null,
             detailed: 1,
             isppCalc: false,
             searchRestrict: 'any',
@@ -64,7 +64,7 @@ export class Map extends OsuCommand {
         this.params.customOD = this.setParam(this.params.customOD, ['-od', '-accuracy'], 'number', {});
         this.params.customHP = this.setParam(this.params.customHP, ['-hp', '-drain', 'health'], 'number', {});
 
-        this.params.maptitleq = this.setParam(this.params.maptitleq, ['-?'], 'string', { string_isMultiple: true });
+        this.params.query = this.setParam(this.params.query, ['-?'], 'string', { string_isMultiple: true });
 
         this.params.isppCalc = this.setParam(this.params.isppCalc, ['pp', 'calc', 'performance'], 'bool', {});
 
@@ -89,7 +89,7 @@ export class Map extends OsuCommand {
         this.params.mapmods = osumodcalc.mod.fromString(interaction.options.getString('mods').toUpperCase());
         this.#apiMods = this.params.mapmods.map(x => { return { acronym: x }; });
         this.params.detailed = interaction.options.getBoolean('detailed') ? 2 : 1;
-        this.params.maptitleq = interaction.options.getString('query');
+        this.params.query = interaction.options.getString('query');
         interaction.options.getNumber('bpm') ? this.params.overrideBpm = interaction.options.getNumber('bpm') : null;
         interaction.options.getNumber('speed') ? this.params.overrideSpeed = interaction.options.getNumber('speed') : null;
 
@@ -124,15 +124,15 @@ export class Map extends OsuCommand {
             this.params.mapmods = tmod.mods;
         }
         if (this.input.args[0] && this.input.args[0].startsWith('query')) {
-            this.params.maptitleq = this.input.args[1];
+            this.params.query = this.input.args[1];
         } else if (messagenohttp.includes('q=')) {
-            this.params.maptitleq = this.setParamMapSearch().query;
+            this.params.query = this.setParamMapSearch().query;
         } else {
             const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
             this.params.mode = mapTemp.mode ?? this.params.mode;
             if (!(mapTemp.map || mapTemp.set || this.map || this.mapset)) {
-                await this.sendError(helper.errors.uErr.osu.map.url);
+                await this.sendError(helper.errors.map.url);
             }
             //get map id via mapset if not in the given URL
             await this.setParamMapGone(mapTemp);
@@ -149,7 +149,7 @@ export class Map extends OsuCommand {
 
             this.mapset = await this.getMapSet(mapTemp.set);
             if (!this.mapset?.beatmaps?.[0] || this.mapset?.beatmaps?.length == 0) {
-                await this.sendError(helper.errors.uErr.osu.map.setonly);
+                await this.sendError(helper.errors.map.setonly(mapTemp.set));
             }
             this.params.mapid = this.mapset.beatmaps[0].id;
         }
@@ -264,7 +264,7 @@ export class Map extends OsuCommand {
 
     }
     protected checkNullParams() {
-        if (!this.params.mapid && !this.params.maptitleq) {
+        if (!this.params.mapid && !this.params.query) {
             const temp = this.getLatestMap();
             this.params.mapid = +temp.mapid;
 
@@ -294,14 +294,14 @@ export class Map extends OsuCommand {
             }
             this.params.mode = temp.mode;
         }
-        if (this.params.mapid == 0 && !this.params.maptitleq) {
+        if (this.params.mapid == 0 && !this.params.query) {
             commandTools.missingPrevID_map(this.input, 'map');
             return true;
         }
         return false;
     }
     protected async checkQueryType(inputModalSearch: Discord.StringSelectMenuBuilder) {
-        if (this.params.maptitleq == null) {
+        if (this.params.query == null) {
             try {
                 const m = await this.getMap(this.params.mapid);
                 this.map = m;
@@ -316,17 +316,13 @@ export class Map extends OsuCommand {
                 return;
             }
         }
-        else if (this.params.maptitleq != null) {
-            const mapidtest = await osuapi.v2.beatmaps.search({ query: this.params.maptitleq });
-            if (mapidtest?.error) {
-                await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.search, false);
-                return;
-            }
+        else if (this.params.query != null) {
+            const mapidtest = await osuapi.v2.beatmaps.search({ query: this.params.query });
             data.debug(mapidtest, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapIdTestData');
-            data.storeFile(mapidtest, this.params.maptitleq.replace(/[\W_]+/g, '').replaceAll(' ', '_'), 'mapQuerydata');
+            data.storeFile(mapidtest, this.params.query.replace(/[\W_]+/g, '').replaceAll(' ', '_'), 'mapQuerydata');
 
-            if (mapidtest?.hasOwnProperty('error') && !mapidtest.hasOwnProperty('beatmapsets')) {
-                await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.search, true);
+            if (mapidtest?.hasOwnProperty('error')) {
+                await this.sendError(helper.errors.map.search);
                 return;
             }
 
@@ -334,16 +330,14 @@ export class Map extends OsuCommand {
             let mapidtest2: osuapi.types_v2.Beatmap[];
 
             if (mapidtest.beatmapsets.length == 0) {
-                this.voidcontent();
-                this.ctn.content = helper.errors.uErr.osu.map.search_nf.replace('[INPUT]', this.params.maptitleq);
-                await this.send();
+                await this.sendError(helper.errors.map.search_nf(this.params.query));
                 return;
             }
             try {
                 let matchedId: number = null;
                 // first check if any diff name matches the search
                 for (let i = 0; i < mapidtest.beatmapsets[0].beatmaps.length; i++) {
-                    if (this.params.maptitleq.includes(mapidtest.beatmapsets[0].beatmaps[i].version)) {
+                    if (this.params.query.includes(mapidtest.beatmapsets[0].beatmaps[i].version)) {
                         matchedId = mapidtest.beatmapsets[0].beatmaps[i].id;
                     }
                 }
@@ -579,7 +573,7 @@ export class Map extends OsuCommand {
             overrideSpeed: this.params.overrideSpeed,
             ppCalc: this.params.isppCalc,
             detailed: this.params.detailed,
-            filterTitle: this.params.maptitleq,
+            filterTitle: this.params.query,
         });
 
         data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
@@ -1303,44 +1297,13 @@ export class UserBeatmaps extends OsuCommand {
 
         let maplistdata: (osuapi.types_v2.Beatmapset[] | osuapi.types_v2.BeatmapPlaycount[]) = [];
 
-        async function getScoreCount(cinitnum: number, input: helper.bottypes.commandInput, args, osudata) {
-            if (cinitnum >= 499) {
-                args.reachedMaxCount = true;
-                return;
-            }
-            const fd =
-                args.filter == 'most_played' ?
-                    await osuapi.v2.users.mostPlayed({
-                        user_id: osudata.id,
-                        offset: cinitnum
-                    })
-                    :
-                    await osuapi.v2.users.beatmaps({
-                        user_id: osudata.id,
-                        type: args.filter,
-                        offset: cinitnum
-                    });
-            if (fd?.hasOwnProperty('error')) {
-                await commandTools.errorAndAbort(input, this.name, true, helper.errors.uErr.osu.map.group_nf.replace('[TYPE]', args.filter), true);
-                return;
-            }
-            for (let i = 0; i < fd.length; i++) {
-                if (!fd[i] || typeof fd[i] == 'undefined') { break; }
-                //@ts-expect-error Beatmapset missing properties from BeatmapPlaycount
-                maplistdata.push(fd[i]);
-            }
-            if (fd.length == 100 && args.filter != 'most_played') {
-                return await getScoreCount(cinitnum + 100, input, args, osudata);
-            }
-            return args;
-        }
         if (data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType) &&
             !('error' in data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType)) &&
             this.input.buttonType != 'Refresh'
         ) {
             maplistdata = data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType);
         } else {
-            this.params = await getScoreCount(0, this.input, this.params, this.osudata);
+            this.params = await this.getScoreCount(0);
         }
 
         data.debug(maplistdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
@@ -1380,7 +1343,7 @@ export class UserBeatmaps extends OsuCommand {
                 commandAs: this.input.type
             };
             if (this.input.overrides.id == null) {
-                await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.m_uk + `at index ${pid}`, true);
+                await this.sendError(helper.errors.map.m_uk + ` at index ${pid}`);
                 return;
             }
             this.input.type = 'other';
@@ -1454,4 +1417,35 @@ export class UserBeatmaps extends OsuCommand {
         this.send();
     }
     osudata: osuapi.types_v2.UserExtended;
+    async getScoreCount(cinitnum: number) {
+        if (cinitnum >= 499) {
+            this.params.reachedMaxCount = true;
+            return;
+        }
+        const fd =
+            this.params.filterType == 'most_played' ?
+                await osuapi.v2.users.mostPlayed({
+                    user_id: this.osudata.id,
+                    offset: cinitnum
+                })
+                :
+                await osuapi.v2.users.beatmaps({
+                    user_id: this.osudata.id,
+                    type: this.params.filterType,
+                    offset: cinitnum
+                });
+        if (fd?.hasOwnProperty('error')) {
+            await this.sendError(helper.errors.map.group_nf(this.params.filterType));
+            return;
+        }
+        for (let i = 0; i < fd.length; i++) {
+            if (!fd[i] || typeof fd[i] == 'undefined') { break; }
+            //@ts-expect-error Beatmapset missing properties from BeatmapPlaycount
+            maplistdata.push(fd[i]);
+        }
+        if (fd.length == 100 && this.params.filterType != 'most_played') {
+            return await this.getScoreCount(cinitnum + 100);
+        }
+        return;
+    }
 }

@@ -337,7 +337,7 @@ export class Ranking extends OsuCommand {
         data.storeFile(rankingdata, this.input.id, 'rankingdata');
 
         if (rankingdata?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.rankings, true);
+            await this.sendError(helper.errors.generic.rankings);
             return;
         }
 
@@ -380,7 +380,7 @@ export class Ranking extends OsuCommand {
                 commandAs: this.input.type
             };
             if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await commandTools.errorAndAbort(this.input, 'osu', true, `${helper.errors.uErr.osu.score.nf} at index ${pid}`, true);
+                await this.sendError(`${helper.errors.score.nf} at index ${pid}`);
                 return;
             }
             this.input.type = 'other';
@@ -736,7 +736,7 @@ export class Profile extends OsuCommand {
                 data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
 
                 if (mostplayeddata?.hasOwnProperty('error')) {
-                    await commandTools.errorAndAbort(this.input, 'osu', true, helper.errors.uErr.osu.profile.mostplayed, true);
+                    await this.sendError(helper.errors.profile.mostplayed);
                     return;
                 }
                 const secperplay = osudata?.statistics.play_time / parseFloat(playcount.replaceAll(',', ''));
@@ -950,7 +950,7 @@ export class RecentActivity extends OsuCommand {
         data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.noUser(this.params.user), true);
+            await this.sendError(helper.errors.profile.user(this.params.user));
             return;
         }
 
@@ -986,7 +986,7 @@ export class RecentActivity extends OsuCommand {
         data.debug(rsactData, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
 
         if (rsactData?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.profile.rsact, true);
+            await this.sendError(helper.errors.profile.rsact);
             return;
         }
 

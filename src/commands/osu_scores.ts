@@ -367,25 +367,24 @@ export class ScoreListCommand extends OsuCommand {
 
     };
     async commitError(type: string) {
-        let err = '';
-        const errList = helper.errors.uErr.osu.scores;
+        const errList = helper.errors.scores;
         switch (type) {
             case 'osutop': case 'nochokes':
-                await this.sendError(errList.best);
+                await this.sendError(errList.best(this.params.user));
                 break;
             case 'recent':
-                await this.sendError(errList.recent);
+                await this.sendError(errList.recent(this.params.user));
                 break;
             case 'map':
-                await this.sendError(errList.map.replace('[MID]', this.params.mapid + ''));
+                await this.sendError(errList.map(this.params.user, this.params.mapid));
                 break;
             case 'firsts':
-                await this.sendError(errList.first);
+                await this.sendError(errList.first(this.params.user));
                 break;
             case 'pinned':
                 break;
         }
-        await this.sendError(err.replace('[ID]', this.params.user));
+        await this.sendError(helper.errors.genError);
     }
     protected toName(map?: osuapi.types_v2.Beatmap) {
         switch (this.type) {
@@ -574,7 +573,7 @@ export class ScoreListCommand extends OsuCommand {
                     break;
             }
             if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await commandTools.errorAndAbort(this.input, this.name, true, `${helper.errors.uErr.osu.score.nf} at index ${pid}`, true);
+                await this.sendError(`${helper.errors.score.nf} at index ${pid}`);
                 return;
             }
             this.input.type = 'other';
@@ -832,7 +831,7 @@ export class SingleScoreCommand extends OsuCommand {
                 fcflag = 'FC';
             }
         } catch (error) {
-            ppissue = helper.errors.uErr.osu.performance.crash;
+            ppissue = helper.errors.performance.crash;
             log.commandErr(error, this.input.id, 'firsts', this.input.message, this.input.interaction);
         }
         return [perfs, ppissue, fcflag];
@@ -1004,10 +1003,7 @@ export class ScoreParse extends SingleScoreCommand {
             if (temp?.apiData?.best_id && typeof temp?.apiData?.best_id === 'number') {
                 this.params.scoreid = temp?.apiData?.best_id;
             } else {
-                this.voidcontent();
-                this.ctn.content = helper.errors.uErr.osu.score.ms;
-                await this.send();
-                return;
+                await this.sendError(helper.errors.score.ms);
             }
         }
 
@@ -1025,10 +1021,7 @@ export class ScoreParse extends SingleScoreCommand {
 
         data.debug(this.score, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'scoreData');
         if (this.score?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.score.nd
-                .replace('[SID]', this.params.scoreid.toString())
-                .replace('[MODE]', this.params.mode), true);
-            return;
+            await this.sendError(helper.errors.score.nd(this.params.scoreid));
         }
         data.storeFile(this.score, this.params.scoreid, 'scoredata', other.modeValidator(this.score.ruleset_id));
 
@@ -1049,8 +1042,7 @@ export class ScoreParse extends SingleScoreCommand {
         try {
             this.score.rank.toUpperCase();
         } catch (error) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.score.wrong + ` - osu.ppy.sh/scores/${this.params.mode}/${this.params.scoreid}`, true);
-            return;
+            await this.sendError(helper.errors.score.wrong + ` - osu.ppy.sh/scores/${this.params.mode}/${this.params.scoreid}`);
         }
         if (data.findFile(this.score.beatmap.id, 'this.map') &&
             !('error' in data.findFile(this.score.beatmap.id, 'this.map')) &&
@@ -1061,8 +1053,7 @@ export class ScoreParse extends SingleScoreCommand {
         }
 
         if (this.map?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.m.replace('[ID]', this.score.beatmap.id.toString()), true);
-            return;
+            await this.sendError(helper.errors.map.m(this.score.beatmap.id));
         }
 
         data.storeFile(this.map, this.score.beatmap.id, 'this.map');
@@ -1219,8 +1210,7 @@ export class Recent extends SingleScoreCommand {
 
         data.debug(this.scores, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsData');
         if (this.scores?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.scores.recent.replace('[ID]', this.params.user), true);
-            return;
+            await this.sendError(helper.errors.scores.recent(this.params.user));
         }
 
         data.storeFile(this.scores, this.input.id, 'rsdata');
@@ -1240,24 +1230,11 @@ export class Recent extends SingleScoreCommand {
 
         this.score = this.scores[this.params.page];
         if (!this.score || this.score == undefined || this.score == null) {
-            let err = `${helper.errors.uErr.osu.scores.recent_ms
-                .replace('[ID]', this.params.user)
-                .replace('[MODE]', helper.emojis.gamemodes[other.modeValidator(this.params.mode)])
-                }`;
+            let err = helper.errors.scores.recent_ms(this.params.user, helper.emojis.gamemodes[other.modeValidator(this.params.mode)]);
             if (this.params.filter) {
-                err = `${helper.errors.uErr.osu.scores.recent_ms
-                    .replace('[ID]', this.params.user)
-                    .replace('[MODE]', helper.emojis.gamemodes[other.modeValidator(this.params.mode)])
-                    } matching \`${this.params.filter}\``;
+                err += ` matching \`${this.params.filter}\``;
             }
-
-            if (this.input.buttonType == null) {
-                this.voidcontent();
-                this.ctn.content = err;
-                this.ctn.edit = true;
-                await this.send();
-            }
-            return;
+            await this.sendError(err);
         }
         this.map = this.score.beatmap as osuapi.types_v2.BeatmapExtended;
         this.mapset = this.score.beatmapset;
@@ -1440,8 +1417,7 @@ export class MapLeaderboard extends OsuCommand {
         data.debug(lbdataf, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'lbDataF');
 
         if (lbdataf?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.lb.replace('[ID]', this.params.mapid + ''), true);
-            return;
+            this.sendError(helper.errors.map.lb(this.params.mapid));
         }
         data.storeFile(lbdataf, this.input.id, 'lbdata');
 
@@ -1461,8 +1437,7 @@ export class MapLeaderboard extends OsuCommand {
                 commandAs: this.input.type,
             };
             if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await commandTools.errorAndAbort(this.input, this.name, true, `${helper.errors.uErr.osu.score.nf} at index ${pid}`, true);
-                return;
+                await this.sendError(`${helper.errors.score.nf} at index ${pid}`);
             }
             this.input.type = 'other';
 
@@ -1606,9 +1581,7 @@ export class ReplayParse extends SingleScoreCommand {
             this.map = await osuapi.v2.beatmaps.mapLookup({ checksum: hash });
         }
         if (this.map?.hasOwnProperty('error')) {
-            const err = helper.errors.uErr.osu.map.m.replace('[ID]', hash + '');
-            await commandTools.errorAndAbort(this.input, this.name, true, err, true);
-            throw new Error(err);
+            await this.sendError(helper.errors.map.m(hash));
         }
         data.debug(this.map, 'fileparse', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
         data.storeFile(this.map, this.map.id, 'this.map');
@@ -1811,7 +1784,7 @@ export class ScoreStats extends OsuCommand {
                 break;
         }
         if (fd?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(input, this.name, true, helper.errors.uErr.osu.scores.best.replace('[ID]', args.user).replace('top', args.scoreTypes == 'best' ? 'top' : args.scoreTypes), true);
+            await this.sendError(helper.errors.scores.best(args.user).replace('top', args.scoreTypes == 'best' ? 'top' : args.scoreTypes));
             return;
         }
         for (let i = 0; i < fd.length; i++) {
@@ -2076,18 +2049,7 @@ export class Simulate extends OsuCommand {
         await this.setParams();
         this.logInput();
         // do stuff
-        if (!this.params.mapid) {
-            try {
-                const temp = this.getLatestMap().mapid;
-                if (temp == false) {
-                    commandTools.missingPrevID_map(this.input, this.name);
-                    return;
-                }
-                this.params.mapid = +temp;
-            } catch (e) {
-                return;
-            }
-        }
+        await this.fixMapParam();
 
         this.sendLoading();
 
@@ -2096,10 +2058,7 @@ export class Simulate extends OsuCommand {
         try {
             this.map = await this.getMap(this.params.mapid);
         } catch (e) {
-            return;
-        }
-        if (!this.params.mods) {
-            this.params.mods = 'NM';
+            await this.sendError(helper.errors.map.m(this.params.mapid));
         }
         if (!this.params.combo) {
             this.params.combo = this.map?.max_combo ?? undefined;
@@ -2114,23 +2073,11 @@ export class Simulate extends OsuCommand {
             miss: this.params.nMiss ?? 0,
         };
 
-        let use300s = (this.params.n300 ?? 0);
-        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
-        if (gotTot != this.map.count_circles + this.map.count_sliders + this.map.count_spinners) {
-            use300s += (this.map.count_circles + this.map.count_sliders + this.map.count_spinners) - use300s;
-        }
-        const useAcc = this.params.acc ?? osumodcalc.accuracy.standard(
-            use300s,
-            this.params.n100 ?? 0,
-            this.params.n50 ?? 0,
-            this.params.nMiss ?? 0
-        ).accuracy;
-
         const perfs = await performance.fullPerformance(
             this.params.mapid,
             0,
             osumodcalc.mod.fromString(this.params.mods),
-            useAcc / 100,
+            this.fixAcc() / 100,
             this.params.overrideSpeed,
             scorestat,
             this.params.combo,
@@ -2153,12 +2100,26 @@ export class Simulate extends OsuCommand {
         this.ctn.embeds = [this.setEmbed(
             perfs, mapPerf,
             `${this.map.beatmapset.artist} - ${this.map.beatmapset.title} [${this.map.version}]`,
-            useAcc
+            this.fixAcc()
         )];
 
         this.send();
     }
     map: osuapi.types_v2.BeatmapExtended;
+    async fixMapParam() {
+        if (!this.params.mapid) {
+            try {
+                const temp = this.getLatestMap().mapid;
+                if (temp == false) {
+                    commandTools.missingPrevID_map(this.input, this.name);
+                    return;
+                }
+                this.params.mapid = +temp;
+            } catch (err) {
+                await this.sendError(helper.errors.map.m_msp);
+            }
+        }
+    }
     fixParams() {
         const tempscore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
         if (tempscore?.apiData && tempscore?.apiData.beatmap.id == this.params.mapid) {
@@ -2175,7 +2136,7 @@ export class Simulate extends OsuCommand {
                 this.params.combo = tempscore.apiData.max_combo;
             }
             if (!this.params.mods) {
-                this.params.mods = tempscore.apiData.mods.map(x => x.acronym).join('');
+                this.params.mods = tempscore.apiData.mods.map(x => x.acronym).join('') ?? 'NM';
             }
         }
         return tempscore;
@@ -2196,6 +2157,21 @@ export class Simulate extends OsuCommand {
             this.params.overrideSpeed *= 0.75;
             this.params.overrideBpm *= 1.5;
         }
+    }
+
+    fixAcc() {
+        let use300s = (this.params.n300 ?? 0);
+        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
+        if (gotTot != this.map.count_circles + this.map.count_sliders + this.map.count_spinners) {
+            use300s += (this.map.count_circles + this.map.count_sliders + this.map.count_spinners) - use300s;
+        }
+        const useAcc = this.params.acc ?? osumodcalc.accuracy.standard(
+            use300s,
+            this.params.n100 ?? 0,
+            this.params.n50 ?? 0,
+            this.params.nMiss ?? 0
+        ).accuracy;
+        return useAcc;
     }
 
     setEmbed(perfs: rosu.PerformanceAttributes[], mapPerf: rosu.PerformanceAttributes[], title: string, useAcc: number) {

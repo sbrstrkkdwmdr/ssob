@@ -120,7 +120,7 @@ export class Compare extends OsuCommand {
                 }
             } else {
                 if (data.getPreviousId('user', `${this.input.message?.guildId ?? this.input.interaction?.guildId}`).id == false) {
-                    await this.sendError(`Could not find second user - ${helper.errors.uErr.osu.profile.user_msp}`);
+                    await this.sendError(`Could not find second user - ${helper.errors.profile.user_msp}`);
                 }
                 this.params.second = data.getPreviousId('user', `${this.input.message?.guildId ?? this.input.interaction?.guildId}`).id as string;
             }
@@ -751,10 +751,7 @@ export class Set extends OsuCommand {
             const thing = other.modeValidatorAlt(this.params.mode);
             this.params.mode = thing.mode;
             if (thing.isincluded == false) {
-                this.voidcontent();
-                this.ctn.content = helper.errors.uErr.osu.set.mode;
-                await this.send();
-                return;
+                await this.sendError(helper.errors.generic.mode);
             }
         }
 
@@ -998,7 +995,7 @@ export class WhatIf extends OsuCommand {
         }
 
         if (topdata?.hasOwnProperty('error')) {
-            await this.sendError(helper.errors.uErr.osu.scores.best.replace('[ID]', user + ''));
+            await this.sendError(helper.errors.scores.best(user));
         }
         data.storeFile(topdata, this.input.id, 'osutopdata');
         return topdata;

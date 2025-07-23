@@ -427,7 +427,7 @@ export class OsuCommand extends Command {
         }
 
         if (osudata?.hasOwnProperty('error') || !osudata.id) {
-            await this.sendError(helper.errors.uErr.osu.profile.user.replace('[ID]', user));
+            await this.sendError(helper.errors.profile.user(user));
         }
         data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
@@ -449,7 +449,7 @@ export class OsuCommand extends Command {
         }
 
         if (mapdata?.hasOwnProperty('error')) {
-            await this.sendError(helper.errors.uErr.osu.map.m.replace('[ID]', mapid + ''));
+            await this.sendError(helper.errors.map.m(mapid));
         }
 
         data.storeFile(mapdata, mapid, 'mapdata');
@@ -467,7 +467,7 @@ export class OsuCommand extends Command {
         }
         data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
         if (bmsdata?.hasOwnProperty('error')) {
-            await commandTools.errorAndAbort(this.input, this.name, true, helper.errors.uErr.osu.map.ms.replace('[ID]', `${mapsetid}`), true);
+            await this.sendError(helper.errors.map.ms(mapsetid));
             return;
         }
         data.storeFile(bmsdata, mapsetid, `bmsdata`);
