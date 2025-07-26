@@ -8,6 +8,7 @@ import * as calculate from '../tools/calculate';
 import * as commandTools from '../tools/commands';
 import * as data from '../tools/data';
 import * as formatters from '../tools/formatters';
+import { formatterInfo } from '../tools/formatters';
 import * as log from '../tools/log';
 import * as osuapi from '../tools/osuapi';
 import * as other from '../tools/other';
@@ -1372,8 +1373,63 @@ export class MapLeaderboard extends OsuCommand {
         await this.setParams();
         this.logInput();
         // do stuff
-        const buttons = new Discord.ActionRowBuilder();
 
+        this.fixMapid();
+        this.sendLoading();
+
+        try {
+            this.map = await this.getMap(this.params.mapid);
+        } catch (e) {
+            await this.sendError(helper.errors.map.ms(this.params.mapid));
+        }
+
+        await this.getScores();
+
+        if (this.params.parseScore) {
+            await this.parseScore(this.scores, this.params.parseId);
+        }
+        const scoresarg = await formatters.scoreList(this.scores, 'score', null, false, 1, this.params.page, true, 'map_leaderboard', this.map);
+
+        commandTools.storeButtonArgs(this.input.id + '', {
+            mapId: this.params.mapid,
+            page: scoresarg.curPage,
+            maxPage: scoresarg.maxPage,
+            sortScore: 'score',
+            reverse: false,
+            mode: this.map.mode,
+            parse: this.params.parseScore,
+            parseId: this.params.parseId,
+        });
+
+        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            scoresarg.text.includes('ERROR'),
+            scoresarg.curPage <= 1,
+            scoresarg.curPage >= scoresarg.maxPage
+        );
+
+        data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+            {
+                id: `${this.map.id}`,
+                apiData: null,
+                mods: this.params?.mapmods?.map(x => { return { acronym: x }; }) ?? []
+            }
+        );
+
+        const buttons = new Discord.ActionRowBuilder()
+            .addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-Map-${this.name}-any-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.map)
+            );
+
+        this.ctn.embeds = [this.createEmbed(scoresarg)];
+        this.ctn.components = [pgbuttons, buttons];
+        this.ctn.edit = true;
+        this.send();
+    }
+    fixMapid() {
         if (!this.params.mapid) {
             const temp = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
             this.params.mapid = +temp?.id;
@@ -1382,22 +1438,8 @@ export class MapLeaderboard extends OsuCommand {
             commandTools.missingPrevID_map(this.input, this.name);
             return;
         }
-        this.sendLoading();
-
-        try {
-            this.map = await this.getMap(this.params.mapid);
-        } catch (e) {
-            return;
-        }
-
-        const fulltitle = `${this.map.beatmapset.artist} - ${this.map.beatmapset.title} [${this.map.version}]`;
-
-        let mods: string;
-        if (this.params.mapmods) {
-            mods = osumodcalc.mod.order(this.params.mapmods).join('');
-        }
-        const lbEmbed = new Discord.EmbedBuilder();
-
+    }
+    async getScores() {
         let lbdataf: osuapi.types_v2.BeatmapScores<osuapi.types_v2.Score>;
         if (data.findFile(this.input.id, 'lbdata') &&
             this.input.type == 'button' &&
@@ -1421,91 +1463,17 @@ export class MapLeaderboard extends OsuCommand {
         }
         data.storeFile(lbdataf, this.input.id, 'lbdata');
 
-        const lbdata = lbdataf.scores;
-
-        if (this.params.parseScore) {
-            let pid = +(this.params.parseId) - 1;
-            if (isNaN(pid) || pid < 0) {
-                pid = 0;
-            }
-            if (pid > lbdata.length) {
-                pid = lbdata.length - 1;
-            }
-            this.input.overrides = {
-                id: lbdata?.[pid]?.id,
-                commanduser: this.commanduser,
-                commandAs: this.input.type,
-            };
-            if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await this.sendError(`${helper.errors.score.nf} at index ${pid}`);
-            }
-            this.input.type = 'other';
-
-            const cmd = new ScoreParse();
-            cmd.setInput(this.input);
-            await cmd.execute();
-            return;
-        }
-
-        lbEmbed
+        this.scores = lbdataf.scores;
+    }
+    protected createEmbed(data: formatterInfo) {
+        const lbEmbed = new Discord.EmbedBuilder()
             .setColor(helper.colours.embedColour.scorelist.dec)
-            .setTitle(`Score leaderboard of \`${fulltitle}\``)
+            .setTitle(`Score leaderboard of \`${this.mapTitle(this.map, this.map.beatmapset)}\``)
             .setURL(`https://osu.ppy.sh/b/${this.params.mapid}`)
-            .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x);
-
-        let scoretxt: string;
-        if (lbdata.length < 1) {
-            scoretxt = 'Error - no scores found ';
-        }
-        if (this.map.status == 'graveyard' || this.map.status == 'pending') {
-            scoretxt = 'Error - map is unranked';
-        }
-
-        if (this.params.page >= Math.ceil(lbdata.length / 5)) {
-            this.params.page = Math.ceil(lbdata.length / 5) - 1;
-        }
-
-        const scoresarg = await formatters.scoreList(lbdata, 'score', null, false, 1, this.params.page, true, 'map_leaderboard', this.map);
-
-        commandTools.storeButtonArgs(this.input.id + '', {
-            mapId: this.params.mapid,
-            page: scoresarg.curPage,
-            maxPage: scoresarg.maxPage,
-            sortScore: 'score',
-            reverse: false,
-            mode: this.map.mode,
-            parse: this.params.parseScore,
-            parseId: this.params.parseId,
-        });
-        lbEmbed.setDescription(scoresarg.text)
-            .setFooter({ text: `${scoresarg.curPage}/${scoresarg.maxPage}` });
-
-        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
-        this.disablePageButtons_check(pgbuttons,
-            scoresarg.text.includes('ERROR'),
-            scoresarg.curPage <= 1,
-            scoresarg.curPage >= scoresarg.maxPage
-        );
-
-        data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
-            {
-                id: `${this.map.id}`,
-                apiData: null,
-                mods: this.params?.mapmods?.map(x => { return { acronym: x }; }) ?? []
-            }
-        );
-
-        buttons.addComponents(
-            new Discord.ButtonBuilder()
-                .setCustomId(`${helper.versions.releaseDate}-Map-${this.name}-any-${this.input.id}-${this.params.mapid}${this.params.mapmods && this.params.mapmods.length > 0 ? '+' + this.params.mapmods.join(',') : ''}`)
-                .setStyle(helper.buttons.type.current)
-                .setEmoji(helper.buttons.label.extras.map)
-        );
-
-        this.ctn.embeds = [lbEmbed];
-        this.ctn.components = [pgbuttons, buttons];
-        this.ctn.edit = true;
-        this.send();
+            .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
+            .setFooter({ text: `${data.curPage}/${data.maxPage}` })
+            .setDescription(data.text);
+        return lbEmbed;
     }
 }
 

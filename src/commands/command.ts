@@ -8,6 +8,7 @@ import * as formatters from '../tools/formatters';
 import * as log from '../tools/log';
 import * as osuapi from '../tools/osuapi';
 import * as other from '../tools/other';
+import { ScoreParse } from './osu_scores';
 
 export abstract class InputHandler {
     protected selected: Command;
@@ -491,6 +492,34 @@ export class OsuCommand extends Command {
             mods: tempScore?.mods,
             mode: tempScore?.mode,
         };
+    }
+    protected mapTitle(map: osuapi.types_v2.BeatmapExtended, mapset: osuapi.types_v2.BeatmapsetExtended, showVersion: boolean = true) {
+        let title = mapset.artist + ' - ' + mapset.title;
+        if (showVersion) {
+            title += ' [' + map.version + '] ';
+        }
+        return title;
+    }
+    protected async parseScore(scores: osuapi.types_v2.Score[], parseId: number) {
+        if (isNaN(parseId) || parseId < 0) parseId = 1;
+        parseId--;
+        if (parseId > scores.length) parseId = scores.length - 1;
+        this.input.overrides = {
+            id: scores[parseId].id,
+            commanduser: this.commanduser,
+            commandAs: this.input.type,
+        };
+        if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
+            await this.sendError(`${helper.errors.score.nf} at index ${parseId}`);
+        }
+        this.input.type = 'other';
+        const cmd = new ScoreParse();
+        cmd.setInput(this.input);
+        await cmd.execute();
+        return;
+    }
+    protected async parseMap(maps: osuapi.types_v2.Score[], parseId: number) {
+
     }
 }
 

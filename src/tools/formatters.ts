@@ -6,7 +6,7 @@ import * as osuapi from './osuapi';
 import * as other from './other';
 import * as performance from './performance';
 
-type formatterInfo = {
+export type formatterInfo = {
     text: string,
     curPage: number,
     maxPage: number,
