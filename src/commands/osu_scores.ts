@@ -545,42 +545,24 @@ export class ScoreListCommand extends OsuCommand {
         }
 
         if (this.params.parseScore) {
-            let pid = +(this.params.parseId) - 1;
-            if (isNaN(pid) || pid < 0) {
-                pid = 0;
-            }
-            if (pid > this.scores.length) {
-                pid = this.scores.length - 1;
-            }
-            this.input.overrides = {
-                id: this.scores?.[pid]?.id,
-                commanduser: this.commanduser,
-                commandAs: this.input.type
-            };
             const user = this.osudata.username;
+            let tempEx = '';
             switch (this.type) {
                 case 'osutop':
-                    this.input.overrides.ex = `${user}'s #${calculate.toOrdinal(pid + 1)} ${this.params.sort == 'pp' ? formatters.sortDescription(this.params.sort ?? 'pp', this.params.reverse) + ' ' : ''}top score`;
+                    tempEx = `${user}'s #{idOrd} ${this.params.sort == 'pp' ? formatters.sortDescription(this.params.sort ?? 'pp', this.params.reverse) + ' ' : ''}top score`;
                     break;
                 case 'nochokes':
-                    this.input.overrides.ex = `${user}'s #${calculate.toOrdinal(pid + 1)} ${this.params.sort == 'pp' ? formatters.sortDescription(this.params.sort ?? 'pp', this.params.reverse) + ' ' : ''}no choke score`;
+                    tempEx = `${user}'s #{idOrd} ${this.params.sort == 'pp' ? formatters.sortDescription(this.params.sort ?? 'pp', this.params.reverse) + ' ' : ''}no choke score`;
                     this.input.overrides.type = 'nochoke';
                     break;
                 case 'firsts':
-                    this.input.overrides.ex = `${user}'s ${calculate.toOrdinal(pid + 1)} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}#1 score`;
+                    tempEx = `${user}'s {idOrd} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}#1 score`;
                     break;
                 case 'pinned':
-                    this.input.overrides.ex = `${user}'s ${calculate.toOrdinal(pid + 1)} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}pinned score`;
+                    tempEx = `${user}'s {idOrd} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}pinned score`;
                     break;
             }
-            if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-                await this.sendError(`${helper.errors.score.nf} at index ${pid}`);
-                return;
-            }
-            this.input.type = 'other';
-            const cmd = new ScoreParse();
-            cmd.setInput(this.input);
-            await cmd.execute();
+            await this.parseId(this.scores.map(x => x.id), +this.params.parseId, new ScoreParse(), helper.errors.score.nf + ` at index {id}`, tempEx);
             return;
         }
 
@@ -1386,7 +1368,8 @@ export class MapLeaderboard extends OsuCommand {
         await this.getScores();
 
         if (this.params.parseScore) {
-            await this.parseScore(this.scores, this.params.parseId);
+            await this.parseId(this.scores.map(x => x.id), this.params.parseId, new ScoreParse(), helper.errors.score.nf + ` at index {id}`);
+            return;
         }
         const scoresarg = await formatters.scoreList(this.scores, 'score', null, false, 1, this.params.page, true, 'map_leaderboard', this.map);
 

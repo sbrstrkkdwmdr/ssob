@@ -5,7 +5,6 @@ import * as helper from './helper';
 import * as checks from './tools/checks';
 import * as commandTools from './tools/commands';
 
-
 const rslist = [
     'recent', 'recentscore', 'rs', 'r',
     'recenttaiko', 'rt',
@@ -319,7 +318,7 @@ export class CommandHandler extends InputHandler {
                 };
             }
             case 'map': case 'm':
-                this.selected = new osu_maps.Map();
+                this.selected = new osu_maps.MapParse();
                 break;
             case 'maprandom': case 'f2': case 'maprand': case 'randommap': case 'randmap':
                 this.selected = new osu_maps.RandomMap();

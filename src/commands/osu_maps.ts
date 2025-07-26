@@ -12,7 +12,7 @@ import * as other from '../tools/other';
 import * as performance from '../tools/performance';
 import { OsuCommand } from './command';
 
-export class Map extends OsuCommand {
+export class MapParse extends OsuCommand {
     declare protected params: {
         mapid: number;
         mapmods: osumodcalc.types.Mod[];
@@ -1037,7 +1037,7 @@ export class RandomMap extends OsuCommand {
                 commandAs: this.input.type
             };
 
-            const cmd = new Map();
+            const cmd = new MapParse();
             cmd.setInput(this.input);
             await cmd.execute();
 
@@ -1131,7 +1131,7 @@ export class RecommendMap extends OsuCommand {
                 ex: exTxt
             };
 
-            const cmd = new Map();
+            const cmd = new MapParse();
             cmd.setInput(this.input);
             await cmd.execute();
             return;
@@ -1310,46 +1310,26 @@ export class UserBeatmaps extends OsuCommand {
         data.storeFile(maplistdata, this.osudata.id, 'maplistdata', null, this.params.filterType);
 
         if (this.params.parseMap) {
+            let ids: number[] = [];
             if (this.params.filterTitle) {
                 switch (this.params.filterType) {
                     case 'most_played':
-                        maplistdata = formatters.filterMapPlays(maplistdata as osuapi.types_v2.BeatmapPlaycount[],
+                        const temp = formatters.filterMapPlays(maplistdata as osuapi.types_v2.BeatmapPlaycount[],
                             this.params.sort as any, {
                             title: this.params.filterTitle
                         }, this.params.reverse);
+                        ids = temp.map(x => x.beatmap_id);
                         break;
                     default:
                         maplistdata = formatters.filterMaps(maplistdata as osuapi.types_v2.BeatmapsetExtended[],
                             this.params.sort as any, {
                             title: this.params.filterTitle
                         }, this.params.reverse);
+                        ids = temp.map(x=>x.beatmapset?.beatmaps?.[0]?.id)
                         break;
                 }
-
             }
-            let pid = this.params.parseId - 1;
-            if (pid < 0) {
-                pid = 0;
-            }
-            if (pid > maplistdata.length) {
-                pid = maplistdata.length - 1;
-            }
-            this.input.overrides = {
-                id:
-                    this.params.filterType == 'most_played' ?
-                        (maplistdata as osuapi.types_v2.BeatmapPlayCountArr)[pid]?.beatmap_id :
-                        (maplistdata as osuapi.types_v2.Beatmapset[])[pid]?.beatmaps[0]?.id,
-                commanduser: this.commanduser,
-                commandAs: this.input.type
-            };
-            if (this.input.overrides.id == null) {
-                await this.sendError(helper.errors.map.m_uk + ` at index ${pid}`);
-                return;
-            }
-            this.input.type = 'other';
-            const cmd = new Map();
-            cmd.setInput(this.input);
-            await cmd.execute();
+            await this.parseId(ids, this.params.parseId, new MapParse(), helper.errors.map.m_uk + ` at index {id}`);
             return;
         }
         if (this.params.page >= Math.ceil(maplistdata.length / 5)) {

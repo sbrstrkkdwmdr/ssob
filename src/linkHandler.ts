@@ -48,7 +48,7 @@ export class LinkHandler extends InputHandler {
 
         const messagenohttp = message.content.replace('https://', '').replace('http://', '').replace('www.', '');
         if (messagenohttp.startsWith('osu.ppy.sh/b/') || messagenohttp.startsWith('osu.ppy.sh/beatmaps/') || messagenohttp.startsWith('osu.ppy.sh/beatmapsets/') || messagenohttp.startsWith('osu.ppy.sh/s/')) {
-            this.selected = new osu_maps.Map();
+            this.selected = new osu_maps.MapParse();
             await this.runCommand(message);
             return;
         }

@@ -2,12 +2,14 @@ import * as Discord from 'discord.js';
 import moment from 'moment';
 import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../helper';
+import * as calculate from '../tools/calculate';
 import * as commandTools from '../tools/commands';
 import * as data from '../tools/data';
 import * as formatters from '../tools/formatters';
 import * as log from '../tools/log';
 import * as osuapi from '../tools/osuapi';
 import * as other from '../tools/other';
+import { MapParse } from './osu_maps';
 import { ScoreParse } from './osu_scores';
 
 export abstract class InputHandler {
@@ -500,26 +502,24 @@ export class OsuCommand extends Command {
         }
         return title;
     }
-    protected async parseScore(scores: osuapi.types_v2.Score[], parseId: number) {
+    protected async parseId(ids: number[], parseId: number, cmd: Command, iferr: string, ex: string = '') {
         if (isNaN(parseId) || parseId < 0) parseId = 1;
-        parseId--;
-        if (parseId > scores.length) parseId = scores.length - 1;
-        this.input.overrides = {
-            id: scores[parseId].id,
-            commanduser: this.commanduser,
-            commandAs: this.input.type,
-        };
-        if (this.input.overrides.id == null || typeof this.input.overrides.id == 'undefined') {
-            await this.sendError(`${helper.errors.score.nf} at index ${parseId}`);
+        if (parseId > ids.length) parseId = ids.length - 1;
+
+        this.input.overrides.id = ids[parseId];
+        this.input.overrides.commanduser = this.commanduser;
+        this.input.overrides.commandAs = this.input.type;
+        this.input.overrides.ex = ex
+            .replaceAll('{idOrd}', calculate.toOrdinal(parseId+1) + '')
+            .replaceAll('{id}', parseId + '');
+        if (this.input.overrides.id == null) {
+            await this.sendError(iferr.replaceAll('{id}', parseId + ''));
+            return;
         }
         this.input.type = 'other';
-        const cmd = new ScoreParse();
         cmd.setInput(this.input);
         await cmd.execute();
         return;
-    }
-    protected async parseMap(maps: osuapi.types_v2.Score[], parseId: number) {
-
     }
 }
 

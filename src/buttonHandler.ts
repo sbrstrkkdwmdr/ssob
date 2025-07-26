@@ -161,7 +161,7 @@ export class ButtonHandler extends InputHandler {
             }
             this.overrides.commandAs = 'interaction';
             this.overrides.commanduser = interaction.member.user as Discord.User;
-            this.selected = new osu_maps.Map();
+            this.selected = new osu_maps.MapParse();
 
             await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
             return true;
@@ -233,7 +233,7 @@ export class ButtonHandler extends InputHandler {
                 this.selected = new osu_other.ServerLeaderboard();
                 break;
             case 'map':
-                this.selected = new osu_maps.Map();
+                this.selected = new osu_maps.MapParse();
                 break;
             case 'mapleaderboard':
                 this.selected = new osu_scores.MapLeaderboard();
