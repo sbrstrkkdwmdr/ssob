@@ -185,12 +185,12 @@ function getcfg() {
         return p;
     } catch (err) {
         return {
-            "token": process.env.DISCORD_TOKEN,
+            "token": process.env.DISCORD_TOKEN ?? undefined,
             "osu": {
-                "clientId": process.env.OSU_CLIENT_ID,
-                "clientSecret": process.env.OSU_CLIENT_SECRET
+                "clientId": process.env.OSU_CLIENT_ID ?? undefined,
+                "clientSecret": process.env.OSU_CLIENT_SECRET ?? undefined
             },
-            "prefix": "sbr-",
+            "prefix": process.env.PREFIX ?? "sbr-",
             "owners": ["id1", "id2"],
             "tenorKey": process.env.TENOR_KEY,
             "enableTracking": true,
