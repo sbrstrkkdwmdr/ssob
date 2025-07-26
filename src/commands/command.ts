@@ -188,7 +188,7 @@ export class Command {
         this.ctn.content = 'No execution method has been set';
         this.send();
     }
-    async send() {
+    protected async send() {
         await commandTools.sendMessage({
             type: this.input.type,
             message: this.input.message,
@@ -196,13 +196,13 @@ export class Command {
             args: this.ctn,
         }, this.input.canReply);
     }
-    async sendError(err: string) {
+    protected async sendError(err: string) {
         this.voidcontent();
         this.ctn.content = err;
         await this.send();
         throw new Error(err);
     }
-    sendLoading() {
+    protected sendLoading() {
         if (this.input.type == 'interaction') {
             this.ctn.content = 'Loading...';
             this.send();
@@ -210,18 +210,18 @@ export class Command {
             this.ctn.edit = true;
         }
     }
-    fixPage() {
+    protected fixPage() {
         if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
             this.params.page = 1;
         }
         this.params.page--;
     }
-    disableButtons(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+    protected disableButtons(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
         for (const component of builder.components) {
             component.setDisabled(true);
         }
     }
-    disablePageButtons_check(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>, allCondition: boolean, startCondition: boolean, endCondition: boolean) {
+    protected disablePageButtons_check(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>, allCondition: boolean, startCondition: boolean, endCondition: boolean) {
         if (allCondition || (startCondition && endCondition)) {
             this.disableButtons(builder);
         } else {
@@ -233,11 +233,11 @@ export class Command {
             }
         }
     }
-    disablePageButtons_start(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+    protected disablePageButtons_start(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
         builder.components[0].setDisabled(true);
         builder.components[1].setDisabled(true);
     }
-    disablePageButtons_end(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+    protected disablePageButtons_end(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
         builder.components[3].setDisabled(true);
         builder.components[4].setDisabled(true);
     }
@@ -510,7 +510,7 @@ export class OsuCommand extends Command {
         this.input.overrides.commanduser = this.commanduser;
         this.input.overrides.commandAs = this.input.type;
         this.input.overrides.ex = ex
-            .replaceAll('{idOrd}', calculate.toOrdinal(parseId+1) + '')
+            .replaceAll('{idOrd}', calculate.toOrdinal(parseId + 1) + '')
             .replaceAll('{id}', parseId + '');
         if (this.input.overrides.id == null) {
             await this.sendError(iferr.replaceAll('{id}', parseId + ''));
