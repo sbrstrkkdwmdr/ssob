@@ -347,57 +347,6 @@ export const cmds: helper.bottypes.commandInfo[] = [
         category: 'general',
     },
     {
-        name: 'Remind',
-        description: 'Sets a reminder. Leave all args blank or use the reminders alias to return a list of reminders',
-        usage: 'remind [time] [reminder]',
-        category: 'general',
-        examples: [
-            {
-                text: 'remind',
-                description: 'Returns a list of reminders.'
-            },
-            {
-                text: 'remind 1h30m30s reminder',
-                description: 'Sets a reminder for 1 hour, 30 minutes, and 30 seconds'
-            },
-            {
-                text: 'remind 2:05 fc',
-                description: 'Sets a reminder for 2 minutes and 5 seconds'
-            },
-        ],
-        aliases: ['reminders', 'reminder'],
-        args: [
-            {
-                name: 'time',
-                type: 'string',
-                required: true,
-                description: 'The time until the reminder',
-                options: [
-                    'units: s, m, h, d, w, y',
-                ],
-                format: ['[number][unit]...', 'hh:mm:ss'],
-                defaultValue: '0s',
-            },
-            {
-                name: 'reminder',
-                type: 'string',
-                required: false,
-                description: 'The reminder',
-                format: ['{text}'],
-                defaultValue: 'null',
-            },
-            {
-                name: 'sendinchannel',
-                type: 'boolean',
-                required: false,
-                description: 'Whether to send the reminder in the channel or in a DM. Admin only',
-                options: ['true', 'false'],
-                format: ['{bool}'],
-                defaultValue: 'false',
-            }
-        ]
-    },
-    {
         name: 'Stats',
         description: 'Shows the bot\'s statistics.',
         usage: 'stats',

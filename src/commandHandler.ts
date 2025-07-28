@@ -80,7 +80,6 @@ export class CommandHandler extends InputHandler {
             'info', 'i',
             'invite',
             'ping',
-            'remind', 'reminders', 'reminder',
             'stats',
             'time', 'tz',
             'weather', 'temperature', 'temp',
@@ -266,8 +265,6 @@ export class CommandHandler extends InputHandler {
             case 'ping':
                 this.selected = new gen.Ping();
                 break;
-            case 'remind': case 'reminder':
-                this.selected = new gen.Remind();
                 break;
             case 'stats':
                 this.selected = new gen.Stats();

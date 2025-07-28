@@ -18,6 +18,10 @@
 -   edit parts of command data for clarity
 -   status changer updates every 5 minutes instead of using song length (caused memory leaks)
 
+### Removed
+
+-   `Remind` command
+
 ### Refactor
 
 -   remove methods and commands from helper module (circular refs)

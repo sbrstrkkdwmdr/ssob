@@ -29,5 +29,4 @@ export const vars = {
     cooldownSet: (new Set()) as Set<string>,
     startTime: new Date(),
     id: 0,
-    reminders: [] as bottypes.reminder[],
 };

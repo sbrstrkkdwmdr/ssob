@@ -97,31 +97,6 @@ function run() {
             dmPermission: true,
         },
         {
-            name: 'remind',
-            description: 'Reminds the user of something. If no args are given, a list of pending reminders is returned.',
-            dmPermission: true,
-            options: [
-                {
-                    name: 'time',
-                    description: 'How long to wait before sending the reminder. Formatted as ?d?h?m?s or hh:mm:ss',
-                    type: Discord.ApplicationCommandOptionType.String,
-                    required: false
-                },
-                {
-                    name: 'reminder',
-                    description: 'The reminder',
-                    type: Discord.ApplicationCommandOptionType.String,
-                    required: false
-                },
-                {
-                    name: 'sendinchannel',
-                    description: 'If true, the reminder will be sent into the channel',
-                    type: Discord.ApplicationCommandOptionType.Boolean,
-                    required: false
-                }
-            ]
-        },
-        {
             name: 'stats',
             description: 'Displays stats about the bot',
             dmPermission: true,
