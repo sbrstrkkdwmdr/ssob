@@ -248,7 +248,7 @@ ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.sco
                 },
                 {
                     name: 'PP',
-                    value: `**${this.score?.pp ?? perfs[0]?.pp ?? NaN}**pp ${fcflag}\n${ppissue}`,
+                    value: `**${(this.score?.pp ?? perfs[0]?.pp ?? 0)?.toFixed(2)}**pp ${fcflag}\n${ppissue}`,
                     inline: true
                 }
             ]);
