@@ -33,6 +33,7 @@
 -   change how command errors are handled
 -   add separate method(s) for disabling pages
 -   config checker
+-   change message sender into a class
 
 ## [5.2.0] - 2025-07-02
 

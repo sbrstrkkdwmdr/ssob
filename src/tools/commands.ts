@@ -5,7 +5,14 @@ import * as helper from '../helper';
 import * as log from './log';
 import * as osuapi from './osuapi';
 import * as other from './other';
-export async function sendMessage(input: {
+
+export async function sendMessage({
+    type,
+    message,
+    interaction,
+    args,
+    canReply = false,
+}: {
     type: 'message' | 'interaction' | 'link' | 'button' | "other",
     message: Discord.Message<any>,
     interaction: Discord.ChatInputCommandInteraction<any> | Discord.ButtonInteraction<any>;
@@ -15,100 +22,173 @@ export async function sendMessage(input: {
         files?: (string | Discord.AttachmentBuilder | Discord.Attachment)[],
         components?: Discord.ActionRowBuilder<any>[],
         ephemeral?: boolean,
+        edit?: boolean,
+        editAsMsg?: boolean,
+    };
+    canReply: boolean;
+}) {
+    const messageSender = new MessageSender({ type, message, interaction, args, canReply });
+    await messageSender.send();
+}
+
+export class MessageSender {
+    private type: 'message' | 'interaction' | 'link' | 'button' | "other";
+    private message: Discord.Message<any>;
+    private interaction: Discord.ChatInputCommandInteraction<any> | Discord.ButtonInteraction<any>;
+    private args: {
+        content?: string,
+        embeds?: (Discord.EmbedBuilder | Discord.Embed)[],
+        files?: (string | Discord.AttachmentBuilder | Discord.Attachment)[],
+        components?: Discord.ActionRowBuilder<any>[],
+        ephemeral?: boolean,
         react?: boolean,
         edit?: boolean,
         editAsMsg?: boolean,
     };
-},
-    canReply: boolean
-) {
-    if (input.args.files) {
-        input.args.files = checkFileLimit(input.args.files);
+    private canReply: boolean;
+
+    public get channel() {
+        return (this.message.channel ?? this.interaction.channel) as Discord.GuildTextBasedChannel;
     }
 
-    try {
-        switch (input.type) {
-            case 'message': case 'link': {
-                if (!canReply) {
-                    (input.message.channel as Discord.GuildTextBasedChannel).send({
-                        content: `${input.args.content ?? ''}`,
-                        embeds: input.args.embeds ?? [],
-                        files: input.args.files ?? [],
-                        components: input.args.components ?? [],
-                    })
-                        .catch(x => console.log(x));
-                } else if (input.args.editAsMsg) {
-                    try {
-                        input.message.edit({
-                            content: `${input.args.content ?? ''}`,
-                            embeds: input.args.embeds ?? [],
-                            files: input.args.files ?? [],
-                            components: input.args.components ?? [],
-                        });
-                    } catch (err) {
-
-                    }
-                } else {
-                    input.message.reply({
-                        content: `${input.args.content ?? ''}`,
-                        embeds: input.args.embeds ?? [],
-                        files: input.args.files ?? [],
-                        components: input.args.components ?? [],
-                        allowedMentions: { repliedUser: false },
-                        failIfNotExists: true
-                    })
-                        .catch(err => {
-                            sendMessage(input, false);
-                        });
-                }
-            }
+    constructor(
+        {
+            type,
+            message,
+            interaction,
+            args,
+            canReply = false,
+        }: {
+            type: 'message' | 'interaction' | 'link' | 'button' | "other",
+            message: Discord.Message<any>,
+            interaction: Discord.ChatInputCommandInteraction<any> | Discord.ButtonInteraction<any>;
+            args: {
+                content?: string,
+                embeds?: (Discord.EmbedBuilder | Discord.Embed)[],
+                files?: (string | Discord.AttachmentBuilder | Discord.Attachment)[],
+                components?: Discord.ActionRowBuilder<any>[],
+                ephemeral?: boolean,
+                edit?: boolean,
+                editAsMsg?: boolean,
+            };
+            canReply: boolean;
+        }
+    ) {
+        this.type = type;
+        this.message = message;
+        this.interaction = interaction;
+        this.args = args;
+        if (this.args.files) {
+            this.args.files = checkFileLimit(this.args.files);
+        }
+        this.canReply = canReply;
+    };
+    async send() {
+        switch (this.type) {
+            case 'message':
+            case 'link':
+                await this.asMessage();
                 break;
-            case 'interaction': {
-                if (input.args.edit == true) {
-                    setTimeout(() => {
-                        (input.interaction as Discord.ChatInputCommandInteraction<any>).editReply({
-                            content: `${input.args.content ?? ''}`,
-                            embeds: input.args.embeds ?? [],
-                            files: input.args.files ?? [],
-                            components: input.args.components ?? [],
-                            allowedMentions: { repliedUser: false },
-                        })
-                            .catch();
-                    }, 1000);
-                } else {
-                    if (input.interaction.replied) {
-                        input.args.edit = true;
-                        sendMessage(input, canReply);
-                    } else {
-                        (input.interaction as Discord.ChatInputCommandInteraction<any>).reply({
-                            content: `${input.args.content ?? ''}`,
-                            embeds: input.args.embeds ?? [],
-                            files: input.args.files ?? [],
-                            components: input.args.components ?? [],
-                            allowedMentions: { repliedUser: false },
-                            // ephemeral: input.args.ephemeral ?? false,
-                            flags: input.args.ephemeral ? Discord.MessageFlags.Ephemeral : null,
-                        })
-                            .catch();
-                    }
-                }
-            }
-            case 'button': {
-                input.message.edit({
-                    content: `${input.args.content ?? ''}`,
-                    embeds: input.args.embeds ?? [],
-                    files: input.args.files ?? [],
-                    components: input.args.components ?? [],
-                    allowedMentions: { repliedUser: false },
-                })
-                    .catch();
-            }
+            case 'interaction':
+                await this.asInteraction();
+                break;
+            case 'button':
+                await this.asButton();
+                break;
+            case 'other':
+                throw new Error('Invalid message type - other');
                 break;
         }
-    } catch (error) {
-        return error;
     }
-    return true;
+    async asMessage() {
+        if (this.canReply) {
+            await this.message.reply({
+                content: `${this.args.content ?? ''}`,
+                embeds: this.args.embeds ?? [],
+                files: this.args.files ?? [],
+                components: this.args.components ?? [],
+                allowedMentions: { repliedUser: false },
+                failIfNotExists: true
+            }).catch(async () => {
+                await this.messageSenderError();
+            });
+            return;
+        } else if (this.args.editAsMsg) {
+            await this.message.edit({
+                content: `${this.args.content ?? ''}`,
+                embeds: this.args.embeds ?? [],
+                files: this.args.files ?? [],
+                components: this.args.components ?? [],
+            }).catch(async () => {
+                await this.messageSenderError();
+            });
+            return;
+        }
+        await this.channel.send({
+            content: `${this.args.content ?? ''}`,
+            embeds: this.args.embeds ?? [],
+            files: this.args.files ?? [],
+            components: this.args.components ?? [],
+        });
+    }
+    async messageSenderError() {
+        this.args.editAsMsg = false;
+        const messageSender = new MessageSender({
+            type: 'message',
+            message: this.message,
+            interaction: this.interaction,
+            args: this.args,
+            canReply: false,
+        });
+        await messageSender.send();
+    }
+    async asInteraction() {
+        const interaction = this.interaction as Discord.ChatInputCommandInteraction<any>;
+        if (this.args.edit) {
+            interaction.editReply({
+                content: `${this.args.content ?? ''}`,
+                embeds: this.args.embeds ?? [],
+                files: this.args.files ?? [],
+                components: this.args.components ?? [],
+                allowedMentions: { repliedUser: false },
+            })
+                .catch();
+            return;
+        }
+        if (interaction.replied) {
+            this.args.edit = true;
+            const messageSender = new MessageSender({
+                type: 'interaction',
+                message: this.message,
+                interaction: this.interaction,
+                args: this.args,
+                canReply: this.canReply,
+            });
+            await messageSender.send();
+            return;
+        }
+        await interaction.reply({
+            content: `${this.args.content ?? ''}`,
+            embeds: this.args.embeds ?? [],
+            files: this.args.files ?? [],
+            components: this.args.components ?? [],
+            allowedMentions: { repliedUser: false },
+            ephemeral: this.args.ephemeral ?? false,
+            flags: this.args.ephemeral ? Discord.MessageFlags.Ephemeral : null,
+        })
+            .catch();
+    }
+    async asButton() {
+        await this.message.edit({
+            content: `${this.args.content ?? ''}`,
+            embeds: this.args.embeds ?? [],
+            files: this.args.files ?? [],
+            components: this.args.components ?? [],
+            allowedMentions: { repliedUser: false },
+        })
+            .catch();
+    }
+
 }
 
 export function checkFileLimit(files: any[]) {
@@ -231,7 +311,7 @@ export function buttonDetail(level: number, button: helper.bottypes.buttonType) 
 }
 
 export async function pageButtons(command: string, commanduser: Discord.User | Discord.APIUser, commandId: string | number) {
-    const pgbuttons= new Discord.ActionRowBuilder()
+    const pgbuttons = new Discord.ActionRowBuilder()
         .addComponents(
             new Discord.ButtonBuilder()
                 .setCustomId(`${helper.versions.releaseDate}-BigLeftArrow-${command}-${commanduser.id}-${commandId}`)
@@ -357,15 +437,17 @@ export function startType(object: Discord.Message | Discord.Interaction) {
 
 export async function missingPrevID_map(input: helper.bottypes.commandInput, name: string) {
     if (input.type != 'button' && input.type != 'link') {
-        await sendMessage({
+        const messageSender = new MessageSender({
             type: input.type,
             message: input.message,
             interaction: input.interaction,
             args: {
                 content: helper.errors.map.m_msp,
                 edit: true
-            }
-        }, input.canReply);
+            },
+            canReply: input.canReply,
+        });
+        await messageSender.send();
     }
     log.commandErr(
         helper.errors.map.m_msp,

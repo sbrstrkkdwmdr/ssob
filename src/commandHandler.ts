@@ -173,9 +173,8 @@ export class CommandHandler extends InputHandler {
                 args: {
                     content: 'The bot is missing permissions.\nMissing permissions: ' + missingPermsBot.join(', ')
                 },
-
-            },
-                canReply);
+                canReply
+            });
             return false;
         }
         if (missingPermsUser.length > 0) {
@@ -186,8 +185,8 @@ export class CommandHandler extends InputHandler {
                 args: {
                     content: 'You do not have permission to use this command.\nMissing permissions: ' + missingPermsUser.join(', ')
                 },
-            },
-                canReply);
+                canReply
+            });
             return false;
         }
 
@@ -199,8 +198,8 @@ export class CommandHandler extends InputHandler {
                 args: {
                     content: 'That command is currently disabled and cannot be used.'
                 },
-            },
-                canReply);
+                canReply
+            });
             return false;
         }
         if (['hug', 'kiss', 'lick', 'pet', 'punch', 'slap',].includes(cmd) && helper.vars.config.tenorKey == 'INVALID_ID') {
@@ -211,8 +210,8 @@ export class CommandHandler extends InputHandler {
                 args: {
                     content: 'gif commands cannot be currently used (error: unset tenor key)'
                 },
-            },
-                canReply);
+                canReply
+            });
             return false;
         }
         return true;

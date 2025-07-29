@@ -194,7 +194,8 @@ export class Command {
             message: this.input.message,
             interaction: this.input.interaction,
             args: this.ctn,
-        }, this.input.canReply);
+            canReply: this.input.canReply
+        });
     }
     protected async sendError(err: string) {
         this.voidcontent();
