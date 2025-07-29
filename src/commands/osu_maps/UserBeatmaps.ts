@@ -128,6 +128,7 @@ export class UserBeatmaps extends OsuCommand {
 
 
     }
+    mapsets: (osuapi.types_v2.Beatmapset[] | osuapi.types_v2.BeatmapPlaycount[]) = [];
     async execute() {
         await this.setParams();
         this.logInput();
@@ -155,45 +156,63 @@ export class UserBeatmaps extends OsuCommand {
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
-        let maplistdata: (osuapi.types_v2.Beatmapset[] | osuapi.types_v2.BeatmapPlaycount[]) = [];
-
-        if (data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType) &&
-            !('error' in data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType)) &&
+        if (data.findFile(this.osudata.id, 'this.mapsets', null, this.params.filterType) &&
+            !('error' in data.findFile(this.osudata.id, 'this.mapsets', null, this.params.filterType)) &&
             this.input.buttonType != 'Refresh'
         ) {
-            maplistdata = data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType);
+            this.mapsets = data.findFile(this.osudata.id, 'this.mapsets', null, this.params.filterType);
         } else {
             this.params = await this.getScoreCount(0);
         }
 
-        data.debug(maplistdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
-        data.storeFile(maplistdata, this.osudata.id, 'maplistdata', null, this.params.filterType);
+        data.debug(this.mapsets, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
+        data.storeFile(this.mapsets, this.osudata.id, 'this.mapsets', null, this.params.filterType);
+
+        let obj: formatters.MapSetFormatter;
+
+        switch (this.params.filterType) {
+            case 'most_played':
+                obj = new formatters.MapPlayFormatter({
+                    mapsets: this.mapsets as osuapi.types_v2.BeatmapPlayCountArr,
+                    sort: this.params.sort as any,
+                    filter: {
+                        title: this.params.filterTitle
+                    },
+                    reverse: this.params.reverse,
+                    page: this.params.page
+                });
+                break;
+            default:
+                obj = new formatters.MapSetFormatter({
+                    mapsets: this.mapsets as osuapi.types_v2.BeatmapsetExtended[],
+                    sort: this.params.sort as any,
+                    filter: {
+                        title: this.params.filterTitle
+                    },
+                    reverse: this.params.reverse,
+                    page: this.params.page
+                });
+                break;
+        }
 
         if (this.params.parseMap) {
             let ids: number[] = [];
             if (this.params.filterTitle) {
+                obj.parseMaps();
                 switch (this.params.filterType) {
                     case 'most_played':
-                        const temp = formatters.filterMapPlays(maplistdata as osuapi.types_v2.BeatmapPlaycount[],
-                            this.params.sort as any, {
-                            title: this.params.filterTitle
-                        }, this.params.reverse);
-                        ids = temp.map(x => x.beatmap_id);
+                        ids = obj.data_playcounts.map(x => x.beatmap_id);
                         break;
                     default:
-                        maplistdata = formatters.filterMaps(maplistdata as osuapi.types_v2.BeatmapsetExtended[],
-                            this.params.sort as any, {
-                            title: this.params.filterTitle
-                        }, this.params.reverse);
-                        ids = temp.map(x=>x.beatmapset?.beatmaps?.[0]?.id)
+                        ids = obj.data.map(x => x?.beatmaps?.[0]?.id);
                         break;
                 }
             }
             await this.parseId(ids, this.params.parseId, new MapParse(), helper.errors.map.m_uk + ` at index {id}`);
             return;
         }
-        if (this.params.page >= Math.ceil(maplistdata.length / 5)) {
-            this.params.page = Math.ceil(maplistdata.length / 5) - 1;
+        if (this.params.page >= Math.ceil(this.mapsets.length / 5)) {
+            this.params.page = Math.ceil(this.mapsets.length / 5) - 1;
         }
         let mapsarg: {
             text: string;
@@ -201,22 +220,7 @@ export class UserBeatmaps extends OsuCommand {
             maxPage: number;
         };
 
-        switch (this.params.filterType) {
-            case 'most_played':
-                mapsarg = formatters.mapPlaysList(maplistdata as osuapi.types_v2.BeatmapPlayCountArr,
-                    this.params.sort as any, {
-                    title: this.params.filterTitle
-                },
-                    this.params.reverse, this.params.page);
-                break;
-            default:
-                mapsarg = formatters.mapList(maplistdata as osuapi.types_v2.BeatmapsetExtended[],
-                    this.params.sort as any, {
-                    title: this.params.filterTitle
-                },
-                    this.params.reverse, this.params.page);
-                break;
-        }
+        mapsarg = obj.execute();
 
         commandTools.storeButtonArgs(this.input.id, {
             searchid: this.params.searchid,
@@ -281,7 +285,7 @@ export class UserBeatmaps extends OsuCommand {
         for (let i = 0; i < fd.length; i++) {
             if (!fd[i] || typeof fd[i] == 'undefined') { break; }
             //@ts-expect-error Beatmapset missing properties from BeatmapPlaycount
-            maplistdata.push(fd[i]);
+            this.mapsets.push(fd[i]);
         }
         if (fd.length == 100 && this.params.filterType != 'most_played') {
             return await this.getScoreCount(cinitnum + 100);

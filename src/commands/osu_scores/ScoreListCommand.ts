@@ -419,8 +419,10 @@ export class ScoreListCommand extends OsuCommand {
             .setURL(seturl);
         formatters.userAuthor(this.osudata, scoresEmbed);
 
-        const scoresFormat = await formatters.scoreList(this.scores, this.params.sort,
-            {
+        const obj = new formatters.ScoreFormatter({
+            scores: this.scores,
+            sort: this.params.sort,
+            filter: {
                 mapper: this.params.filteredMapper,
                 modsInclude: this.params.modsInclude,
                 title: this.params.filterTitle,
@@ -436,9 +438,14 @@ export class ScoreListCommand extends OsuCommand {
                 miss: this.params.miss,
                 bpm: this.params.bpm,
                 isnochoke: this.type == 'nochokes'
-            }, this.params.reverse, this.params.detailed, this.params.page, true,
-            this.type == 'map' ? 'single_map' : undefined, map ?? undefined
-        );
+            },
+            reverse: this.params.reverse,
+            page: this.params.page,
+            showOriginalIndex: true,
+            preset: this.type == 'map' ? 'single_map' : undefined,
+            overrideMap: this.map ?? undefined,
+        });
+        const scoresFormat = await obj.execute();
 
         commandTools.storeButtonArgs(this.input.id + '', {
             user: this.params.user,

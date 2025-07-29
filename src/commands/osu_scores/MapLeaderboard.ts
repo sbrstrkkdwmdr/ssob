@@ -4,8 +4,8 @@ import * as helper from '../../helper';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
-import { formatterInfo } from '../../tools/formatters';
 import * as osuapi from '../../tools/osuapi';
+import { formatterInfo } from '../../types/tools';
 import { OsuCommand } from '../command';
 import { ScoreParse } from './ScoreParse';
 
@@ -117,7 +117,17 @@ export class MapLeaderboard extends OsuCommand {
             await this.parseId(this.scores.map(x => x.id), this.params.parseId, new ScoreParse(), helper.errors.score.nf + ` at index {id}`);
             return;
         }
-        const scoresarg = await formatters.scoreList(this.scores, 'score', null, false, 1, this.params.page, true, 'map_leaderboard', this.map);
+        const obj = new formatters.ScoreFormatter({
+            scores: this.scores,
+            sort: 'score',
+            filter: null,
+            reverse: false,
+            page: this.params.page,
+            showOriginalIndex: true,
+            preset: "map_leaderboard",
+            overrideMap: this.map,
+        });
+        const scoresarg = await obj.execute();
 
         commandTools.storeButtonArgs(this.input.id + '', {
             mapId: this.params.mapid,
