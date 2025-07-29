@@ -19,7 +19,7 @@ export class ScoreFormatter {
         'C',
         'D',
         'F',
-    ]
+    ];
     private scores: osuapi.types_v2.Score[];
     private indexed: tooltypes.indexed<osuapi.types_v2.Score>[];
     private sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank';
@@ -207,46 +207,54 @@ export class ScoreFormatter {
     async sortScores_performance() {
         const sc = [];
         for (const score of this.indexed) {
-            if (!score.pp || isNaN(score.pp)) {
-                let perf;
-                let useacc = score.accuracy;
-                let tempmss = score.statistics.miss;
-                let usestats = score.statistics;
-                if (this.filter?.isnochoke) {
-                    usestats.miss = 0;
-                    switch (osumodcalc.mode.toName(score.ruleset_id)) {
-                        case 'osu': default:
-                            useacc = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
-                            break;
-                        case 'taiko':
-                            useacc = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
-                            break;
-                        case 'fruits':
-                            useacc = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
-                            break;
-                        case 'mania':
-                            useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
-                            break;
-                    }
-                    score.max_combo = null;
-                }
-                perf = await performance.calcScore({
-                    mapid: this.overrideMap?.id ?? score.beatmap_id,
-                    mode: score.ruleset_id,
-                    mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
-                    accuracy: useacc,
-                    clockRate: performance.getModSpeed(score.mods),
-                    stats: usestats,
-                    maxcombo: score.max_combo,
-                    passedObjects: other.scoreTotalHits(score.statistics),
-                    mapLastUpdated: new Date(score.ended_at),
-                });
-
-                score.pp = perf.pp;
-            }
-            sc.push(score);
+            sc.push(
+                !score.pp || isNaN(score.pp) ?
+                    await this.calculatePerformance(score) :
+                    score
+            );
         }
         this.indexed = sc;
+    }
+    async calculatePerformance(score: osuapi.types_v2.Score) {
+        let useacc = score.accuracy;
+        let usestats = structuredClone(score.statistics);
+        if (this.filter?.isnochoke) {
+            usestats.miss = 0;
+            useacc = this.scoreAccuracy(score);
+            score.max_combo = null;
+        }
+        const perf = await performance.calcScore({
+            mapid: this.overrideMap?.id ?? score.beatmap_id,
+            mode: score.ruleset_id,
+            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+            accuracy: useacc,
+            clockRate: performance.getModSpeed(score.mods),
+            stats: usestats,
+            maxcombo: score.max_combo,
+            passedObjects: other.scoreTotalHits(score.statistics),
+            mapLastUpdated: new Date(score.ended_at),
+        });
+        score.pp = perf.pp;
+
+        return score;
+    }
+    scoreAccuracy(score: osuapi.types_v2.Score) {
+        let useacc = score.accuracy;
+        switch (osumodcalc.mode.toName(score.ruleset_id)) {
+            case 'osu': default:
+                useacc = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
+                break;
+            case 'taiko':
+                useacc = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
+                break;
+            case 'fruits':
+                useacc = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
+                break;
+            case 'mania':
+                useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
+                break;
+        }
+        return useacc;
     }
 
     async formatScores() {
@@ -349,26 +357,14 @@ export class ScoreFormatter {
         let str: string[] = [];
         if (this.filter?.isnochoke && score.statistics.miss > 0) {
             let rm = score.statistics.miss;
-            score.statistics.miss = 0;
-            let na: number = 1;
-            switch (osumodcalc.mode.toName(score.ruleset_id)) {
-                case 'osu': default:
-                    na = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
-                    break;
-                case 'taiko':
-                    na = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
-                    break;
-                case 'fruits':
-                    na = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
-                    break;
-                case 'mania':
-                    na = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
-                    break;
-            }
+            const copy = structuredClone(score);
+            copy.statistics.miss = 0;
+            const acc = this.scoreAccuracy(copy);
+
             const removedMsg = `**Removed ${rm}❌**\n`;
             const hits = returnHits(score.statistics, score.ruleset_id).short;
             const combo = `**${perfs[1].difficulty.maxCombo}x**`;
-            const accuracy = `${(score.accuracy * 100).toFixed(2)}% ->  **${na.toFixed(2)}%**`;
+            const accuracy = `${(score.accuracy * 100).toFixed(2)}% ->  **${acc.toFixed(2)}%**`;
             str = [
                 removedMsg, hits, combo, accuracy
             ];
