@@ -38,3 +38,12 @@ export type guildSettings = {
 
 export type Dict<T = any> = { [key: string]: T; };
 export type DictEntry<T = any> = { (key: string): T; };
+export type indexed<T = any> = T & {
+    originalIndex: number,
+};
+
+export type formatterInfo = {
+    text: string,
+    curPage: number,
+    maxPage: number,
+};

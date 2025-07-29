@@ -1,33 +1,29 @@
 import * as Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
+import { PerformanceAttributes } from 'rosu-pp-js';
 import * as helper from '../helper';
+import * as tooltypes from '../types/tools';
 import * as calculate from './calculate';
 import * as osuapi from './osuapi';
 import * as other from './other';
 import * as performance from './performance';
 
-export type formatterInfo = {
-    text: string,
-    curPage: number,
-    maxPage: number,
-};
-
-const ranks = [
-    'XH',
-    'X',
-    'SH',
-    'S',
-    'A',
-    'B',
-    'C',
-    'D',
-    'F',
-];
-
-export async function scoreList(
-    scores: osuapi.types_v2.Score[],
-    sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank',
-    filter: {
+export class ScoreFormatter {
+    ranks = [
+        'XH',
+        'X',
+        'SH',
+        'S',
+        'A',
+        'B',
+        'C',
+        'D',
+        'F',
+    ]
+    private scores: osuapi.types_v2.Score[];
+    private indexed: tooltypes.indexed<osuapi.types_v2.Score>[];
+    private sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank';
+    private filter: {
         mapper: string,
         title: string,
         artist: string,
@@ -43,37 +39,283 @@ export async function scoreList(
         miss: string,
         bpm: string,
         isnochoke: boolean,
-    },
-    reverse: boolean,
-    detail: number,
-    page: number,
-    showOriginalIndex: boolean,
-    preset?: 'map_leaderboard' | 'single_map',
-    overrideMap?: osuapi.types_v2.BeatmapExtended
-): Promise<formatterInfo> {
-    const newScores = await filterScores(scores as osuapi.types_v2.Score[], sort, filter, reverse, overrideMap);
-    if (newScores.length == 0) {
+    };
+    private reverse: boolean;
+    private overrideMap: osuapi.types_v2.Beatmap;
+    private page: number = 0;
+    private showOriginalIndex: boolean = true;
+    private preset?: 'map_leaderboard' | 'single_map';
+
+    constructor(
+        {
+            scores, sort, filter, reverse, page, showOriginalIndex, preset, overrideMap
+        }: {
+            scores: osuapi.types_v2.Score[],
+            sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank',
+            filter: {
+                mapper: string,
+                title: string,
+                artist: string,
+                version: string,
+                modsInclude: osumodcalc.types.Mod[],
+                modsExact: (osumodcalc.types.Mod | 'NONE')[],
+                modsExclude: osumodcalc.types.Mod[],
+                rank: string,
+                pp: string,
+                score: string,
+                acc: string,
+                combo: string,
+                miss: string,
+                bpm: string,
+                isnochoke: boolean,
+            },
+            reverse: boolean,
+            page: number,
+            showOriginalIndex: boolean,
+            preset?: 'map_leaderboard' | 'single_map',
+            overrideMap?: osuapi.types_v2.BeatmapExtended,
+        }
+    ) {
+        this.scores = scores;
+        this.sort = sort;
+        this.filter = filter;
+        this.reverse = reverse;
+        this.page = page ?? 0;
+        this.overrideMap = overrideMap;
+        this.showOriginalIndex = showOriginalIndex ?? true;
+        this.preset = preset;
+    }
+    async parseScores() {
+        for (let i = 0; i < this.scores.length; i++) {
+            const newScore = { ...this.scores[i], originalIndex: i };
+            this.indexed.push(newScore);
+        }
+        await this.filterScores();
+        await this.sortScores();
+        if (this.reverse) {
+            this.scores.reverse();
+        }
+    }
+    async filterScores() {
+        const dict: tooltypes.Dict<(score: tooltypes.indexed<osuapi.types_v2.Score>) => boolean> = {
+            mapper: (score => matchesString(score.beatmapset.user.username, this.filter.mapper) || matchesString(score.beatmapset.user_id + '', this.filter.mapper) || matchesString((this.overrideMap ?? score.beatmap).user_id + '', this.filter.mapper)),
+            title: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
+            artist: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
+            version: (score => matchesString((this.overrideMap ?? score.beatmap).version, this.filter.version)),
+        };
+        const argRangeDict: tooltypes.Dict<string> = {
+            pp: 'pp',
+            score: 'total_score',
+            acc: 'total_accuracy',
+            combo: 'max_combo',
+        };
+        for (const key in dict) {
+            if (this.filter[key]) {
+                this.indexed = this.indexed.filter(dict[key]);
+            }
+        }
+        for (const key in argRangeDict) {
+            if (this.filter[key]) {
+                const tempArg = argRange(this.filter[key], true);
+                this.indexed = this.indexed.filter(score => {
+                    filterArgRange(score[argRangeDict[key]] ?? 0, tempArg);
+                });
+            }
+        }
+        if (this.filter?.miss) {
+            const tempArg = argRange(this.filter.miss, true);
+            this.indexed = this.indexed.filter(score => filterArgRange(score?.statistics?.miss ?? 0, tempArg));
+        }
+        if (this.filter?.bpm) {
+            const tempArg = argRange(this.filter.bpm, true);
+            this.indexed = this.indexed.filter(score => filterArgRange((this.overrideMap ?? score.beatmap).id, tempArg));
+        }
+        this.filterMods();
+    }
+    filterMods() {
+        if (this.filter?.modsInclude && this.filter?.modsInclude.length > 0) {
+            this.filterIncludeMods();
+        }
+        if (this.filter?.modsExact && !this.filter.modsInclude) {
+            this.filterExactMods();
+        } else if (this.filter?.modsExclude) {
+            this.filterExcludeMods();
+        }
+    }
+    filterIncludeMods() {
+        this.indexed = this.indexed.filter(score => {
+            let x: boolean = true;
+            score.mods.forEach(mod => {
+                if (!osumodcalc.mod.fix(this.filter.modsInclude, osumodcalc.mode.toName(score.ruleset_id)).includes(mod.acronym as osumodcalc.types.Mod)) {
+                    x = false;
+                }
+            });
+            return x;
+        });
+    }
+    filterExactMods() {
+        if (this.filter.modsExact.includes('NONE')) {
+            this.indexed = this.indexed.filter(score => score.mods.length == 0 || score.mods.map(x => x.acronym).join('') == 'CL' || score.mods.map(x => x.acronym).join('') == 'LZ');
+        } else {
+            this.indexed = this.indexed.filter(score => score.mods.map(x => x.acronym).join('') == osumodcalc.mod.fix(this.filter.modsExact as osumodcalc.types.Mod[], osumodcalc.mode.toName(score.ruleset_id)).join(''));
+        }
+    }
+    filterExcludeMods() {
+        const xlModsArr = osumodcalc.mod.fix(this.filter.modsExclude, osumodcalc.mode.toName(this.indexed?.[0]?.ruleset_id ?? 0));
+        if (this.filter.modsExclude.includes('DT') && this.filter.modsExclude.includes('NC')) {
+            xlModsArr.push('DT');
+        }
+        if (this.filter.modsExclude.includes('HT') && this.filter.modsExclude.includes('DC')) {
+            xlModsArr.push('DC');
+        }
+        this.indexed = this.indexed.filter(score => {
+            let x: boolean = true;
+            score.mods.forEach(mod => {
+                if (xlModsArr.includes(mod.acronym as osumodcalc.types.Mod)) {
+                    x = false;
+                }
+            });
+            return x;
+        });
+    }
+
+    async sortScores() {
+        switch (this.sort) {
+            case 'pp':
+                await this.sortScores_performance();
+                break;
+            case 'score':
+                this.indexed.sort((a, b) => b.total_score - a.total_score);
+                break;
+            case 'recent':
+                this.indexed.sort((a, b) => (new Date(b.ended_at ?? b.started_at)).getTime() - (new Date(a.ended_at ?? a.started_at)).getTime());
+                break;
+            case 'acc':
+                this.indexed.sort((a, b) => b.accuracy - a.accuracy);
+                break;
+            case 'combo':
+                this.indexed.sort((a, b) => b.max_combo - a.max_combo);
+                break;
+            case 'miss':
+                this.indexed.sort((a, b) => (a.statistics.miss ?? 0) - (b.statistics.miss ?? 0));
+                break;
+            case 'rank':
+                this.indexed.sort((a, b) => this.ranks.indexOf(a.rank) - this.ranks.indexOf(b.rank));
+                break;
+        }
+    }
+    async sortScores_performance() {
+        const sc = [];
+        for (const score of this.indexed) {
+            if (!score.pp || isNaN(score.pp)) {
+                let perf;
+                let useacc = score.accuracy;
+                let tempmss = score.statistics.miss;
+                let usestats = score.statistics;
+                if (this.filter?.isnochoke) {
+                    usestats.miss = 0;
+                    switch (osumodcalc.mode.toName(score.ruleset_id)) {
+                        case 'osu': default:
+                            useacc = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
+                            break;
+                        case 'taiko':
+                            useacc = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
+                            break;
+                        case 'fruits':
+                            useacc = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
+                            break;
+                        case 'mania':
+                            useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
+                            break;
+                    }
+                    score.max_combo = null;
+                }
+                perf = await performance.calcScore({
+                    mapid: this.overrideMap?.id ?? score.beatmap_id,
+                    mode: score.ruleset_id,
+                    mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+                    accuracy: useacc,
+                    clockRate: performance.getModSpeed(score.mods),
+                    stats: usestats,
+                    maxcombo: score.max_combo,
+                    passedObjects: other.scoreTotalHits(score.statistics),
+                    mapLastUpdated: new Date(score.ended_at),
+                });
+
+                score.pp = perf.pp;
+            }
+            sc.push(score);
+        }
+        this.indexed = sc;
+    }
+
+    async formatScores() {
+        let max = 5;
+        const maxPage = Math.ceil(this.indexed.length / max);
+        if (isNaN(this.page) || this.page < 1) this.page = 1;
+        if (this.page > maxPage) this.page = maxPage;
+        const offset = (this.page - 1) * max;
+        let text: string[] = [];
+        for (let i = 0; i < max && i < this.indexed.length - offset; i++) {
+            const score = this.indexed[i + offset];
+            if (!score) break;
+            const scoreString = await this.parseScore(score, i);
+            text.push(scoreString);
+        }
+        if (text.length == 0) {
+            switch (0) {
+                case this.scores.length:
+                    text = ['**ERROR**\nNo scores found'];
+                    break;
+                case this.indexed.length:
+                    text = ['**ERROR**\nNo scores found matching the given filters'];
+                    break;
+            }
+            text = ['**ERROR**\nNo scores found'];
+        }
         return {
-            text: 'No scores were found (check the filter options)',
-            curPage: 0,
-            maxPage: 0,
+            text: text.join('\n\n'),
+            curPage: this.page,
+            maxPage
         };
     }
-    let max = 5;
-    if (detail == 2) max = 10;
-    const maxPage = Math.ceil(newScores.length / max);
-    if (isNaN(page) || page < 1) page = 1;
-    if (page > maxPage) page = maxPage;
-    const offset = (page - 1) * max;
-    let text = '';
+    async parseScore(score: tooltypes.indexed<osuapi.types_v2.Score>, index: number): Promise<string> {
+        let info = this.scoreHeader(score, index);
+        const perfs = await this.scorePerformance(score);
 
-    for (let i = 0; i < max && i < newScores.length - offset; i++) {
-        let score = newScores[i + offset];
-        if (!score) break;
-        // let convertedScore = CurrentToLegacyScore(score as osuapi.types_v2.Score);
+        info += '\n' + this.scoreStatsRankScoreMods(score);
+        info += '\n' + this.scoreStatsHitsComboAcc(score, perfs);
+        info += '\n' + this.scoreStatsPerformance(score, perfs);
+
+        return info;
+    }
+    scoreHeader(score: tooltypes.indexed<osuapi.types_v2.Score>, index: number) {
+        let str = `**#${(this.showOriginalIndex ? score.originalIndex : index) + 1}`;
+        let modadjustments = '';
+        if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
+            modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
+        }
+        switch (this.preset) {
+            case 'map_leaderboard':
+                str += `・[${score.user.username}](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `u/${score.user_id}`})`;
+                break;
+            case 'single_map': {
+                let t = osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments;
+                if (t == '') {
+                    t = 'NM';
+                }
+                str += `・[${t}](https://osu.ppy.sh/scores/${score.id})`;
+            } break;
+            default:
+                str += `・[${score.beatmapset.title} [${(this.overrideMap ?? score.beatmap).version}]](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `b/${(this.overrideMap ?? score.beatmap).id}`})`;
+                break;
+        }
+        return str + `** ${dateToDiscordFormat(new Date(score.ended_at))}`;
+    }
+    async scorePerformance(score: osuapi.types_v2.Score) {
         const overrides = calculate.modOverrides(score.mods);
         const perfs = await performance.fullPerformance(
-            overrideMap?.id ?? score.beatmap_id,
+            this.overrideMap?.id ?? score.beatmap_id,
             score.ruleset_id,
             score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
             score.accuracy,
@@ -81,40 +323,31 @@ export async function scoreList(
             score.statistics,
             score.max_combo,
             null,
-            new Date((overrideMap ?? score.beatmap).last_updated),
+            new Date((this.overrideMap ?? score.beatmap).last_updated),
             overrides.ar,
             overrides.hp,
             overrides.cs,
             overrides.od,
         );
-        let info = `**#${(showOriginalIndex ? score.originalIndex : i) + 1}`;
+        return perfs;
+    }
+    scoreStatsRankScoreMods(score: osuapi.types_v2.Score) {
         let modadjustments = '';
         if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
             modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
         }
-        switch (preset) {
-            case 'map_leaderboard':
-                info += `・[${score.user.username}](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `u/${score.user_id}`})`;
-                break;
-            case 'single_map': {
-                let t = osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments;
-                if (t == '') {
-                    t = 'NM';
-                }
-                info += `・[${t}](https://osu.ppy.sh/scores/${score.id})`;
-            } break;
-            default:
-                info += `・[${score.beatmapset.title} [${(overrideMap ?? score.beatmap).version}]](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `b/${(overrideMap ?? score.beatmap).id}`})`;
-                break;
-        }
-        let combo = `${score?.max_combo}/**${perfs[1].difficulty.maxCombo}x**`;
-        if (score.max_combo == perfs[1].difficulty.maxCombo || !score.max_combo) combo = `**${score.max_combo}x**`;
-        const tempScore = score as indexedScore<osuapi.types_v2.Score>;
-
-        info +=
-            `** ${dateToDiscordFormat(new Date(tempScore.ended_at))}
-${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[score.rank]} if pass)`} | \`${calculate.numberShorthand(other.getTotalScore(score))}\` | ${tempScore.mods.length > 0 && preset != 'single_map' ? ' **' + osumodcalc.mod.order(tempScore.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' : ''} `;
-        if (filter?.isnochoke && score.statistics.miss > 0) {
+        const rank = `${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[score.rank]} if pass)`}`;
+        const scoreStat = `\`${calculate.numberShorthand(other.getTotalScore(score))}\``;
+        const mods = `${score.mods.length > 0 && this.preset != 'single_map' ?
+            ' **' + osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' :
+            ''}`;
+        const str: string[] = [rank, scoreStat];
+        if (mods != '') str.push(mods);
+        return str.join(' | ');
+    }
+    scoreStatsHitsComboAcc(score: osuapi.types_v2.Score, perfs: PerformanceAttributes[]) {
+        let str: string[] = [];
+        if (this.filter?.isnochoke && score.statistics.miss > 0) {
             let rm = score.statistics.miss;
             score.statistics.miss = 0;
             let na: number = 1;
@@ -132,227 +365,45 @@ ${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `($
                     na = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
                     break;
             }
-            info +=
-                `| **Removed ${rm}❌**\n\`${returnHits(score.statistics, score.ruleset_id).short}\` | ${combo} | ${(score.accuracy * 100).toFixed(2)}% ->  **${na.toFixed(2)}%**`;
+            const removedMsg = `**Removed ${rm}❌**\n`;
+            const hits = returnHits(score.statistics, score.ruleset_id).short;
+            const combo = `**${perfs[1].difficulty.maxCombo}x**`;
+            const accuracy = `${(score.accuracy * 100).toFixed(2)}% ->  **${na.toFixed(2)}%**`;
+            str = [
+                removedMsg, hits, combo, accuracy
+            ];
         } else {
-            info +=
-                `\n\`${returnHits(score.statistics, score.ruleset_id).short}\` | **${perfs[1].difficulty.maxCombo}x** | ${(score.accuracy * 100).toFixed(2)}% `;
+            const hits = returnHits(score.statistics, score.ruleset_id).short;
+            let combo = `${score?.max_combo}/**${perfs[1].difficulty.maxCombo}x**`;
+            if (score.max_combo == perfs[1].difficulty.maxCombo || !score.max_combo) combo = `**${score.max_combo}x**`;
+            const accuracy = `${(score.accuracy * 100).toFixed(2)}%`;
+            str = [
+                hits, combo, accuracy
+            ];
         }
-        info += `\n${(score?.pp ?? perfs[0].pp).toFixed(2)}pp`;
-
+        return str.join(' | ');;
+    }
+    scoreStatsPerformance(score: osuapi.types_v2.Score, perfs: PerformanceAttributes[]) {
+        let str = `${(score?.pp ?? perfs[0].pp).toFixed(2)}pp`;
         if (!score?.is_perfect_combo) {
-            info += ' (' + perfs[1].pp.toFixed(2) + 'pp if FC)';
+            str += ' (' + perfs[1].pp.toFixed(2) + 'pp if FC)';
         } else if (score?.accuracy < 1) {
-            info += ' (' + perfs[2].pp.toFixed(2) + 'pp if SS)';
+            str += ' (' + perfs[2].pp.toFixed(2) + 'pp if SS)';
         }
-        info += '\n\n';
-        text += info;
+        return str;
     }
-    if (text == '') {
-        switch (0) {
-            case scores.length:
-                text = '**ERROR**\nNo scores found';
-                break;
-            case newScores.length:
-                text = '**ERROR**\nNo scores found matching the given filters';
-                break;
-        }
-        text = '**ERROR**\nNo scores found';
-    }
-    return {
-        text,
-        curPage: page,
-        maxPage
-    };
-}
 
-type indexedScore<T> = T & {
-    originalIndex: number,
-};
-
-export async function filterScores(
-    scores: osuapi.types_v2.Score[],
-    sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank',
-    filter: {
-        mapper: string,
-        title: string,
-        artist: string,
-        version: string,
-        modsInclude: osumodcalc.types.Mod[],
-        modsExact: (osumodcalc.types.Mod | 'NONE')[],
-        modsExclude: osumodcalc.types.Mod[],
-        rank: string,
-        pp: string,
-        score: string,
-        acc: string,
-        combo: string,
-        miss: string,
-        bpm: string,
-        isnochoke: boolean,
-    },
-    reverse: boolean,
-    overrideMap?: osuapi.types_v2.Beatmap
-): Promise<indexedScore<osuapi.types_v2.Score>[]> {
-    let newScores = [] as indexedScore<osuapi.types_v2.Score>[];
-    for (let i = 0; i < scores.length; i++) {
-        const newScore = { ...scores[i], originalIndex: i };
-        newScores.push(newScore);
-    }
-    if (filter?.mapper) {
-        newScores = newScores.filter(score =>
-            matchesString(score.beatmapset.user.username, filter.mapper) || matchesString(score.beatmapset.user_id + '', filter.mapper) || matchesString((overrideMap ?? score.beatmap).user_id + '', filter.mapper));
-    }
-    if (filter?.title) {
-        newScores = newScores.filter(score =>
-            matchesString(score.beatmapset.title, filter.title) || matchesString(score.beatmapset.title_unicode, filter.title));
-    }
-    if (filter?.artist) {
-        newScores = newScores.filter(score =>
-            matchesString(score.beatmapset.artist, filter.artist) || matchesString(score.beatmapset.artist_unicode, filter.artist));
-    }
-    if (filter?.version) {
-        newScores = newScores.filter(score =>
-            matchesString((overrideMap ?? score.beatmap).version, filter.version));
-    }
-    if (filter?.pp) {
-        const tempArg = argRange(filter.pp, true);
-        newScores = newScores.filter(score => filterArgRange(score.pp, tempArg));
-    }
-    if (filter?.score) {
-        const tempArg = argRange(filter.score, true);
-        newScores = newScores.filter(score => filterArgRange(score.total_score, tempArg));
-    }
-    if (filter?.acc) {
-        const tempArg = argRange(filter.acc, true);
-        newScores = newScores.filter(score => filterArgRange(score.accuracy, tempArg));
-    }
-    if (filter?.combo) {
-        const tempArg = argRange(filter.combo, true);
-        newScores = newScores.filter(score => filterArgRange(score.max_combo, tempArg));
-    }
-    if (filter?.miss) {
-        const tempArg = argRange(filter.miss, true);
-        newScores = newScores.filter(score => filterArgRange(score?.statistics?.miss ?? 0, tempArg));
-    }
-    if (filter?.bpm) {
-        const tempArg = argRange(filter.bpm, true);
-        newScores = newScores.filter(score => filterArgRange((overrideMap ?? score.beatmap).id, tempArg));
-    }
-    if (filter?.modsInclude && filter?.modsInclude.length > 0) {
-        newScores = newScores.filter(score => {
-            let x: boolean = true;
-            score.mods.forEach(mod => {
-                if (!osumodcalc.mod.fix(filter.modsInclude, osumodcalc.mode.toName(score.ruleset_id)).includes(mod.acronym as osumodcalc.types.Mod)) {
-                    x = false;
-                }
-            });
-            return x;
-        });
-    }
-    if (filter?.modsExact && !filter.modsInclude) {
-        if (filter.modsExact.includes('NONE')) {
-            newScores = newScores.filter(score => score.mods.length == 0 || score.mods.map(x => x.acronym).join('') == 'CL' || score.mods.map(x => x.acronym).join('') == 'LZ');
-        } else {
-            newScores = newScores.filter(score => score.mods.map(x => x.acronym).join('') == osumodcalc.mod.fix(filter.modsExact as osumodcalc.types.Mod[], osumodcalc.mode.toName(score.ruleset_id)).join(''));
+    async execute(): Promise<tooltypes.formatterInfo> {
+        if (this.indexed.length == 0) {
+            return {
+                text: 'No scores were found (check the filter options)',
+                curPage: 0,
+                maxPage: 0,
+            };
         }
-    } else if (filter?.modsExclude) {
-        const xlModsArr = osumodcalc.mod.fix(filter.modsExclude, osumodcalc.mode.toName(newScores?.[0]?.ruleset_id ?? 0));
-        if (filter.modsExclude.includes('DT') && filter.modsExclude.includes('NC')) {
-            xlModsArr.push('DT');
-        }
-        if (filter.modsExclude.includes('HT') && filter.modsExclude.includes('DC')) {
-            xlModsArr.push('DC');
-        }
-        newScores = newScores.filter(score => {
-            let x: boolean = true;
-            score.mods.forEach(mod => {
-                if (xlModsArr.includes(mod.acronym as osumodcalc.types.Mod)) {
-                    x = false;
-                }
-            });
-            return x;
-        });
+        await this.parseScores();
+        return await this.formatScores();
     }
-    switch (sort) {
-        case 'pp': {
-            const sc = [];
-            for (const score of newScores) {
-
-                if (!score.pp || isNaN(score.pp)) {
-                    let perf;
-                    if (filter?.isnochoke) {
-                        let tempmss = score.statistics.miss;
-                        let usestats = score.statistics;
-                        usestats.miss = 0;
-                        let useacc = 1;
-                        switch (osumodcalc.mode.toName(score.ruleset_id)) {
-                            case 'osu': default:
-                                useacc = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
-                                break;
-                            case 'taiko':
-                                useacc = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
-                                break;
-                            case 'fruits':
-                                useacc = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
-                                break;
-                            case 'mania':
-                                useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
-                                break;
-                        }
-                        perf = await performance.calcFullCombo({
-                            mapid: overrideMap?.id ?? score.beatmap_id,
-                            mode: score.ruleset_id,
-                            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
-                            accuracy: useacc,
-                            clockRate: performance.getModSpeed(score.mods),
-                            stats: score.statistics,
-                            mapLastUpdated: new Date(score.ended_at),
-                        });
-                        usestats.miss = tempmss;
-                    }
-                    else {
-                        perf = await performance.calcScore({
-                            mapid: overrideMap?.id ?? score.beatmap_id,
-                            mode: score.ruleset_id,
-                            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
-                            accuracy: score.accuracy,
-                            clockRate: performance.getModSpeed(score.mods),
-                            stats: score.statistics,
-                            maxcombo: score.max_combo,
-                            passedObjects: other.scoreTotalHits(score.statistics),
-                            mapLastUpdated: new Date(score.ended_at),
-                        });
-                    }
-                    score.pp = perf.pp;
-                }
-                sc.push(score);
-            }
-            newScores = sc;
-            newScores.sort((a, b) => b.pp - a.pp);
-        }
-            break;
-        case 'score':
-            newScores.sort((a, b) => b.total_score - a.total_score);
-            break;
-        case 'recent':
-            newScores.sort((a, b) => (new Date(b.ended_at ?? b.started_at)).getTime() - (new Date(a.ended_at ?? a.started_at)).getTime());
-            break;
-        case 'acc':
-            newScores.sort((a, b) => b.accuracy - a.accuracy);
-            break;
-        case 'combo':
-            newScores.sort((a, b) => b.max_combo - a.max_combo);
-            break;
-        case 'miss':
-            newScores.sort((a, b) => (a.statistics.miss ?? 0) - (b.statistics.miss ?? 0));
-            break;
-        case 'rank':
-            newScores.sort((a, b) => ranks.indexOf(a.rank) - ranks.indexOf(b.rank));
-            break;
-    }
-    if (reverse) newScores.reverse();
-
-    return newScores;
 }
 
 
@@ -367,7 +418,7 @@ export function mapList(
     },
     reverse: boolean,
     page: number,
-): formatterInfo {
+): tooltypes.formatterInfo {
     mapsets = filterMaps(mapsets, sort, filter, reverse);
 
     const maxPage = Math.ceil(mapsets.length / 5);
@@ -510,7 +561,7 @@ export function mapPlaysList(
     },
     reverse: boolean,
     page: number,
-): formatterInfo {
+): tooltypes.formatterInfo {
     mapsets = filterMapPlays(mapsets, sort, filter, reverse);
 
     const maxPage = Math.ceil(mapsets.length / 5);
@@ -636,7 +687,7 @@ export function userList(
         country: string;
     },
     reverse: boolean,
-): formatterInfo {
+): tooltypes.formatterInfo {
     return {
         text: 'string',
         curPage: 1,
