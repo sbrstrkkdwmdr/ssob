@@ -42,8 +42,9 @@ export class TrackChannel extends OsuCommand {
                 args: {
                     content: `The current tracking channel is <#${guildsetting.dataValues.trackChannel}>`,
                     edit: true
-                }
-            }, this.input.canReply);
+                },
+                canReply: this.input.canReply
+            });
             return;
         }
         if (!this.params.channelId || isNaN(+this.params.channelId) || !helper.vars.client.channels.cache.get(this.params.channelId)) {

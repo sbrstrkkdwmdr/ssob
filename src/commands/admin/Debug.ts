@@ -39,8 +39,9 @@ type debugtype =
                     interaction: this.input.interaction,
                     args: {
                         content: 'Error: missing first argument (type)'
-                    }
-                }, this.input.canReply);
+                    },
+                    canReply: this.input.canReply
+                });
                 return;
     
             }

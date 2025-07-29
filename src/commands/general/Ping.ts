@@ -46,8 +46,9 @@ export class Ping extends Command {
                                 embeds: [pingEmbed],
                                 edit: true,
                                 editAsMsg: true,
-                            }
-                        }, this.input.canReply);
+                            },
+                            canReply: this.input.canReply
+                        });
                     })
                         .catch();
                 }
