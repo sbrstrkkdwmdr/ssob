@@ -165,7 +165,7 @@ export class CommandHandler extends InputHandler {
             missingPermsUser.push('Owner');
         }
 
-        if (missingPermsBot.length > 0 && !(message ?? interaction).channel.isDMBased) {
+        if (missingPermsBot.length > 0 && !(message ?? interaction).channel.isDMBased()) {
             commandTools.sendMessage({
                 type: "message",
                 message,
