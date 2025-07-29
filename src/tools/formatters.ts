@@ -666,7 +666,7 @@ export class MapPlayFormatter extends MapSetFormatter {
     }
 }
 
-function listLine(...args: string[] | string[][]) {
+export function listLine(...args: string[] | string[][]) {
     if (typeof args[0] == 'string') {
         return args.join(' | ');
     }
