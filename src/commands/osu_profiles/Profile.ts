@@ -2,10 +2,11 @@ import Discord from 'discord.js';
 import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
+import * as formatters from '../../tools/formatters';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
+import * as tooltypes from '../../types/tools';
 import { OsuCommand } from '../command';
-
 export class Profile extends OsuCommand {
     declare protected params: {
         user: string;
@@ -113,153 +114,26 @@ export class Profile extends OsuCommand {
         }
         this.setParamOverride('commanduser');
     }
+    user: osuapi.types_v2.UserExtended;
     async execute() {
         await this.setParams();
         this.getOverrides();
         this.logInput();
         // do stuff
 
-        const buttons = new Discord.ActionRowBuilder();
-        if (this.params.graphonly != true) {
-            buttons.addComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-Graph-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.graph),
-            );
-            switch (this.params.detailed) {
-                case 1: {
-                    buttons.addComponents(
-                        new Discord.ButtonBuilder()
-                            .setCustomId(`${helper.versions.releaseDate}-Detail2-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                            .setStyle(helper.buttons.type.current)
-                            .setEmoji(helper.buttons.label.main.detailMore),
-                    );
-                }
-                    break;
-                case 2: {
-                    buttons.addComponents(
-                        new Discord.ButtonBuilder()
-                            .setCustomId(`${helper.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                            .setStyle(helper.buttons.type.current)
-                            .setEmoji(helper.buttons.label.main.detailLess),
-                    );
-                }
-                    break;
-            }
-        } else {
-            buttons.addComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.user),
-            );
-        }
-
         await this.fixUser();
 
         this.sendLoading();
 
-        let osudata: osuapi.types_v2.UserExtended;
+        await this.getUser();
+        this.updateUserStats();
 
-        try {
-            const t = await this.getProfile(this.params.user, this.params.mode);
-            osudata = t;
-        } catch (e) {
-            return;
-        }
-        //check for player's default mode if mode is null
-        if ((
+        const embed = await this.createEmbed();
 
-            (this.input.type == 'interaction' && !(this.input.interaction as Discord.ChatInputCommandInteraction)?.options?.getString('mode'))
-            || this.input.type == 'message' || this.input.type == 'link'
-        ) &&
-            osudata.playmode != 'osu' &&
-            typeof this.params.mode != 'undefined') {
-            try {
-                const t = await this.getProfile(this.params.user, this.params.mode);
-                osudata = t;
-            } catch (e) {
-                return;
-            }
-        } else {
-            this.params.mode = this.params.mode ?? 'osu';
-        }
-
-        if (this.input.type != 'button' || this.input.buttonType == 'Refresh') {
-            try {
-                data.updateUserStats(osudata, osudata.playmode,);
-                data.userStatsCache([osudata], other.modeValidator(this.params.mode), 'User');
-            } catch (error) {
-            }
-        }
-
-        const osustats = osudata.statistics;
-        const grades = osustats.grade_counts;
-
-        const playerrank =
-            osudata.statistics?.global_rank ?
-                calculate.separateNum(osudata.statistics.global_rank) :
-                '---';
-
-        const countryrank =
-            osudata.statistics?.country_rank ?
-                calculate.separateNum(osudata.statistics.country_rank) :
-                '---';
-
-        const rankglobal = ` #${playerrank} (#${countryrank} ${osudata.country_code} :flag_${osudata.country_code.toLowerCase()}:)`;
-
-        const peakRank = osudata?.rank_highest?.rank ?
-            `\n**Peak Rank**: #${calculate.separateNum(osudata.rank_highest.rank)} (<t:${new Date(osudata.rank_highest.updated_at).getTime() / 1000}:R>)` :
-            '';
-        const onlinestatus = osudata.is_online ?
-            `**${helper.emojis.onlinestatus.online} Online**` :
-            (new Date(osudata.last_visit)).getTime() != 0 ?
-                `**${helper.emojis.onlinestatus.offline} Offline** | Last online <t:${(new Date(osudata.last_visit)).getTime() / 1000}:R>`
-                : `**${helper.emojis.onlinestatus.offline} Offline**`;
-
-        const prevnames = osudata.previous_usernames.length > 0 ?
-            '**Previous Usernames:** ' + osudata.previous_usernames.join(', ') :
-            '';
-
-        const playcount = osustats.play_count == null ?
-            '---' :
-            calculate.separateNum(osustats.play_count);
-
-        const lvl = osustats.level.current != null ?
-            osustats.level.progress != null && osustats.level.progress > 0 ?
-                `${osustats.level.current}.${Math.floor(osustats.level.progress)}` :
-                `${osustats.level.current}` :
-            '---';
-
-        let supporter = '';
-        switch (osudata.support_level) {
-            case 0:
-                break;
-            case 1: default:
-                supporter = helper.emojis.supporter.first;
-                break;
-            case 2:
-                supporter = helper.emojis.supporter.second;
-                break;
-            case 3:
-                supporter = helper.emojis.supporter.third;
-                break;
-        }
-
-        const gradeCounts =
-            `${helper.emojis.grades.XH}${grades.ssh} ${helper.emojis.grades.X}${grades.ss} ${helper.emojis.grades.SH}${grades.sh} ${helper.emojis.grades.S}${grades.s} ${helper.emojis.grades.A}${grades.a}`;
-        // `XH${grades.ssh} X}{grades.ss} SH${grades.sh} S}{grades.s} A}{grades.a}`;
-
-        const osuEmbed = new Discord.EmbedBuilder()
-            .setColor(helper.colours.embedColour.user.dec)
-            .setTitle(`${osudata.username}'s ${this.params.mode ?? 'osu!'} profile`)
-            .setURL(`https://osu.ppy.sh/users/${osudata.id}/${this.params.mode ?? ''}`)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`);
-        if (this.params.graphonly) {
-            const graphembeds = await this.getGraphs(osudata);
-            this.ctn.embeds = graphembeds;
-        } else {
+        // const prevnames = osudata.previous_usernames.length > 0 ?
+        //     '**Previous Usernames:** ' + osudata.previous_usernames.join(', ') :
+        //     '';
+        {
             if (this.params.detailed == 2) {
                 const loading = new Discord.EmbedBuilder()
                     .setColor(helper.colours.embedColour.user.dec)
@@ -355,37 +229,218 @@ export class Profile extends OsuCommand {
             }
         }
         data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${osudata.id}`, apiData: null, mods: null });
-        this.ctn.components = [buttons];
+        this.handleButtons();
         this.send();
     }
 
-    async getGraphs(osudata: osuapi.types_v2.User) {
+    async getUser() {
+        this.user = await this.getProfile(this.params.user, this.params.mode);
+
+        if ((
+            (this.input.type == 'interaction' && !(this.input.interaction as Discord.ChatInputCommandInteraction)?.options?.getString('mode'))
+            || this.input.type == 'message' || this.input.type == 'link'
+        ) &&
+            this.user.playmode != 'osu' &&
+            typeof this.params.mode != 'undefined') {
+            try {
+                const t = await this.getProfile(this.params.user, this.params.mode);
+                this.user = t;
+            } catch (e) {
+                return;
+            }
+        } else {
+            this.params.mode = this.params.mode ?? 'osu';
+        }
+    }
+    async updateUserStats() {
+        if (this.input.type != 'button' || this.input.buttonType == 'Refresh') {
+            try {
+                await data.updateUserStats(this.user, this.user.playmode,);
+                await data.userStatsCache([this.user], other.modeValidator(this.params.mode), 'User');
+            } catch (error) {
+            }
+        }
+    }
+    async createEmbed() {
+        const osuEmbed = new Discord.EmbedBuilder()
+            .setColor(helper.colours.embedColour.user.dec)
+            .setTitle(`${this.user.username}'s ${this.params.mode ?? 'osu!'} profile`)
+            .setURL(`https://osu.ppy.sh/users/${this.user.id}/${this.params.mode ?? ''}`)
+            .setThumbnail(`${this.user?.avatar_url ?? helper.defaults.images.any.url}`);
+        if (this.params.graphonly) {
+            await this.embedGraph();
+        } else {
+            await this.embedUserData(osuEmbed);
+        }
+        return osuEmbed;
+    }
+    async embedGraph() {
+        const graphembeds = await this.getGraphs();
+        this.ctn.embeds = this.ctn.embeds.concat(graphembeds);
+    }
+    async embedUserData(embed: Discord.EmbedBuilder) {
+        if (this.params.detailed == 2) {
+
+        }
+    }
+    embedUserNormal(embed: Discord.EmbedBuilder) {
+        embed.setDescription(`
+        **Global Rank:**${this.rankCurrent()}${this.rankPeak()}
+        **pp:** ${this.parseNumberStatistic(this.user?.statistics?.pp)}
+        **Accuracy:** ${this.statAccuracy()}%
+        **Play Count:** ${this.parseNumberStatistic(this.user?.statistics?.play_count)}
+        **Level:** ${this.statLevel()}
+        **Medals**: ${this.user.user_achievements.length}
+        ${this.getGradeCounts()}
+        **Player joined** <t:${new Date(this.user.join_date).getTime() / 1000}:R>
+        **Followers:** ${this.user.follower_count}
+        ${this.previousNames()}
+        **Total Play Time:** ${calculate.secondsToTime(this.user?.statistics.play_time, true)}
+        ${this.supporterStatus()} ${this.getOnlineStatus()}
+                `);
+    }
+    embedUserDetailed(embed: Discord.EmbedBuilder) {
+
+    }
+    parseNumberStatistic(input?: number) {
+        if (input) return calculate.separateNum(input);
+        return '---';
+    }
+    rankCurrent() {
+        const stats = this.user?.statistics;
+        const playerrank = this.parseNumberStatistic(stats?.global_rank);
+        const countryrank = this.parseNumberStatistic(stats?.country_rank);
+        return ` #${playerrank} (#${countryrank} ${this.user.country_code} :flag_${this.user.country_code.toLowerCase()}:)`;
+    }
+    rankPeak() {
+        if (this.user.rank_highest.rank) {
+            const rank = calculate.separateNum(this.user.rank_highest.rank);
+            const peakTimeEpoch = new Date(this.user.rank_highest.updated_at).getTime() / 1000;
+            return `\n**Peak Rank**: #${calculate.separateNum(rank)} (<t:${peakTimeEpoch}:R>)`;
+        }
+        return '';
+    }
+    statAccuracy() {
+        if (this.user.statistics.hit_accuracy) {
+            return this.user.statistics.hit_accuracy.toFixed(2);
+        }
+        return '00.00';
+    }
+    statLevel() {
+        if (this.user.statistics.level.current) {
+            const level = this.user.statistics.level;
+            let txt = level.current + '';
+            if (level?.progress ?? 0 > 0) {
+                txt += '.' + level.progress;
+            }
+            return txt;
+        }
+        return '---';
+    }
+    previousNames() {
+        if (this.user.previous_usernames.length > 0) {
+            return '**Previous Usernames:** ' + this.user.previous_usernames.join(', ');
+        }
+        return '';
+    }
+    getGradeCounts() {
+        const grades = this.user.statistics.grade_counts;
+        const emojis = helper.emojis.grades;
+        const arr: [string, number][] = [
+            [emojis.XH, grades.ssh],
+            [emojis.X, grades.ss],
+            [emojis.SH, grades.sh],
+            [emojis.S, grades.s],
+            [emojis.A, grades.a],
+            // [emojis.XH, grades.ssh],
+        ];
+        let str = '';
+        for (const item of arr) {
+            str += item[0] + item[1] + ' ';
+        }
+    }
+    supporterStatus() {
+        const emojis = helper.emojis.supporter;
+        return emojis[this.user.support_level ?? 0];
+    }
+    getOnlineStatus() {
+        // formatters.relativeTime()
+        if (this.user.is_online) {
+            return `**${helper.emojis.onlinestatus.online} Online**`;
+        }
+        if ((new Date(this.user.last_visit)).getTime() != 0) {
+            return `**${helper.emojis.onlinestatus.offline} Offline** | Last online ${formatters.relativeTime(this.user.last_visit)}`;
+        }
+        return `**${helper.emojis.onlinestatus.offline} Offline**`;
+    }
+
+    handleButtons() {
+        const buttons = new Discord.ActionRowBuilder();
+        if (this.params.graphonly != true) {
+            buttons.addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-Graph-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.graph),
+            );
+            switch (this.params.detailed) {
+                case 1: {
+                    buttons.addComponents(
+                        new Discord.ButtonBuilder()
+                            .setCustomId(`${helper.versions.releaseDate}-Detail2-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                            .setStyle(helper.buttons.type.current)
+                            .setEmoji(helper.buttons.label.main.detailMore),
+                    );
+                }
+                    break;
+                case 2: {
+                    buttons.addComponents(
+                        new Discord.ButtonBuilder()
+                            .setCustomId(`${helper.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                            .setStyle(helper.buttons.type.current)
+                            .setEmoji(helper.buttons.label.main.detailLess),
+                    );
+                }
+                    break;
+            }
+        } else {
+            buttons.addComponents(
+                new Discord.ButtonBuilder()
+                    .setCustomId(`${helper.versions.releaseDate}-Detail1-${this.name}-${this.commanduser.id}-${this.input.id}`)
+                    .setStyle(helper.buttons.type.current)
+                    .setEmoji(helper.buttons.label.extras.user),
+            );
+        }
+        this.ctn.components = [buttons];
+    }
+
+    async getGraphs() {
         let chartplay;
         let chartrank;
 
         let nulltext = helper.defaults.invisbleChar;
 
         if (
-            (!osudata.monthly_playcounts ||
-                osudata.monthly_playcounts.length == 0) ||
-            (!osudata.rank_history ||
-                osudata.rank_history.length == 0)) {
+            (!this.user.monthly_playcounts ||
+                this.user.monthly_playcounts.length == 0) ||
+            (!this.user.rank_history ||
+                this.user.rank_history.length == 0)) {
             nulltext = 'Error - Missing data';
             chartplay = helper.defaults.images.any.url;
             chartrank = chartplay;
         } else {
-            const dataplay = ('start,' + osudata.monthly_playcounts.map(x => x.start_date).join(',')).split(',');
-            const datarank = ('start,' + osudata.rank_history.data.map(x => x).join(',')).split(',');
+            const dataplay = ('start,' + this.user.monthly_playcounts.map(x => x.start_date).join(',')).split(',');
+            const datarank = ('start,' + this.user.rank_history.data.map(x => x).join(',')).split(',');
 
             const play =
-                await other.graph(dataplay, osudata.monthly_playcounts.map(x => x.count), 'Playcount', {
+                await other.graph(dataplay, this.user.monthly_playcounts.map(x => x.count), 'Playcount', {
                     startzero: true,
                     fill: true,
                     displayLegend: true,
                     pointSize: 0,
                 });
             const rank =
-                await other.graph(datarank, osudata.rank_history.data, 'Rank', {
+                await other.graph(datarank, this.user.rank_history.data, 'Rank', {
                     startzero: false,
                     fill: false,
                     displayLegend: true,
@@ -401,13 +456,13 @@ export class Profile extends OsuCommand {
             chartrank = `attachment://${rank.filename}.jpg`;
         }
         const ChartsEmbedRank = new Discord.EmbedBuilder()
-            .setTitle(`${osudata.username}`)
-            .setURL(`https://osu.ppy.sh/users/${osudata.id}/${this.params.mode ?? ''}`)
+            .setTitle(`${this.user.username}`)
+            .setURL(`https://osu.ppy.sh/users/${this.user.id}/${this.params.mode ?? ''}`)
             .setDescription(nulltext)
             .setImage(`${chartrank}`);
 
         const ChartsEmbedPlay = new Discord.EmbedBuilder()
-            .setURL(`https://osu.ppy.sh/users/${osudata.id}/${this.params.mode ?? ''}`)
+            .setURL(`https://osu.ppy.sh/users/${this.user.id}/${this.params.mode ?? ''}`)
             .setImage(`${chartplay}`);
 
         return [ChartsEmbedRank, ChartsEmbedPlay];

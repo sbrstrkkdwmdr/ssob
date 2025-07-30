@@ -156,9 +156,10 @@ export const mods = {
 
 // files/img/osu/support(x).png
 export const supporter = {
-    first: '<:support1:1134082832273252473>',
-    second: '<:support2:1134082835909713980>',
-    third: '<:support3:1134082838355005470>',
+    0: '',
+    1: '<:support1:1134082832273252473>',
+    2: '<:support2:1134082835909713980>',
+    3: '<:support3:1134082838355005470>',
 };
 
 export const discord = {

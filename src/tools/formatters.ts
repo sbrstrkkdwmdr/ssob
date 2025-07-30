@@ -7,7 +7,6 @@ import * as calculate from './calculate';
 import * as osuapi from './osuapi';
 import * as other from './other';
 import * as performance from './performance';
-
 export class ScoreFormatter {
     ranks = [
         'XH',
@@ -796,8 +795,12 @@ export function toCapital(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-export function dateToDiscordFormat(date: Date, type?: 'R' | 'F') {
-    return `<t:${Math.floor(date.getTime() / 1000)}:${type ?? 'R'}>`;
+export function dateToDiscordFormat(date: Date, type: 'R' | 'F' = 'R') {
+    return `<t:${Math.floor(date.getTime() / 1000)}:${type}>`;
+}
+export function relativeTime(timestamp: string) {
+    const date = new Date(timestamp);
+    return dateToDiscordFormat(date, 'R');
 }
 
 /**
