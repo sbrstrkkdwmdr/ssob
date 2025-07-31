@@ -204,10 +204,12 @@ export class Command {
         throw new Error(err);
     }
     protected sendLoading() {
+        const temp = this.ctn;
         if (this.input.type == 'interaction') {
+            this.voidcontent();
             this.ctn.content = 'Loading...';
             this.send();
-            this.voidcontent();
+            this.ctn = temp;
             this.ctn.edit = true;
         }
     }
