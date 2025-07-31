@@ -128,107 +128,9 @@ export class Profile extends OsuCommand {
         await this.getUser();
         this.updateUserStats();
 
-        const embed = await this.createEmbed();
+        await this.setEmbeds();
 
-        // const prevnames = osudata.previous_usernames.length > 0 ?
-        //     '**Previous Usernames:** ' + osudata.previous_usernames.join(', ') :
-        //     '';
-        {
-            if (this.params.detailed == 2) {
-                const loading = new Discord.EmbedBuilder()
-                    .setColor(helper.colours.embedColour.user.dec)
-                    .setTitle(`${osudata.username}'s ${this.params.mode ?? 'osu!'} profile`)
-                    .setURL(`https://osu.ppy.sh/users/${osudata.id}/${this.params.mode ?? ''}`)
-                    .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`)
-                    .setDescription(`Loading...`);
-
-                if (this.input.type != 'button') {
-                    if (this.input.type == 'interaction') {
-                        setTimeout(() => {
-                            (this.input.interaction as Discord.ChatInputCommandInteraction).editReply({
-                                embeds: [loading],
-                                allowedMentions: { repliedUser: false },
-                            })
-                                .catch();
-                        }, 1000);
-                    }
-                }
-                const graphembeds = await this.getGraphs(osudata);
-
-                const mostplayeddata: osuapi.types_v2.BeatmapPlayCountArr = await osuapi.v2.users.mostPlayed({ user_id: osudata.id });
-                data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
-
-                if (mostplayeddata?.hasOwnProperty('error')) {
-                    await this.sendError(helper.errors.profile.mostplayed);
-                    return;
-                }
-                const secperplay = osudata?.statistics.play_time / parseFloat(playcount.replaceAll(',', ''));
-
-                let mostplaytxt = ``;
-                for (let i2 = 0; i2 < mostplayeddata.length && i2 < 10; i2++) {
-                    const bmpc = mostplayeddata[i2];
-                    mostplaytxt += `\`${(bmpc.count.toString() + ' plays').padEnd(15, ' ')}\` | [${bmpc.beatmapset.title}[${bmpc.beatmap.version}]](https://osu.ppy.sh/b/${bmpc.beatmap_id})\n`;
-                }
-
-                const dailies = (osustats.play_count / (osudata.monthly_playcounts.length * 30.4375)).toFixed(2);
-                const monthlies =
-                    (osustats.play_count / osudata.monthly_playcounts.length).toFixed(2);
-                // osudata.monthly_playcounts.map(x => x.count).reduce((a, b) => b + a)
-                osuEmbed.addFields([
-                    {
-                        name: 'Stats',
-                        value:
-                            `**Global Rank:**${rankglobal}${peakRank}
-    **pp:** ${osustats.pp}
-    **Accuracy:** ${(osustats.hit_accuracy != null ? osustats.hit_accuracy : 0).toFixed(2)}%
-    **Play Count:** ${playcount}
-    **Level:** ${lvl}
-    **Total Play Time:** ${calculate.secondsToTime(osudata?.statistics.play_time)} (${calculate.secondsToTime(osudata?.statistics.play_time, true,)})`,
-                        inline: true
-                    },
-                    {
-                        name: helper.defaults.invisbleChar,
-                        value:
-                            `**Player joined** <t:${new Date(osudata.join_date).getTime() / 1000}:R>                        
-    ${gradeCounts}
-    **Medals**: ${osudata.user_achievements.length}
-    **Followers:** ${osudata.follower_count}
-    ${prevnames}
-    ${supporter} ${onlinestatus}
-    **Avg time per play:** ${calculate.secondsToTime(secperplay)}
-    **Avg daily playcount:** ${dailies}
-    **Avg monthly playcount:** ${monthlies}
-    `,
-                        inline: true
-                    }
-                ]);
-                osuEmbed.addFields([{
-                    name: 'Most Played Beatmaps',
-                    value: mostplaytxt != `` ? mostplaytxt : 'No data',
-                    inline: false
-                }]
-                );
-
-                this.ctn.embeds = [osuEmbed].concat(graphembeds);
-            } else {
-                osuEmbed.setDescription(`
-    **Global Rank:**${rankglobal}${peakRank}
-    **pp:** ${osustats.pp}
-    **Accuracy:** ${(osustats.hit_accuracy != null ? osustats.hit_accuracy : 0).toFixed(2)}%
-    **Play Count:** ${playcount}
-    **Level:** ${lvl}
-    **Medals**: ${osudata.user_achievements.length}
-    ${gradeCounts}
-    **Player joined** <t:${new Date(osudata.join_date).getTime() / 1000}:R>
-    **Followers:** ${osudata.follower_count}
-    ${prevnames}
-    **Total Play Time:** ${calculate.secondsToTime(osudata?.statistics.play_time, true)}
-    ${supporter} ${onlinestatus}
-            `);
-                this.ctn.embeds = [osuEmbed];
-            }
-        }
-        data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${osudata.id}`, apiData: null, mods: null });
+        data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${this.user.id}`, apiData: null, mods: null });
         this.handleButtons();
         this.send();
     }
@@ -261,58 +163,93 @@ export class Profile extends OsuCommand {
             }
         }
     }
-    async createEmbed() {
+    async setEmbeds() {
         const osuEmbed = new Discord.EmbedBuilder()
             .setColor(helper.colours.embedColour.user.dec)
             .setTitle(`${this.user.username}'s ${this.params.mode ?? 'osu!'} profile`)
             .setURL(`https://osu.ppy.sh/users/${this.user.id}/${this.params.mode ?? ''}`)
             .setThumbnail(`${this.user?.avatar_url ?? helper.defaults.images.any.url}`);
         if (this.params.graphonly) {
-            await this.embedGraph();
+            this.ctn.embeds = await this.getGraphs();
         } else {
             await this.embedUserData(osuEmbed);
         }
-        return osuEmbed;
-    }
-    async embedGraph() {
-        const graphembeds = await this.getGraphs();
-        this.ctn.embeds = this.ctn.embeds.concat(graphembeds);
     }
     async embedUserData(embed: Discord.EmbedBuilder) {
         if (this.params.detailed == 2) {
-
+            await this.embedUserDetailed(embed);
+        } else {
+            this.embedUserNormal(embed);
         }
     }
     embedUserNormal(embed: Discord.EmbedBuilder) {
         embed.setDescription(`
-        **Global Rank:**${this.rankCurrent()}${this.rankPeak()}
-        **pp:** ${this.parseNumberStatistic(this.user?.statistics?.pp)}
-        **Accuracy:** ${this.statAccuracy()}%
-        **Play Count:** ${this.parseNumberStatistic(this.user?.statistics?.play_count)}
-        **Level:** ${this.statLevel()}
-        **Medals**: ${this.user.user_achievements.length}
-        ${this.getGradeCounts()}
-        **Player joined** <t:${new Date(this.user.join_date).getTime() / 1000}:R>
-        **Followers:** ${this.user.follower_count}
-        ${this.previousNames()}
-        **Total Play Time:** ${calculate.secondsToTime(this.user?.statistics.play_time, true)}
-        ${this.supporterStatus()} ${this.getOnlineStatus()}
-                `);
+**Global Rank:** ${this.rankCurrent}${this.rankPeak}
+**pp:** ${this.parseNumberStatistic(this.user?.statistics?.pp)}
+**Accuracy:** ${this.statAccuracy}%
+**Play Count:** ${this.parseNumberStatistic(this.user?.statistics?.play_count)}
+**Level:** ${this.statLevel}
+**Medals**: ${this.user.user_achievements.length}
+${this.gradeCounts}
+**Player joined** ${formatters.relativeTime(this.user.join_date)}
+**Followers:** ${this.user.follower_count}
+${this.previousNames}
+**Total Play Time:** ${calculate.secondsToTime(this.user?.statistics.play_time, true)}
+${this.supporterStatus} ${this.onlineStatus}`);
     }
-    embedUserDetailed(embed: Discord.EmbedBuilder) {
+    async embedUserDetailed(embed: Discord.EmbedBuilder) {
+        this.ctn.embeds = await this.getGraphs();
 
+        // osudata.monthly_playcounts.map(x => x.count).reduce((a, b) => b + a)
+        embed.addFields([
+            {
+                name: 'Stats',
+                value:
+                    `**Global Rank:** ${this.rankCurrent}${this.rankPeak}
+**pp:** ${this.parseNumberStatistic(this.user?.statistics?.pp)}
+**Accuracy:** ${this.statAccuracy}%
+**Play Count:** ${this.parseNumberStatistic(this.user?.statistics?.play_count)}
+**Level:** ${this.statLevel}
+**Total Play Time:** ${calculate.secondsToTime(this.user?.statistics.play_time)} (${calculate.secondsToTime(this.user?.statistics.play_time, true,)})`,
+                inline: true
+            },
+            {
+                name: helper.defaults.invisbleChar,
+                value:
+                    `**Player joined** ${formatters.relativeTime(this.user.join_date)}                      
+${this.gradeCounts}
+**Medals**: ${this.user.user_achievements.length}
+**Followers:** ${this.user.follower_count}
+${this.previousNames}
+${this.supporterStatus} ${this.onlineStatus}
+**Avg time per play:** ${this.timePerPlay}
+**Avg daily playcount:** ${this.dailyPlaycount.toFixed(2)}
+**Avg monthly playcount:** ${this.monthlyPlaycount.toFixed(2)}
+`,
+                inline: true
+            }
+        ]);
+        const mostplaytxt = await this.mpText();
+        embed.addFields([{
+            name: 'Most Played Beatmaps',
+            value: mostplaytxt != `` ? mostplaytxt : 'No data',
+            inline: false
+        }]
+        );
+
+        this.ctn.embeds.push(embed);
     }
     parseNumberStatistic(input?: number) {
         if (input) return calculate.separateNum(input);
         return '---';
     }
-    rankCurrent() {
+    protected get rankCurrent() {
         const stats = this.user?.statistics;
         const playerrank = this.parseNumberStatistic(stats?.global_rank);
         const countryrank = this.parseNumberStatistic(stats?.country_rank);
         return ` #${playerrank} (#${countryrank} ${this.user.country_code} :flag_${this.user.country_code.toLowerCase()}:)`;
     }
-    rankPeak() {
+    protected get rankPeak() {
         if (this.user.rank_highest.rank) {
             const rank = calculate.separateNum(this.user.rank_highest.rank);
             const peakTimeEpoch = new Date(this.user.rank_highest.updated_at).getTime() / 1000;
@@ -320,13 +257,13 @@ export class Profile extends OsuCommand {
         }
         return '';
     }
-    statAccuracy() {
+    protected get statAccuracy() {
         if (this.user.statistics.hit_accuracy) {
             return this.user.statistics.hit_accuracy.toFixed(2);
         }
         return '00.00';
     }
-    statLevel() {
+    protected get statLevel() {
         if (this.user.statistics.level.current) {
             const level = this.user.statistics.level;
             let txt = level.current + '';
@@ -337,13 +274,13 @@ export class Profile extends OsuCommand {
         }
         return '---';
     }
-    previousNames() {
+    protected get previousNames() {
         if (this.user.previous_usernames.length > 0) {
             return '**Previous Usernames:** ' + this.user.previous_usernames.join(', ');
         }
         return '';
     }
-    getGradeCounts() {
+    protected get gradeCounts() {
         const grades = this.user.statistics.grade_counts;
         const emojis = helper.emojis.grades;
         const arr: [string, number][] = [
@@ -358,12 +295,13 @@ export class Profile extends OsuCommand {
         for (const item of arr) {
             str += item[0] + item[1] + ' ';
         }
+        return str;
     }
-    supporterStatus() {
-        const emojis = helper.emojis.supporter;
+    protected get supporterStatus() {
+        const emojis: tooltypes.Dict<string> = helper.emojis.supporter;
         return emojis[this.user.support_level ?? 0];
     }
-    getOnlineStatus() {
+    protected get onlineStatus() {
         // formatters.relativeTime()
         if (this.user.is_online) {
             return `**${helper.emojis.onlinestatus.online} Online**`;
@@ -373,7 +311,33 @@ export class Profile extends OsuCommand {
         }
         return `**${helper.emojis.onlinestatus.offline} Offline**`;
     }
-
+    protected get timePerPlay() {
+        const n = (this.user?.statistics?.play_time ?? 0) / (this.user?.statistics?.play_count ?? 0);
+        return calculate.secondsToTime(n ?? 0);
+    }
+    protected get dailyPlaycount() {
+        return this.monthlyPlaycount / 30.4375;
+    }
+    protected get monthlyPlaycount() {
+        return (this.user.statistics.play_count / this.user.monthly_playcounts.length);
+    }
+    protected async mostPlayed() {
+        const mostplayeddata: osuapi.types_v2.BeatmapPlayCountArr = await osuapi.v2.users.mostPlayed({ user_id: this.user.id });
+        data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
+        if (mostplayeddata?.hasOwnProperty('error')) {
+            await this.sendError(helper.errors.profile.mostplayed);
+            return;
+        }
+        return mostplayeddata;
+    }
+    protected async mpText() {
+        const data = await this.mostPlayed();
+        let text = [];
+        for (const bmpc of data) {
+            text.push(`\`${(bmpc.count.toString() + ' plays').padEnd(15, ' ')}\` | [${bmpc.beatmapset.title}[${bmpc.beatmap.version}]](https://osu.ppy.sh/b/${bmpc.beatmap_id})`);
+        }
+        return text.join('\n');
+    }
     handleButtons() {
         const buttons = new Discord.ActionRowBuilder();
         if (this.params.graphonly != true) {
