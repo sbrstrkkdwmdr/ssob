@@ -7,3 +7,4 @@ osuauth.json
 *.env
 bun.lockb
 package-lock.json
+/.idea
