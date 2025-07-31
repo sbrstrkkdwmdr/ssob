@@ -144,7 +144,7 @@ export class Help extends Command {
                 new Discord.ActionRowBuilder()
                     .setComponents(inputMenu));
         }
-        this.send();
+        await this.send();
     }
     commandEmb(command: helper.bottypes.commandInfo, embed) {
         let usetxt = '';

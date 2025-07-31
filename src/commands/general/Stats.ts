@@ -48,6 +48,6 @@ export class Stats extends Command {
     `
             );
         this.ctn.embeds = [Embed];
-        this.send();
+        await this.send();
     }
 }

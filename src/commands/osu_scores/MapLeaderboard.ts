@@ -166,7 +166,7 @@ export class MapLeaderboard extends OsuCommand {
         this.ctn.embeds = [this.createEmbed(scoresarg)];
         this.ctn.components = [pgbuttons, buttons];
         this.ctn.edit = true;
-        this.send();
+        await this.send();
     }
     fixMapid() {
         if (!this.params.mapid) {

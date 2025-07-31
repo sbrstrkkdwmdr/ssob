@@ -186,7 +186,7 @@ export class Command {
     }
     async execute() {
         this.ctn.content = 'No execution method has been set';
-        this.send();
+        await this.send();
     }
     protected async send() {
         await commandTools.sendMessage({
@@ -208,7 +208,7 @@ export class Command {
         if (this.input.type == 'interaction') {
             this.voidcontent();
             this.ctn.content = 'Loading...';
-            this.send();
+            await this.send();
             this.ctn = temp;
             this.ctn.edit = true;
         }
@@ -750,6 +750,6 @@ class TEMPLATE extends Command {
         this.logInput();
         // do stuff
 
-        this.send();
+        await this.send();
     }
 }

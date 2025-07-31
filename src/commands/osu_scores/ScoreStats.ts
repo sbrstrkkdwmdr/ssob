@@ -126,7 +126,7 @@ export class ScoreStats extends OsuCommand {
         this.ctn.embeds = [await this.setEmbed()];
         this.ctn.components = [buttons];
 
-        this.send();
+        await this.send();
     }
 
     scores: osuapi.types_v2.Score[] = [];

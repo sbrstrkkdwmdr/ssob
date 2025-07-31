@@ -180,7 +180,7 @@ export class Compare extends OsuCommand {
             embed.setDescription(embedescription);
         }
         this.ctn.embeds = [embed];
-        this.send();
+        await this.send();
     }
     async getTopData(user: number, mode: osuapi.types_v2.GameMode, n: 'first' | 'second') {
         let topdata: osuapi.types_v2.Score[];

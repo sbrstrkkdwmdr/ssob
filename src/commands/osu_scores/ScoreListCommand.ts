@@ -569,7 +569,7 @@ export class ScoreListCommand extends OsuCommand {
         await this.list(this?.map);
         this.ctn.edit = true;
 
-        this.send();
+        await this.send();
     }
 
     fixParamMap() {

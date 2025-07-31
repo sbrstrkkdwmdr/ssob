@@ -228,7 +228,7 @@ export class MapParse extends OsuCommand {
                 mode: this.params.mode
             }
         );
-        this.send();
+        await this.send();
     }
     map: osuapi.types_v2.BeatmapExtended;
     mapset: osuapi.types_v2.BeatmapsetExtended;

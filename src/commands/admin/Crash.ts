@@ -20,7 +20,7 @@ export class Crash extends Command {
         this.logInput(true);
         // do stuff
         this.ctn.content = 'executing crash command...';
-        this.send();
+        await this.send();
         setTimeout(() => {
             log.stdout(`executed crash command by ${this?.commanduser?.id} - ${this?.commanduser?.username}`);
             process.exit(1);

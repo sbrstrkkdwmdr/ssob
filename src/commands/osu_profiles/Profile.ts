@@ -132,7 +132,7 @@ export class Profile extends OsuCommand {
 
         data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${this.user.id}`, apiData: null, mods: null });
         this.handleButtons();
-        this.send();
+        await this.send();
     }
 
     async getUser() {

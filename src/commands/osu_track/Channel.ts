@@ -57,6 +57,6 @@ export class TrackChannel extends OsuCommand {
             where: { guildid: this.input.message?.guildId ?? this.input.interaction?.guildId }
         });
         this.ctn.content = `Tracking channel set to <#${this.params.channelId}>`;
-        this.send();
+        await this.send();
     }
 }

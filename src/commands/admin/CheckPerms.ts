@@ -60,6 +60,6 @@ export class CheckPerms extends Command {
         }
 
         this.ctn.embeds = [embed];
-        this.send();
+        await this.send();
     }
 }

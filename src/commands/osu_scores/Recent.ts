@@ -191,7 +191,7 @@ export class Recent extends SingleScoreCommand {
 
         this.ctn.edit = true;
 
-        this.send();
+        await this.send();
     }
 
 }

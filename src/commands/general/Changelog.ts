@@ -94,7 +94,7 @@ export class Changelog extends Command {
 
         this.ctn.embeds = [this.createEmbed()];
         await this.handleButtons();
-        this.send();
+        await this.send();
     }
     found: string | number;
     findVersion() {

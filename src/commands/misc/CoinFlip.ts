@@ -23,6 +23,6 @@ export class CoinFlip extends Command {
         this.ctn.embeds = [embed];
         this.ctn.files = [file];
 
-        this.send();
+        await this.send();
     }
 }

@@ -42,6 +42,6 @@ export class Roll extends Command {
         }
         const eq = Math.floor(Math.random() * (this.params.maxNum - this.params.minNum)) + this.params.minNum;
         this.ctn.content = eq + '';
-        this.send();
+        await this.send();
     }
 }

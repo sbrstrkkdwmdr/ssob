@@ -89,7 +89,7 @@ export class Gif extends Command {
             .setImage(gifSelection[Math.floor(Math.random() * gifSelection.length)]);
 
         this.ctn.embeds = [embed];
-        this.send();
+        await this.send();
     }
 
 }

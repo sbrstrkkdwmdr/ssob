@@ -28,6 +28,6 @@ export class _8Ball extends Command {
                 break;
         }
 
-        this.send();
+        await this.send();
     }
 }

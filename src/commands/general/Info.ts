@@ -119,6 +119,6 @@ Bot Version: ${data.version}
         this.ctn.embeds = [Embed];
         this.ctn.components = [buttons];
 
-        this.send();
+        await this.send();
     }
 }

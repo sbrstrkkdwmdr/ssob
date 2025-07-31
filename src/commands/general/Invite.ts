@@ -12,6 +12,6 @@ export class Invite extends Command {
         this.logInput(true);
         // do stuff
         this.ctn.content = helper.versions.linkInvite;
-        this.send();
+        await this.send();
     }
 }

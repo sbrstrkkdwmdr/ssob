@@ -71,7 +71,7 @@ export class ReplayParse extends SingleScoreCommand {
         const e = await this.renderEmbed();
         e.setImage(`attachment://${chartInit.filename}.jpg`);
         this.ctn.files = [chartFile];
-        this.send();
+        await this.send();
     }
     map: osuapi.types_v2.BeatmapExtended;
     /**

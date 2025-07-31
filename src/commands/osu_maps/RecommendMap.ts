@@ -98,6 +98,6 @@ export class RecommendMap extends OsuCommand {
 
         this.ctn.embeds = [embed];
 
-        this.send();
+        await this.send();
     }
 }

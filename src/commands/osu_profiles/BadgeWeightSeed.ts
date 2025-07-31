@@ -85,7 +85,7 @@ export class BadgeWeightSeed extends OsuCommand {
 
         this.ctn.embeds = [embed];
         this.ctn.components = [cmdbuttons];
-        this.send();
+        await this.send();
     }
 
     response(rank: number, badgecount: number = 0) {

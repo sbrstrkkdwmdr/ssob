@@ -114,6 +114,6 @@ export class Saved extends OsuCommand {
         }
 
         this.ctn.embeds = [Embed];
-        this.send();
+        await this.send();
     }
 }

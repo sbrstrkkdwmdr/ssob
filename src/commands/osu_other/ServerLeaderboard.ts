@@ -141,7 +141,7 @@ export class ServerLeaderboard extends OsuCommand {
         this.ctn.embeds = [serverlb];
         this.ctn.components = [pgbuttons];
 
-        this.send();
+        await this.send();
     }
 
     async getUsers(mode: 'osu' | 'taiko' | 'fruits' | 'mania') {

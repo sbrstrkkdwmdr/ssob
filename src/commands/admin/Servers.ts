@@ -23,6 +23,6 @@ export class Servers extends Command {
             this.ctn.files = [`${helper.path.main}/debug/guilds.txt`];
         }
         this.ctn.embeds = [embed];
-        this.send();
+        await this.send();
     }
 }

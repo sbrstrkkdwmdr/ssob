@@ -130,6 +130,6 @@ export class Set extends OsuCommand {
             }
         }
 
-        this.send();
+        await this.send();
     }
 }

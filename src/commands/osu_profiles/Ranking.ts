@@ -220,7 +220,7 @@ export class Ranking extends OsuCommand {
 
         this.ctn.embeds = [embed];
         this.ctn.components = [pgbuttons];
-        this.send();
+        await this.send();
     }
 
     formatUL(embed: Discord.EmbedBuilder, rankingdata: osuapi.types_v2.Rankings) {

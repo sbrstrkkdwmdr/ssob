@@ -28,6 +28,6 @@ export class Find extends Command {
         this.logInput(true);
         // do stuff
 
-        this.send();
+        await this.send();
     }
 }

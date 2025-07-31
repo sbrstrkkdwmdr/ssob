@@ -228,6 +228,6 @@ ${actText}`);
         this.ctn.embeds = [curEmbed];
         this.ctn.components = [pgbuttons, buttons];
 
-        this.send();
+        await this.send();
     }
 }

@@ -147,7 +147,7 @@ export class ScoreParse extends SingleScoreCommand {
             }
         );
 
-        this.send();
+        await this.send();
     }
 
 

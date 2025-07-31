@@ -108,7 +108,7 @@ export class WhatIf extends OsuCommand {
             osutopdata = await this.getTopData(osudata.id, this.params.mode);
         } catch (e) {
             this.ctn.content = 'There was an error trying to fetch top scores';
-            this.send();
+            await this.send();
             return;
         }
 
@@ -158,7 +158,7 @@ export class WhatIf extends OsuCommand {
 
         this.ctn.embeds = [embed];
         this.ctn.components = [buttons];
-        this.send();
+        await this.send();
     }
     async getTopData(user: number, mode: osuapi.types_v2.GameMode) {
         let topdata: osuapi.types_v2.Score[];

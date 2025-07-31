@@ -150,7 +150,7 @@ export class Simulate extends OsuCommand {
             this.fixAcc()
         )];
 
-        this.send();
+        await this.send();
     }
     map: osuapi.types_v2.BeatmapExtended;
     async fixMapParam() {

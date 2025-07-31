@@ -446,7 +446,7 @@ type debugtype =
                 }
     
             }
-            this.send();
+            await this.send();
         }
         async findAndReturn(inpath: string, find: string, serverId: string) {
             const sFiles = fs.readdirSync(`${inpath}`);

@@ -32,7 +32,7 @@ export class Clear extends Command {
 
         embed = this.clearCache(this.params.type, embed);
         this.ctn.embeds = [embed];
-        this.send();
+        await this.send();
     }
     clearCache(type: string, embed: Discord.EmbedBuilder) {
         switch (type) {

@@ -64,7 +64,7 @@ export class TrackAR extends OsuCommand {
             guildId: this.input.message?.guildId ?? this.input.interaction?.guildId,
             mode: this.params.mode
         });
-        this.send();
+        await this.send();
     }
     getMsg(uid: string) {
         switch (this.type) {

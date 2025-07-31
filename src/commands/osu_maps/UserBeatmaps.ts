@@ -258,7 +258,7 @@ export class UserBeatmaps extends OsuCommand {
         this.ctn.embeds = [mapList];
         this.ctn.components = [pgbuttons, buttons];
 
-        this.send();
+        await this.send();
     }
     osudata: osuapi.types_v2.UserExtended;
     async getScoreCount(cinitnum: number) {

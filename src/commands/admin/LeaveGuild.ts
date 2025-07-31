@@ -50,6 +50,6 @@ export class LeaveGuild extends Command {
                     `Was unable to leave guild`
                 :
                 'You don\'t have permissions to use this command';
-        this.send();
+        await this.send();
     }
 }

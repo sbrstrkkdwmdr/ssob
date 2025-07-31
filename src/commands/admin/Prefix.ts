@@ -37,6 +37,6 @@ export class Prefix extends Command {
             }
         }
 
-        this.send();
+        await this.send();
     }
 }

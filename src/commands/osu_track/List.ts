@@ -52,6 +52,6 @@ export class TrackList extends OsuCommand {
                 `${userList.map((user, i) => `${i + 1}. ${helper.emojis.gamemodes[user.mode == 'undefined' ? 'osu' : user.mode]} https://osu.ppy.sh/users/${user.osuid}`).join('\n')}`
             );
         this.ctn.embeds = [userListEmbed];
-        this.send();
+        await this.send();
     }
 }

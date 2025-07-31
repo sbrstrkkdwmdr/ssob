@@ -97,6 +97,6 @@ ${badge.image_url.length != 0 ? `[Image](${badge.image_url})` : ''}`,
         }
         this.ctn.embeds = [embed];
         this.ctn.components = [cmdbuttons];
-        this.send();
+        await this.send();
     }
 }

@@ -78,6 +78,6 @@ export class Janken extends Command {
         };
 
         this.ctn.content = `${toEmoji[real]} vs. ${toEmoji[pcChoice]} | ` + content;
-        this.send();
+        await this.send();
     }
 }
