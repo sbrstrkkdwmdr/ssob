@@ -48,7 +48,7 @@ export class BadgeWeightSeed extends OsuCommand {
 
         this.fixUser(false);
 
-        this.sendLoading();
+        await this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 

@@ -518,7 +518,7 @@ export class ScoreListCommand extends OsuCommand {
 
         this.buttons = new Discord.ActionRowBuilder();
 
-        this.sendLoading();
+        await this.sendLoading();
 
         if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
             this.params.page = 1;

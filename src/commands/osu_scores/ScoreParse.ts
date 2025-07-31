@@ -69,7 +69,7 @@ export class ScoreParse extends SingleScoreCommand {
             }
         }
 
-        this.sendLoading();
+        await this.sendLoading();
 
         if (data.findFile(this.params.scoreid, 'scoredata') &&
             !('error' in data.findFile(this.params.scoreid, 'scoredata')) &&

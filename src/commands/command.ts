@@ -203,7 +203,7 @@ export class Command {
         await this.send();
         throw new Error(err);
     }
-    protected sendLoading() {
+    protected async sendLoading() {
         const temp = this.ctn;
         if (this.input.type == 'interaction') {
             this.voidcontent();

@@ -88,7 +88,7 @@ export class ScoreStats extends OsuCommand {
 
         await this.fixUser();
 
-        this.sendLoading();
+        await this.sendLoading();
 
         try {
             this.user = await this.getProfile(this.params.user, this.params.mode);

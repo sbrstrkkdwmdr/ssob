@@ -75,7 +75,7 @@ export class RecentActivity extends OsuCommand {
         this.fixUser(false);
 
         this.fixPage();
-        this.sendLoading();
+        await this.sendLoading();
 
         let osudata: osuapi.types_v2.UserExtended;
 

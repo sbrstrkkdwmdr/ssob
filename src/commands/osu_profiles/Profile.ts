@@ -123,7 +123,7 @@ export class Profile extends OsuCommand {
 
         await this.fixUser();
 
-        this.sendLoading();
+        await this.sendLoading();
 
         await this.getUser();
         this.updateUserStats();

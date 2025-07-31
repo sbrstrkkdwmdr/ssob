@@ -139,7 +139,7 @@ export class UserBeatmaps extends OsuCommand {
 
         await this.fixUser(false);
 
-        this.sendLoading();
+        await this.sendLoading();
 
         try {
             const u = await this.getProfile(this.params.user, this.params.mode);

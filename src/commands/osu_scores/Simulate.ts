@@ -98,7 +98,7 @@ export class Simulate extends OsuCommand {
         // do stuff
         await this.fixMapParam();
 
-        this.sendLoading();
+        await this.sendLoading();
 
         this.fixParams();
 

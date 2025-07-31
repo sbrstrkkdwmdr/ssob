@@ -103,7 +103,7 @@ export class MapLeaderboard extends OsuCommand {
         // do stuff
 
         this.fixMapid();
-        this.sendLoading();
+        await this.sendLoading();
 
         try {
             this.map = await this.getMap(this.params.mapid);

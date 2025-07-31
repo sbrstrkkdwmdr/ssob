@@ -210,7 +210,7 @@ export class MapParse extends OsuCommand {
         const inputModalSearch = new Discord.StringSelectMenuBuilder()
             .setCustomId(`${helper.versions.releaseDate}-Select-map-${this.commanduser.id}-${this.input.id}-search`)
             .setPlaceholder('Select a map');
-        this.sendLoading();
+        await this.sendLoading();
         if (await this.checkQueryType(inputModalSearch)) {
             return;
         }

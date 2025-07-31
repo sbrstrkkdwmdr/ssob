@@ -75,7 +75,7 @@ export class ServerLeaderboard extends OsuCommand {
         this.logInput();
         // do stuff
 
-        this.sendLoading();
+        await this.sendLoading();
 
         this.fixPage();
 

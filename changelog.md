@@ -16,7 +16,6 @@
 
 -   updated osumodcalculator
 -   edit parts of command data for clarity
--   status changer updates every 5 minutes instead of using song length (caused memory leaks)
 
 ### Removed
 
@@ -26,6 +25,7 @@
 
 -   remove methods and commands from helper module (circular refs)
 -   move commands to separate helper module
+-   status changer updates every 5 minutes instead of using song length (caused memory leaks)
 -   `Map` split `execute()` into multiple smaller methods
 -   convert input handlers into classes
 -   rewrite how params are managed (added `ArgParser` class)

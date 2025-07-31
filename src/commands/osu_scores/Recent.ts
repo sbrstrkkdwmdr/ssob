@@ -94,7 +94,7 @@ export class Recent extends SingleScoreCommand {
 
         this.fixPage();
 
-        this.sendLoading();
+        await this.sendLoading();
 
         try {
             const u = await this.getProfile(this.params.user, this.params.mode);
