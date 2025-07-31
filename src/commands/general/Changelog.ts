@@ -263,7 +263,7 @@ Total of ${this.versionChangeCount(changesList)} changes.${txt}
         return txt;
     }
     changeCategory(change: string) {
-        const clrs: tooltypes.Dict<string> = {
+        const clrs: helper.tooltypes.Dict<string> = {
             'Fixed': 'yellow',
             'Changed': 'blue',
             'Added': 'green',

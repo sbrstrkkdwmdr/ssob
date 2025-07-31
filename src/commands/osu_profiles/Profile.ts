@@ -298,7 +298,7 @@ ${this.supporterStatus} ${this.onlineStatus}
         return str;
     }
     protected get supporterStatus() {
-        const emojis: tooltypes.Dict<string> = helper.emojis.supporter;
+        const emojis: helper.tooltypes.Dict<string> = helper.emojis.supporter;
         return emojis[this.user.support_level ?? 0];
     }
     protected get onlineStatus() {
@@ -396,21 +396,29 @@ ${this.supporterStatus} ${this.onlineStatus}
             const dataplay = ('start,' + this.user.monthly_playcounts.map(x => x.start_date).join(',')).split(',');
             const datarank = ('start,' + this.user.rank_history.data.map(x => x).join(',')).split(',');
 
-            const play =
-                await other.graph(dataplay, this.user.monthly_playcounts.map(x => x.count), 'Playcount', {
+            const play = other.graph({
+                x: dataplay,
+                y: this.user.monthly_playcounts.map(x => x.count),
+                label: 'Playcount',
+                other: {
                     startzero: true,
                     fill: true,
                     displayLegend: true,
                     pointSize: 0,
-                });
-            const rank =
-                await other.graph(datarank, this.user.rank_history.data, 'Rank', {
+                }
+            });
+            const rank = other.graph({
+                x: datarank,
+                y: this.user.rank_history.data,
+                label: 'Rank',
+                other: {
                     startzero: false,
                     fill: false,
                     displayLegend: true,
                     reverse: true,
                     pointSize: 0,
-                });
+                }
+            });
             const fileplay = new Discord.AttachmentBuilder(`${play.path}`);
             const filerank = new Discord.AttachmentBuilder(`${rank.path}`);
 

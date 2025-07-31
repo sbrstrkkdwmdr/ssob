@@ -20,7 +20,7 @@ export class ScoreFormatter {
         'F',
     ];
     private scores: osuapi.types_v2.Score[];
-    private indexed: tooltypes.indexed<osuapi.types_v2.Score>[];
+    private indexed: helper.tooltypes.indexed<osuapi.types_v2.Score>[];
     public get data() {
         return this.indexed;
     }
@@ -99,13 +99,13 @@ export class ScoreFormatter {
         }
     }
     async filterScores() {
-        const dict: tooltypes.Dict<(score: tooltypes.indexed<osuapi.types_v2.Score>) => boolean> = {
+        const dict: helper.tooltypes.Dict<(score: helper.tooltypes.indexed<osuapi.types_v2.Score>) => boolean> = {
             mapper: (score => matchesString(score.beatmapset.user.username, this.filter.mapper) || matchesString(score.beatmapset.user_id + '', this.filter.mapper) || matchesString((this.overrideMap ?? score.beatmap).user_id + '', this.filter.mapper)),
             title: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
             artist: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
             version: (score => matchesString((this.overrideMap ?? score.beatmap).version, this.filter.version)),
         };
-        const argRangeDict: tooltypes.Dict<string> = {
+        const argRangeDict: helper.tooltypes.Dict<string> = {
             pp: 'pp',
             score: 'total_score',
             acc: 'total_accuracy',
@@ -241,22 +241,34 @@ export class ScoreFormatter {
         return score;
     }
     scoreAccuracy(score: osuapi.types_v2.Score) {
-        let useacc = score.accuracy;
         switch (osumodcalc.mode.toName(score.ruleset_id)) {
             case 'osu': default:
-                useacc = osumodcalc.accuracy.standard(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, 0).accuracy;
-                break;
+                return osumodcalc.accuracy.standard(
+                    score.statistics.great ?? 0,
+                    score.statistics.ok ?? 0,
+                    score.statistics.meh ?? 0, 0).accuracy;
             case 'taiko':
-                useacc = osumodcalc.accuracy.taiko(score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.miss ?? 0).accuracy;
-                break;
+                return osumodcalc.accuracy.taiko(
+                    score.statistics.great ?? 0,
+                    score.statistics.good ?? 0,
+                    score.statistics.miss ?? 0).accuracy;
             case 'fruits':
-                useacc = osumodcalc.accuracy.fruits(score.statistics.great ?? 0, score.statistics.ok ?? 0, score.statistics.small_tick_hit ?? 0, score.statistics.small_tick_miss ?? 0, score.statistics.miss ?? 0).accuracy;
-                break;
+                return osumodcalc.accuracy.fruits(
+                    score.statistics.great ?? 0,
+                    score.statistics.ok ?? 0,
+                    score.statistics.small_tick_hit ?? 0,
+                    score.statistics.small_tick_miss ?? 0,
+                    score.statistics.miss ?? 0).accuracy;
             case 'mania':
-                useacc = osumodcalc.accuracy.mania(score.statistics.perfect ?? 0, score.statistics.great ?? 0, score.statistics.good ?? 0, score.statistics.ok ?? 0, score.statistics.meh ?? 0, score.statistics.miss ?? 0).accuracy;
-                break;
+                return osumodcalc.accuracy.mania(
+                    score.statistics.perfect ?? 0,
+                    score.statistics.great ?? 0,
+                    score.statistics.good ?? 0,
+                    score.statistics.ok ?? 0,
+                    score.statistics.meh ?? 0,
+                    score.statistics.miss ?? 0).accuracy;
         }
-        return useacc;
+        // return score.accuracy;
     }
 
     async formatScores() {
@@ -289,7 +301,7 @@ export class ScoreFormatter {
             maxPage
         };
     }
-    async formatScore(score: tooltypes.indexed<osuapi.types_v2.Score>, index: number): Promise<string> {
+    async formatScore(score: helper.tooltypes.indexed<osuapi.types_v2.Score>, index: number): Promise<string> {
         let info = this.scoreHeader(score, index);
         const perfs = await this.scorePerformance(score);
 
@@ -299,7 +311,7 @@ export class ScoreFormatter {
 
         return info;
     }
-    scoreHeader(score: tooltypes.indexed<osuapi.types_v2.Score>, index: number) {
+    scoreHeader(score: helper.tooltypes.indexed<osuapi.types_v2.Score>, index: number) {
         let str = `**#${(this.showOriginalIndex ? score.originalIndex : index) + 1}`;
         let modadjustments = '';
         if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
@@ -406,9 +418,9 @@ export class ScoreFormatter {
 
 export class MapSetFormatter {
     protected mapsets: osuapi.types_v2.BeatmapsetExtended[];
-    protected indexed: tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[];
+    protected indexed: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[];
     protected playcounts: osuapi.types_v2.BeatmapPlaycount[];
-    protected indexed_pc: tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[];
+    protected indexed_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[];
     protected sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length';
     protected filter: {
         mapper?: string,
@@ -458,7 +470,7 @@ export class MapSetFormatter {
         }
     }
     filterMaps() {
-        const dict: tooltypes.Dict<(set: tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>) => boolean> = {
+        const dict: helper.tooltypes.Dict<(set: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>) => boolean> = {
             mapper: (set => matchesString(set.user.username, this.filter.mapper) || matchesString(set.user_id + '', this.filter.mapper) || matchesString(set.user_id + '', this.filter.mapper)),
             title: (set => matchesString(set.artist, this.filter.artist) || matchesString(set.artist_unicode, this.filter.artist)),
             artist: (set => matchesString(set.artist, this.filter.artist) || matchesString(set.artist_unicode, this.filter.artist)),
@@ -475,10 +487,10 @@ export class MapSetFormatter {
         }
     }
     sortMaps() {
-        const dict: tooltypes.Dict<
+        const dict: helper.tooltypes.Dict<
             (
-                a: tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>,
-                b: tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>
+                a: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>,
+                b: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>
             ) => number
         > = {
             title: (a, b) => a.title.localeCompare(b.title),
@@ -506,10 +518,10 @@ export class MapSetFormatter {
                 b.beatmaps[0].total_length -
                 a.beatmaps[0].total_length,
         };
-        const playcountdict: tooltypes.Dict<
+        const playcountdict: helper.tooltypes.Dict<
             (
-                a: tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>,
-                b: tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>
+                a: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>,
+                b: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>
             ) => number
         > = {
             plays_pc: (a, b) => b.count - a.count
@@ -522,8 +534,8 @@ export class MapSetFormatter {
         }
     }
     syncIndexed() {
-        const temp: tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[] = [];
-        const temp_pc: tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[] = [];
+        const temp: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[] = [];
+        const temp_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[] = [];
         const setIndexes = this.indexed.map(x => x.originalIndex);
         const pcIndexes = this.indexed_pc.map(x => x.originalIndex);
         for (const pc of this.indexed_pc) {
@@ -679,7 +691,7 @@ export function userList(
         country: string;
     },
     reverse: boolean,
-): tooltypes.formatterInfo {
+): helper.tooltypes.formatterInfo {
     return {
         text: 'string',
         curPage: 1,

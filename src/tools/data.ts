@@ -24,7 +24,6 @@ export async function updateUserStats(user: osuapi.types_v2.User, mode: string) 
             case 'osu':
             default:
                 {
-
                     await helper.vars.userdata.update({
                         osupp: !isNaN(user?.statistics?.pp) ? user?.statistics?.pp : 0,
                         osurank: !isNaN(user?.statistics?.global_rank) ? user?.statistics?.global_rank : 0,

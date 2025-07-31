@@ -54,12 +54,16 @@ export class ReplayParse extends SingleScoreCommand {
             return;
         }
 
-
-        const chartInit = await other.graph(score.replay.lifeBar.map(x => calculate.secondsToTime(x.startTime / 1000)), score.replay.lifeBar.map(x => Math.floor(x.health * 100)), 'Health', {
-            fill: false,
-            startzero: true,
-            pointSize: 0,
-            gradient: true
+        const chartInit = other.graph({
+            x: score.replay.lifeBar.map(x => calculate.secondsToTime(x.startTime / 1000)),
+            y: score.replay.lifeBar.map(x => Math.floor(x.health * 100)),
+            label: 'Health',
+            other: {
+                fill: false,
+                startzero: true,
+                pointSize: 0,
+                gradient: true
+            }
         });
 
         const chartFile = new Discord.AttachmentBuilder(chartInit.path);

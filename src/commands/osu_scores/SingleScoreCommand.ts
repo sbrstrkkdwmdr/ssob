@@ -180,8 +180,11 @@ export class SingleScoreCommand extends OsuCommand {
             data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
             log.stdout(error);
         }
-        let strainsgraph =
-            await other.graph(strains.strainTime, strains.value, 'Strains', {
+        let strainsgraph = other.graph({
+            x: strains.strainTime,
+            y: strains.value,
+            label: 'Strains',
+            other: {
                 startzero: true,
                 type: 'bar',
                 fill: true,
@@ -189,7 +192,8 @@ export class SingleScoreCommand extends OsuCommand {
                 title: 'Strains',
                 imgUrl: osuapi.other.beatmapImages(map.beatmapset_id).full,
                 blurImg: true,
-            });
+            }
+        });
         this.ctn.files = [strainsgraph.path];
         return strainsgraph.filename + '.jpg';
     }

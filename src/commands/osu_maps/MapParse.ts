@@ -767,8 +767,11 @@ export class MapParse extends OsuCommand {
         }
         let mapgraph: string;
         if (strains) {
-            const mapgraphInit =
-                await other.graph(strains.strainTime, strains.value, 'Strains', {
+            const mapgraphInit = other.graph({
+                x: strains.strainTime,
+                y: strains.value,
+                label: 'Strains',
+                other: {
                     startzero: true,
                     type: 'bar',
                     fill: true,
@@ -776,7 +779,8 @@ export class MapParse extends OsuCommand {
                     title: 'Strains',
                     imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
                     blurImg: true,
-                });
+                }
+            });
             this.ctn.files.push(mapgraphInit.path);
             mapgraph = mapgraphInit.filename;
         } else {
@@ -791,18 +795,24 @@ export class MapParse extends OsuCommand {
         for (let i = 0; i < failval.length; i++) {
             numofval.push(`${i}s`);
         }
-        const passInit = await other.graph(numofval, map.failtimes.fail, 'Fails', {
-            stacked: true,
-            type: 'bar',
-            showAxisX: false,
-            title: 'Fail times',
-            imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-            blurImg: true,
-        }, [{
-            data: map.failtimes.exit,
-            label: 'Exits',
-            separateAxis: false,
-        }]);
+        const passInit = other.graph({
+            x: numofval,
+            y: map.failtimes.fail,
+            label: 'Fails',
+            other: {
+                stacked: true,
+                type: 'bar',
+                showAxisX: false,
+                title: 'Fail times',
+                imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
+                blurImg: true,
+            },
+            extra: [{
+                data: map.failtimes.exit,
+                label: 'Exits',
+                separateAxis: false,
+            }]
+        });
         this.ctn.files.push(passInit.path);
 
         const passurl = passInit.filename;

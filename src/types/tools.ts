@@ -47,3 +47,15 @@ export type formatterInfo = {
     curPage: number,
     maxPage: number,
 };
+
+export type dataset = {
+    label: string,
+    data: number[];
+    fill: boolean,
+    borderColor: string | ((colour) => string),
+    borderWidth: number,
+    pointRadius: number,
+    yAxisID: string,
+};
+
+export type graphPosition = 'left' | 'top' | 'center' | 'right' | 'bottom'
