@@ -90,7 +90,7 @@ export class Debug extends Command {
             }
                 break;
             //returns command logs for server
-            case 'logs': this.getLogs()
+            case 'logs': this.getLogs();
                 break;
             case 'ls': this.listData();
                 break;
@@ -106,19 +106,24 @@ export class Debug extends Command {
         }
         await this.send();
     }
-    async findAndReturn(inpath: string, find: string, serverId: string) {
+    findAndReturn(inpath: string, find: string, serverId: string) {
         const sFiles = fs.readdirSync(`${inpath}`);
         const found = sFiles.find(x => x == find);
-        const inFiles = fs.readdirSync(`${inpath}/${found}`);
+        let inFiles = [];
+        try {
+            inFiles = fs.readdirSync(`${inpath}/${found}`);
+        } catch (err) {
+            this.ctn.content = `No files found for command \`${this.params.inputstr}\``
+            return;
+        }
         this.ctn.content = `Files found for command \`${this.params.inputstr}\``;
         this.ctn.files = inFiles.map(x => `${inpath}/${found}/${x}`);
-        if (!isNaN(+serverId)) {
+        if (!isNaN(+serverId) && serverId) {
             const tfiles = inFiles.map(x => `${inpath}/${found}/${x}`).filter(x => x.includes(serverId));
             this.ctn.content = `Files found for command \`${this.params.inputstr}\`, matching server ID ${serverId}`;
             this.ctn.files = tfiles;
             if (tfiles.length == 0) {
-                this.ctn.files = inFiles.map(x => `${inpath}/${found}/${x}`);
-                this.ctn.content = `Files found for command \`${this.params.inputstr}\`. None found matching ${serverId}`;
+                this.ctn.content = `No found for command \`${this.params.inputstr}\` matching ${serverId}`;
             }
         }
     }
@@ -171,147 +176,22 @@ export class Debug extends Command {
         if (!this.params.inputstr) {
             this.ctn.content = `No search query given`;
         }
-        const files = fs.readdirSync(`${helper.path.cache}/debug/command`);
-        if (files.length < 1) {
+        const files = fs.readdirSync(`${helper.path.cache}/debug`);
+        if (files.length == 0) {
             this.ctn.content = 'Cache folder is currently empty';
         } else {
             //convert to search term
-            let resString: string;
             let tempId = null;
             if (this.params.inputstr.includes(' ')) {
                 const temp = this.params.inputstr.split(' ');
                 this.params.inputstr = temp[0];
                 tempId = temp[1];
             }
-            const cmdftypes = [
-                'Badges',
-                'BadgeWeightSeed',
-                'Compare',
-                'Firsts',
-                'Map',
-                'MapLeaderboard',
-                'MapScores',
-                'OsuTop',
-                'Pinned',
-                'Profile',
-                'Ranking',
-                'Recent',
-                'RecentList',
-                'RecentActivty',
-                'ScoreParse',
-                'ScoreStats',
-                'Simulate',
-                'UserBeatmaps',
-                'WhatIf',
-            ];
-            switch (this.params.inputstr.toLowerCase()) {
-                case 'badgeweightsystem': case 'badgeweight': case 'badgeweightseed': case 'badgerank': case 'bws':
-                    resString = 'BadgeWeightSeed';
-                    break;
-                case 'firstplaceranks': case 'fpr': case 'fp': case '#1s': case 'first': case '#1': case '1s':
-                    resString = 'Firsts';
-                    break;
-                case 'osc': case 'osustatscount':
-                    resString = 'globals';
-                    break;
-                case 'm':
-                    resString = 'Map';
-                    break;
-                case 'maplb': case 'mapleaderboard': case 'leaderboard':
-                    resString = 'MapLeaderboard';
-                    break;
-                case 'profile': case 'o': case 'user': case 'osu':
-                case 'taiko': case 'drums':
-                case 'fruits': case 'ctb': case 'catch':
-                case 'mania':
-                    resString = 'Profile';
-                    break;
-                case 'top': case 't': case 'ot': case 'toposu': case 'topo':
-                case 'taikotop': case 'toptaiko': case 'tt': case 'topt':
-                case 'ctbtop': case 'fruitstop': case 'catchtop': case 'topctb': case 'topfruits': case 'topcatch': case 'tctb': case 'tf': case 'topf': case 'topc':
-                case 'maniatop': case 'topmania': case 'tm': case 'topm':
-                case 'sotarks': case 'sotarksosu':
-                case 'sotarkstaiko': case 'taikosotarks': case 'sotarkst': case 'tsotarks':
-                case 'sotarksfruits': case 'fruitssotarks': case 'fruitsotarks': case 'sotarksfruit': case 'sotarkscatch': case 'catchsotarks':
-                case 'sotarksctb': case 'ctbsotarks': case 'fsotarks': case 'sotarksf': case 'csotarks': case 'sotarksc':
-                case 'sotarksmania': case 'maniasottarks': case 'sotarksm': case 'msotarks':
-                    resString = 'OsuTop';
-                    break;
-                case 'rs': case 'r':
-                case 'recenttaiko': case 'rt':
-                case 'recentfruits': case 'rf': case 'rctb':
-                case 'recentmania': case 'rm':
-                    resString = 'Recent';
-                    break;
-                case 'rs best': case 'recent best':
-                case 'rsbest': case 'recentbest': case 'rb':
-                case 'recentlist': case 'rl':
-                case 'recentlisttaiko': case 'rlt':
-                case 'recentlistfruits': case 'rlf': case 'rlctb': case 'rlc':
-                case 'recentlistmania': case 'rlm':
-                    resString = 'RecentList';
-                case 'recentactivity': case 'recentact': case 'rsact':
-                    resString = 'RecentActivty';
-                    break;
-                case 'score': case 'sp':
-                    resString = 'ScoreParse';
-                    break;
-                case 'c': case 'scores':
-                    resString = 'MapScores';
-                    break;
-                case 'ss':
-                    resString = 'ScoreStats';
-                    break;
-                case 'simulate': case 'sim': case 'simplay':
-                    resString = 'Simulate';
-                    break;
-                case 'ub': case 'userb': case 'ubm': case 'um': case 'usermaps':
-                    resString = 'UserBeatmaps';
-                    break;
-                case 'wi':
-                    resString = 'WhatIf';
-                    break;
-                case 'mapfile': case 'mf':
-                    resString = 'map (file)';
-                    break;
-                default:
-                    resString = this.params.inputstr;
-                    break;
+            const cmd = commandTools.getCommand(this.params.inputstr.toLowerCase());
+            if (!cmd) {
+                await this.sendError("Invalid command alias");
             }
-            switch (resString) {
-                case 'badges':
-                case 'bws':
-                case 'firsts':
-                case 'globals':
-                case 'map':
-                case 'maplb':
-                case 'osu':
-                case 'osutop':
-                case 'pinned':
-                case 'recent':
-                case 'recent_activity':
-                case 'scoreparse':
-                case 'scores':
-                case 'scorestats':
-                case 'simplay':
-                case 'userbeatmaps':
-                case 'whatif':
-                case 'weather':
-                case 'tropicalweather':
-                    {
-                        await this.findAndReturn(`${helper.path.cache}/debug/command`, resString, tempId);
-                    }
-                    break;
-                case 'map (file)':
-                case 'replay':
-                    {
-                        await this.findAndReturn(`${helper.path.cache}/debug/fileparse`, resString, tempId);
-                    }
-                    break;
-                default:
-                    this.ctn.content = `${this.params.inputstr && this.params.inputstr?.length > 0 ? `No files found for command "${this.params.inputstr}"\n` : ''}Valid options are: ${cmdftypes.map(x => '`' + x + '`').join(', ')}`;
-                    break;
-            }
+            this.findAndReturn(`${helper.path.cache}/debug`, cmd.name, tempId);
         }
     }
     serverList() {
@@ -452,8 +332,8 @@ Joined(EPOCH):  ${member.joinedTimestamp}
             const cmdCache = fs.readdirSync(`${helper.path.cache}/commandData`);
             fields.push(this.debugIntoField('Cache', cmdCache, `${helper.path.files}/cmdcache.txt`, files));
             //debug
-            const debugCMD = fs.readdirSync(`${helper.path.cache}/debug/command`);
-            const debugFP = fs.readdirSync(`${helper.path.cache}/debug/fileparse`);
+            const debugCMD = fs.readdirSync(`${helper.path.cache}/debug`);
+            const debugFP = fs.readdirSync(`${helper.path.cache}/debug`);
             const debugCache = debugCMD.concat(debugFP);
             fields.push(this.debugIntoField('Debug', debugCache, `${helper.path.files}/debugcache.txt`, files, true));
             //error files
