@@ -18,7 +18,7 @@ export class ButtonHandler extends InputHandler {
         this.overrides = {
             commandAs: 'button',
         };
-        
+
         let canReply = true;
         if (!checks.botHasPerms(interaction, ['ReadMessageHistory'])) {
             canReply = false;
@@ -115,7 +115,7 @@ export class ButtonHandler extends InputHandler {
                         // @ts-expect-error TS2339: Property 'components' does not exist on type 'TopLevelComponent'.
                         if (interaction?.message?.components[2]?.components[0]) {
                             // @ts-expect-error TS2339: Property 'components' does not exist on type 'TopLevelComponent'.
-                            overrides.overwriteModal = interaction.message.components[2].components[0] as any;
+                            this.overrides.overwriteModal = interaction.message.components[2].components[0] as any;
                         }
                     }
                     break;
