@@ -204,7 +204,7 @@ export class MapLeaderboard extends OsuCommand {
 
         this.scores = lbdataf.scores;
     }
-    protected createEmbed(data: formatterInfo) {
+    protected createEmbed(data: formatterInfo<osuapi.v2.types.Score>) {
         const lbEmbed = new Discord.EmbedBuilder()
             .setColor(helper.colours.embedColour.scorelist.dec)
             .setTitle(`Score leaderboard of \`${this.mapTitle(this.map, this.map.beatmapset)}\``)

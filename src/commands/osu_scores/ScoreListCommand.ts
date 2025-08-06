@@ -1,6 +1,7 @@
 import Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../../helper';
+import * as calculate from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
@@ -418,7 +419,6 @@ export class ScoreListCommand extends OsuCommand {
             .setThumbnail(`${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setURL(seturl);
         formatters.userAuthor(this.osudata, scoresEmbed);
-
         const obj = new formatters.ScoreFormatter({
             scores: this.scores,
             sort: this.params.sort,
@@ -446,7 +446,9 @@ export class ScoreListCommand extends OsuCommand {
             overrideMap: this.map ?? undefined,
         });
         const scoresFormat = await obj.execute();
-
+        if (this.type == 'nochokes') {
+            this.userPerf(scoresEmbed, scoresFormat.used);
+        }
         commandTools.storeButtonArgs(this.input.id + '', {
             user: this.params.user,
             searchid: this.params.searchid,
@@ -468,7 +470,6 @@ export class ScoreListCommand extends OsuCommand {
             reverse: this.params.reverse,
             maxPage: scoresFormat.maxPage
         });
-
         scoresEmbed.setFooter({
             text: `${scoresFormat.curPage}/${scoresFormat.maxPage} | ${this.params.mode ?? osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}`
         });
@@ -528,7 +529,7 @@ export class ScoreListCommand extends OsuCommand {
             const u = await this.getProfile(this.params.user, this.params.mode);
             this.osudata = u;
         } catch (e) {
-            return;
+            await this.sendError(helper.errors.profile.user(this.params.user));
         }
 
         this.buttons.addComponents(
@@ -540,8 +541,7 @@ export class ScoreListCommand extends OsuCommand {
         try {
             await this.getScores();
         } catch (e) {
-            console.log(e);
-            return;
+            await this.sendError(helper.errors.scores.generic(this.params.user));
         }
 
         if (this.params.parseScore) {
@@ -583,5 +583,18 @@ export class ScoreListCommand extends OsuCommand {
                 throw new Error('');
             }
         }
+    }
+    userPerf(embed: Discord.EmbedBuilder, scores: osuapi.types_v2.Score[]) {
+        const pp = calculate.totalWeightedPerformance(scores.map(x => x.pp));
+        // return;
+        const json = embed.toJSON();
+        const temp = json.author!.name.split('|');
+        temp.pop();
+        temp.push(` est. ${pp.toFixed(2)}pp (excl. bonus)`);
+        embed.setAuthor({
+            url: json.author.url,
+            iconURL: json.author.icon_url,
+            name: temp.join('|')
+        });
     }
 }

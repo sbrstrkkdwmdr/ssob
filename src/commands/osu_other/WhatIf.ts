@@ -118,14 +118,7 @@ export class WhatIf extends OsuCommand {
         const ppindex = pparr.indexOf(this.params.pp);
 
         const weight = calculate.findWeight(ppindex);
-
-        const newTotal: number[] = [];
-
-        for (let i = 0; i < pparr.length; i++) {
-            newTotal.push(pparr[i] * calculate.findWeight(i));
-        }
-
-        const total = newTotal.reduce((a, b) => a + b, 0);
+        const total = calculate.totalWeightedPerformance(pparr);
         //     416.6667 * (1 - 0.9994 ** osudata.statistics.play_count);
 
         const newBonus = [];

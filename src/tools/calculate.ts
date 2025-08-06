@@ -424,6 +424,16 @@ export function findWeight(index: number) {
     return (0.95 ** (index));
 }
 
+export function totalWeightedPerformance(input: number[]) {
+    const values = input.slice().sort((a, b) => b - a);
+    let n = 0;
+    for (let i = 0; i < values.length; i++) {
+        const weighted = values[i] * findWeight(i);
+        n += weighted;
+    }
+    return n;
+}
+
 export function isWithinPercentage(input: number, percentage: number, against: number) {
     if (percentage < 0 || percentage > 100) {
         throw new Error('Percentage should be between 0 and 100.');

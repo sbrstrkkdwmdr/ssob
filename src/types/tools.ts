@@ -42,10 +42,11 @@ export type indexed<T = any> = T & {
     originalIndex: number,
 };
 
-export type formatterInfo = {
+export type formatterInfo<T> = {
     text: string,
     curPage: number,
     maxPage: number,
+    used: T[]
 };
 
 export type dataset = {

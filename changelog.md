@@ -16,6 +16,7 @@
 
 -   updated osumodcalculator
 -   edit parts of command data for clarity
+-   no chokes show estimated total performance in author section
 
 ### Removed
 

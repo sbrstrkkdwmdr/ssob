@@ -298,7 +298,8 @@ export class ScoreFormatter {
         return {
             text: text.join('\n\n'),
             curPage: this.page,
-            maxPage
+            maxPage,
+            used: this.scores ?? []
         };
     }
     async formatScore(score: helper.tooltypes.indexed<osuapi.types_v2.Score>, index: number): Promise<string> {
@@ -403,13 +404,14 @@ export class ScoreFormatter {
         return str;
     }
 
-    async execute(): Promise<tooltypes.formatterInfo> {
+    async execute(): Promise<tooltypes.formatterInfo<osuapi.types_v2.Score>> {
         await this.parseScores();
         if (this.indexed.length == 0) {
             return {
                 text: 'No scores were found (check the filter options)',
                 curPage: 0,
                 maxPage: 0,
+                used: this.scores ?? [],
             };
         }
         return await this.formatScores();
@@ -551,7 +553,7 @@ export class MapSetFormatter {
         this.indexed = temp;
         this.indexed_pc = temp_pc;
     }
-    formatMaps() {
+    formatMaps(): tooltypes.formatterInfo<osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended> {
         const pages = this.handlePage();
         let text: string[] = [];
         for (let i = 0; i < 5 && i < this.indexed.length - pages.offset; i++) {
@@ -565,7 +567,8 @@ export class MapSetFormatter {
         return {
             text: text.join('\n\n'),
             curPage: this.page,
-            maxPage: pages.maxPage
+            maxPage: pages.maxPage,
+            used: (this.playcounts ?? this.mapsets)
         };
     }
     handlePage() {
@@ -621,7 +624,7 @@ export class MapSetFormatter {
         return listLine(submit, last);
     }
 
-    execute() {
+    execute(): tooltypes.formatterInfo<osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended> {
         this.parseMaps();
         return this.formatMaps();
     }
@@ -672,7 +675,8 @@ export class MapPlayFormatter extends MapSetFormatter {
         return {
             text: text.join('\n\n'),
             curPage: this.page,
-            maxPage: pages.maxPage
+            maxPage: pages.maxPage,
+            used: (this.playcounts ?? this.mapsets)
         };
     }
 }
@@ -691,11 +695,12 @@ export function userList(
         country: string;
     },
     reverse: boolean,
-): helper.tooltypes.formatterInfo {
+): helper.tooltypes.formatterInfo<any> {
     return {
         text: 'string',
         curPage: 1,
         maxPage: 1,
+        used: []
     };
 }
 
