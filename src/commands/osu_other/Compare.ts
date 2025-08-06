@@ -196,7 +196,7 @@ export class Compare extends OsuCommand {
             });
         }
 
-        if (topdata?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(topdata)) {
             if (this.input.type != 'button' && this.input.type != 'link') {
                 await this.sendError(`could not fetch ${n} user\'s top scores`);
             }

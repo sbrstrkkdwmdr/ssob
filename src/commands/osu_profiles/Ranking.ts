@@ -131,7 +131,7 @@ export class Ranking extends OsuCommand {
 
         data.storeFile(rankingdata, this.input.id, 'rankingdata');
 
-        if (rankingdata?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(rankingdata)) {
             await this.sendError(helper.errors.generic.rankings);
             return;
         }

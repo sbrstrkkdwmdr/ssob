@@ -325,7 +325,7 @@ ${this.supporterStatus} ${this.onlineStatus}
     protected async mostPlayed() {
         const mostplayeddata: osuapi.types_v2.BeatmapPlayCountArr = await osuapi.v2.users.mostPlayed({ user_id: this.user.id });
         data.debug(mostplayeddata, 'command', 'osu', this.input.message?.guildId ?? this.input.interaction?.guildId, 'mostPlayedData');
-        if (mostplayeddata?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(mostplayeddata)) {
             await this.sendError(helper.errors.profile.mostplayed);
             return;
         }

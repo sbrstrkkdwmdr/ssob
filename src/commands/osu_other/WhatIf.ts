@@ -167,7 +167,7 @@ export class WhatIf extends OsuCommand {
             });
         }
 
-        if (topdata?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(topdata)) {
             await this.sendError(helper.errors.scores.best(user));
         }
         data.storeFile(topdata, this.input.id, 'osutopdata');

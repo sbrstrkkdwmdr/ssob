@@ -84,7 +84,7 @@ export class ScoreParse extends SingleScoreCommand {
         }
 
         data.debug(this.score, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'scoreData');
-        if (this.score?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(this.score)) {
             await this.sendError(helper.errors.score.nd(this.params.scoreid));
         }
         data.storeFile(this.score, this.params.scoreid, 'scoredata', other.modeValidator(this.score.ruleset_id));
@@ -116,7 +116,7 @@ export class ScoreParse extends SingleScoreCommand {
             this.map = await osuapi.v2.beatmaps.map({ id: this.score?.beatmap?.id ?? this.score?.beatmap_id });
         }
 
-        if (this.map?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(this.map)) {
             await this.sendError(helper.errors.map.m(this.score.beatmap.id));
         }
 

@@ -278,7 +278,7 @@ export class UserBeatmaps extends OsuCommand {
                     type: this.params.filterType,
                     offset: cinitnum
                 });
-        if (fd?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(fd)) {
             await this.sendError(helper.errors.map.group_nf(this.params.filterType));
             return;
         }

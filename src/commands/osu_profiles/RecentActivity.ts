@@ -90,7 +90,7 @@ export class RecentActivity extends OsuCommand {
 
         data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
-        if (osudata?.hasOwnProperty('error') || !osudata.id) {
+        if (helper.errors.isErrorObject(osudata) || !osudata.id) {
             await this.sendError(helper.errors.profile.user(this.params.user));
             return;
         }
@@ -126,7 +126,7 @@ export class RecentActivity extends OsuCommand {
 
         data.debug(rsactData, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
 
-        if (rsactData?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(rsactData)) {
             await this.sendError(helper.errors.profile.rsact);
             return;
         }

@@ -153,7 +153,7 @@ export class ScoreStats extends OsuCommand {
                 fd = await osuapi.v2.scores.pinned(defArgs);
                 break;
         }
-        if (fd?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(fd)) {
             await this.sendError(helper.errors.scores.best(args.user).replace('top', args.scoreTypes == 'best' ? 'top' : args.scoreTypes));
             return;
         }

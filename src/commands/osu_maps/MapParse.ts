@@ -320,7 +320,7 @@ export class MapParse extends OsuCommand {
             data.debug(mapidtest, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapIdTestData');
             data.storeFile(mapidtest, this.params.query.replace(/[\W_]+/g, '').replaceAll(' ', '_'), 'mapQuerydata');
 
-            if (mapidtest?.hasOwnProperty('error')) {
+            if (helper.errors.isErrorObject(mapidtest)) {
                 await this.sendError(helper.errors.map.search);
                 return;
             }

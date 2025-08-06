@@ -15,6 +15,9 @@ import { ScoreParse } from './osu_scores';
 export abstract class InputHandler {
     protected selected: Command;
     protected overrides: helper.bottypes.overrides = {};
+    constructor() {
+        this.overrides = {};
+    }
     abstract onMessage(message: Discord.Message): Promise<void>;
     abstract onInteraction(interaction: Discord.Interaction): Promise<void>;
 }
@@ -432,7 +435,7 @@ export class OsuCommand extends Command {
             osudata = await osuapi.v2.users.profile({ name: user, mode });
         }
 
-        if (osudata?.hasOwnProperty('error') || !osudata.id) {
+        if (helper.errors.isErrorObject(osudata) || !osudata.id) {
             await this.sendError(helper.errors.profile.user(user));
         }
         data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
@@ -454,7 +457,7 @@ export class OsuCommand extends Command {
             mapdata = await osuapi.v2.beatmaps.map({ id: +mapid });
         }
 
-        if (mapdata?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(mapdata)) {
             await this.sendError(helper.errors.map.m(mapid));
         }
 
@@ -472,7 +475,7 @@ export class OsuCommand extends Command {
             bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
         }
         data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
-        if (bmsdata?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(bmsdata)) {
             await this.sendError(helper.errors.map.ms(mapsetid));
             return;
         }

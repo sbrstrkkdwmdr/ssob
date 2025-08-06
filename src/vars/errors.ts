@@ -138,3 +138,7 @@ export const tracking = {
         return 'You can only use this command in <#' + id + '>';
     }),
 };
+
+export function isErrorObject(obj: object): boolean {
+    return obj.hasOwnProperty("error") && Object.keys(obj).length < 3;
+};

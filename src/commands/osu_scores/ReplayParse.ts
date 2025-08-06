@@ -85,7 +85,7 @@ export class ReplayParse extends SingleScoreCommand {
         } else {
             this.map = await osuapi.v2.beatmaps.mapLookup({ checksum: hash });
         }
-        if (this.map?.hasOwnProperty('error')) {
+        if (helper.errors.isErrorObject(this.map)) {
             await this.sendError(helper.errors.map.m(hash));
         }
         data.debug(this.map, 'fileparse', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
