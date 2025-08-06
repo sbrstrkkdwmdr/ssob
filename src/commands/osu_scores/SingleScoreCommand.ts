@@ -73,14 +73,10 @@ export class SingleScoreCommand extends OsuCommand {
             guesspasspercentage = Math.abs((totalhits / curbmhitobj) * 100);
         }
 
-        // let showFailGraph = false;
-        // let FailGraph = '';
-
         let rsgrade = helper.emojis.grades[this.score.rank.toUpperCase()];
         if (!this.score.passed) {
             rspassinfo = `${guesspasspercentage.toFixed(2)}% completed (${calculate.secondsToTime(curbmpasstime)}/${calculate.secondsToTime(this.map.total_length)})`;
-            rsgrade =
-                helper.emojis.grades.F + `(${helper.emojis.grades[this.score.rank.toUpperCase()]} if pass)`;
+            rsgrade = helper.emojis.grades.F + `(${helper.emojis.grades[this.grade().rank.toUpperCase()]} if pass)`;
         }
 
         const fulltitle = `${this.mapset.artist} - ${this.mapset.title} [${this.map.version}]`;
@@ -274,5 +270,18 @@ ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.sco
                 break;
         }
         return embed;
+    }
+    grade() {
+        const stats = this.score.statistics;
+        switch (this.score.ruleset_id) {
+            case 0:
+                return osumodcalc.accuracy.standard(stats.great, stats.ok ?? 0, stats.meh ?? 0, stats.miss ?? 0);
+            case 1:
+                return osumodcalc.accuracy.taiko(stats.great, stats.good ?? 0, stats.miss ?? 0);
+            case 2:
+                return osumodcalc.accuracy.fruits(stats.great, stats.ok ?? 0, stats.small_tick_hit ?? 0, stats.small_tick_miss ?? 0, stats.miss ?? 0);
+            case 3:
+                return osumodcalc.accuracy.mania(stats.perfect ?? 0, stats.great, stats.good ?? 0, stats.ok ?? 0, stats.meh ?? 0, stats.miss ?? 0);
+        }
     }
 }

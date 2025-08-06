@@ -11,6 +11,7 @@
 -   added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
 -   `Rankings` not missing all args in `setParamsMsg`
 -   `osuapi` cached oauthkey not updating when expired
+-   `Recent` "F if pass"
 
 ### Changed
 
