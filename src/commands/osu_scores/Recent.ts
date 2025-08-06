@@ -31,7 +31,6 @@ export class Recent extends SingleScoreCommand {
     }
 
     async setParamsMsg() {
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
         this.params.showFails = this.setParam(this.params.showFails, ['-nf', '-nofail', '-pass', '-passes', 'passes=true'], 'bool', {});
         this.setParamPage();
         this.params.filter = this.setParam(this.params.filter, ['-?'], 'string', { string_isMultiple: true });
@@ -42,12 +41,7 @@ export class Recent extends SingleScoreCommand {
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user) {
-            this.params.user = this.argParser.getRemaining().join(' ').trim();
-        }
-        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
-            this.params.user = null;
-        }
+        this.setUserParams();
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;

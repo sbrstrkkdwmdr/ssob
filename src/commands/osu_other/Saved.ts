@@ -27,11 +27,7 @@ export class Saved extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        this.params.user = this.input.args.join(' ')?.replaceAll('"', '');
-        if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid)) {
-            this.params.user = null;
-        }
+        this.setUserParams();
     }
     getOverrides(): void {
         if (!this.input.overrides) return;

@@ -20,17 +20,9 @@ export class BadgeWeightSeed extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
-        if (!this.params.user) {
-            this.params.user = this.argParser.getRemaining().join(' ').trim();
-        }
-        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
-            this.params.user = null;
-        }
-
+        this.setUserParams();
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;

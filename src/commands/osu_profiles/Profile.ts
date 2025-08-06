@@ -27,8 +27,6 @@ export class Profile extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-
         this.params.detailed = this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 });
         this.params.graphonly = this.setParam(this.params.graphonly, ['-g', '-graph'], 'bool', {});
         this.setParamMode();
@@ -38,12 +36,7 @@ export class Profile extends OsuCommand {
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user) {
-            this.params.user = this.argParser.getRemaining().join(' ').trim();
-        }
-        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
-            this.params.user = null;
-        }
+        this.setUserParams();
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;

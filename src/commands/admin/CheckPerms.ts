@@ -15,7 +15,6 @@ export class CheckPerms extends Command {
         };
     }
     async setParamsMsg() {
-
         if (this.input.args[0]) {
             if (this.input.message.mentions.users.size > 0) {
                 this.params.searchUser = this.input.message.mentions.users.first();

@@ -11,7 +11,7 @@ newest-oldest
 -   [x] Clear
 -   [x] Debug
 -   [x] MapParse
--   [ ] RandomMap
+-   [x] RandomMap
 -   [ ] RecommendMap
 -   [ ] UserBeatmaps
 -   [ ] Compare

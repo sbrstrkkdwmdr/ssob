@@ -35,7 +35,6 @@ export class ScoreStats extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
         {
             this.setParamMode();
 
@@ -47,20 +46,12 @@ export class ScoreStats extends OsuCommand {
             { set: 'pinned', flags: ['pinned', 'pins', 'pin', 'p'] },
         );
         this.params.all = this.setParam(this.params.all, ['all', 'd', 'a', 'detailed'], 'bool', {});
-
-
-
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
         if (usertemp?.mode && !this.params.mode) {
             this.params.mode = usertemp?.mode;
         }
-        if (!this.params.user) {
-            this.params.user = this.argParser.getRemaining().join(' ').trim();
-        }
-        if (this.params.user == '' || this.params.user.includes(this.params.searchid)) {
-            this.params.user = null;
-        }
+        this.setUserParams();
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;

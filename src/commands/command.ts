@@ -251,7 +251,9 @@ export class Command {
      * will check whether to prioritise user or searchid
      */
     protected setUserParams() {
-        this.params.user = this.argParser.getRemaining().join(' ')?.replaceAll('"', '');
+        if (!this.params.user) {
+            this.params.user = this.argParser.getRemaining().join(' ').trim();
+        }
         this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
         if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid) || this.params.user == '') {
             this.params.user = null;

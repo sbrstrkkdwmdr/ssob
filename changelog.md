@@ -40,6 +40,7 @@
 -   change message sender into a class
 -   debug files are now stored in `/debug/` instead of `/debug/<type>/`
 -   `Debug` commandfiletype uses `commandTools.getCommand()` instead of long switch statement
+-   move searchid and nulling user to separate method
 
 ## [5.2.0] - 2025-07-02
 
