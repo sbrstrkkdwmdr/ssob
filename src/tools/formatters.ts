@@ -86,6 +86,7 @@ export class ScoreFormatter {
         this.overrideMap = overrideMap;
         this.showOriginalIndex = showOriginalIndex ?? true;
         this.preset = preset;
+        this.indexed = [];
     }
     async parseScores() {
         for (let i = 0; i < this.scores.length; i++) {
@@ -185,6 +186,7 @@ export class ScoreFormatter {
         switch (this.sort) {
             case 'pp':
                 await this.sortScores_performance();
+                this.indexed.sort((a, b) => b.pp - a.pp);
                 break;
             case 'score':
                 this.indexed.sort((a, b) => b.total_score - a.total_score);
@@ -299,7 +301,7 @@ export class ScoreFormatter {
             text: text.join('\n\n'),
             curPage: this.page,
             maxPage,
-            used: this.scores ?? []
+            used: this.indexed ?? []
         };
     }
     async formatScore(score: helper.tooltypes.indexed<osuapi.types_v2.Score>, index: number): Promise<string> {
@@ -411,7 +413,7 @@ export class ScoreFormatter {
                 text: 'No scores were found (check the filter options)',
                 curPage: 0,
                 maxPage: 0,
-                used: this.scores ?? [],
+                used: this.indexed ?? [],
             };
         }
         return await this.formatScores();
@@ -458,6 +460,8 @@ export class MapSetFormatter {
         this.reverse = reverse;
         this.page = page;
         this.mode = 'set';
+        this.indexed = [];
+        this.indexed_pc = [];
     }
     parseMaps() {
         for (let i = 0; i < this.mapsets.length; i++) {
