@@ -135,7 +135,7 @@ export class Simulate extends OsuCommand {
             this.params.customOD,
             this.params.customHP,
         );
-        data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
+        data.debug(perfs, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
 
         const mapPerf = await performance.calcMap({
             mods: osumodcalc.mod.fromString(this.params.mods),

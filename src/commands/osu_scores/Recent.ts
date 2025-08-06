@@ -124,7 +124,7 @@ export class Recent extends SingleScoreCommand {
             });
         }
 
-        data.debug(this.scores, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsData');
+        data.debug(this.scores, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsData');
         if (helper.errors.isErrorObject(this.scores)) {
             await this.sendError(helper.errors.scores.recent(this.params.user));
         }

@@ -438,7 +438,7 @@ export class OsuCommand extends Command {
         if (helper.errors.isErrorObject(osudata) || !osudata.id) {
             await this.sendError(helper.errors.profile.user(user));
         }
-        data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
+        data.debug(osudata, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
         data.userStatsCache([osudata], other.modeValidator(mode), 'User');
 
@@ -474,7 +474,7 @@ export class OsuCommand extends Command {
         } else {
             bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
         }
-        data.debug(bmsdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
+        data.debug(bmsdata, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
         if (helper.errors.isErrorObject(bmsdata)) {
             await this.sendError(helper.errors.map.ms(mapsetid));
             return;

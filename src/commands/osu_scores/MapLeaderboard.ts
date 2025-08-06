@@ -195,7 +195,7 @@ export class MapLeaderboard extends OsuCommand {
             });
         }
 
-        data.debug(lbdataf, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'lbDataF');
+        data.debug(lbdataf, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'lbDataF');
 
         if (helper.errors.isErrorObject(lbdataf)) {
             this.sendError(helper.errors.map.lb(this.params.mapid));

@@ -10,7 +10,7 @@ newest-oldest
 
 -   [x] Clear
 -   [ ] Debug
--   [ ] MapParse
+-   [x] MapParse
 -   [ ] RandomMap
 -   [ ] RecommendMap
 -   [ ] UserBeatmaps

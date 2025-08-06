@@ -22,7 +22,7 @@ export class ReplayParse extends SingleScoreCommand {
 
         const decoder = new osuparsers.ScoreDecoder();
         const score = await decoder.decodeFromPath(`${helper.path.files}/replays/${this.input.id}.osr`);
-        data.debug(score, 'fileparse', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'replayData');
+        data.debug(score,  this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'replayData');
         this.setScore(score);
         try {
             this.map = await this.getMap(score?.info?.beatmapHashMD5);
@@ -88,7 +88,7 @@ export class ReplayParse extends SingleScoreCommand {
         if (helper.errors.isErrorObject(this.map)) {
             await this.sendError(helper.errors.map.m(hash));
         }
-        data.debug(this.map, 'fileparse', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
+        data.debug(this.map,  this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
         data.storeFile(this.map, this.map.id, 'this.map');
         data.storeFile(this.map, hash, 'this.map');
         return this.map;

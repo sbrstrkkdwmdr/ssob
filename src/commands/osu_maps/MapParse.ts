@@ -33,7 +33,7 @@ export class MapParse extends OsuCommand {
     #apiMods: osumodcalc.types.ApiMod[];
     constructor() {
         super();
-        this.name = 'Map';
+        this.name = 'MapParse';
         this.params = {
             mapid: undefined,
             mapmods: [],
@@ -317,7 +317,7 @@ export class MapParse extends OsuCommand {
         }
         else if (this.params.query != null) {
             const mapidtest = await osuapi.v2.beatmaps.search({ query: this.params.query });
-            data.debug(mapidtest, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapIdTestData');
+            data.debug(mapidtest, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapIdTestData');
             data.storeFile(mapidtest, this.params.query.replace(/[\W_]+/g, '').replaceAll(' ', '_'), 'mapQuerydata');
 
             if (helper.errors.isErrorObject(mapidtest)) {
@@ -509,7 +509,7 @@ export class MapParse extends OsuCommand {
             } catch (error) {
                 totaldiff = map.difficulty_rating?.toFixed(2);
             }
-            data.debug(ppComputed, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
+            data.debug(ppComputed, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
 
         } catch (error) {
             log.stdout(error);
@@ -760,9 +760,9 @@ export class MapParse extends OsuCommand {
                 mapLastUpdated: new Date(map.last_updated),
             });
         try {
-            data.debug(strains, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+            data.debug(strains, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
         } catch (error) {
-            data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+            data.debug({ error: error }, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
         }
         let mapgraph: string;
         if (strains) {

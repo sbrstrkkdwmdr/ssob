@@ -83,7 +83,7 @@ export class ScoreParse extends SingleScoreCommand {
             this.score = await osuapi.v2.scores.single({ id: this.params.scoreid, ...hasMode });
         }
 
-        data.debug(this.score, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'scoreData');
+        data.debug(this.score, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'scoreData');
         if (helper.errors.isErrorObject(this.score)) {
             await this.sendError(helper.errors.score.nd(this.params.scoreid));
         }

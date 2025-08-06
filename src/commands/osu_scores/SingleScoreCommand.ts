@@ -141,7 +141,7 @@ export class SingleScoreCommand extends OsuCommand {
                 overrides.od,
                 overrides.hp,
             );
-            data.debug(perfs, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalcing');
+            data.debug(perfs, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalcing');
 
             const mxCombo = perfs[0].difficulty.maxCombo ?? this.map?.max_combo;
 
@@ -171,9 +171,9 @@ export class SingleScoreCommand extends OsuCommand {
             mapLastUpdated: new Date(map.last_updated)
         });
         try {
-            data.debug(strains, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+            data.debug(strains, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
         } catch (error) {
-            data.debug({ error: error }, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
+            data.debug({ error: error }, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
             log.stdout(error);
         }
         let strainsgraph = other.graph({

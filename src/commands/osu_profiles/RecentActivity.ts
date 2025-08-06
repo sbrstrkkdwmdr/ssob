@@ -88,7 +88,7 @@ export class RecentActivity extends OsuCommand {
             osudata = await osuapi.v2.users.profile({ name: this.params.user, mode: 'osu' });
         }
 
-        data.debug(osudata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
+        data.debug(osudata, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
 
         if (helper.errors.isErrorObject(osudata) || !osudata.id) {
             await this.sendError(helper.errors.profile.user(this.params.user));
@@ -124,7 +124,7 @@ export class RecentActivity extends OsuCommand {
             rsactData = await osuapi.v2.users.recentActivity({ user_id: osudata.id });
         }
 
-        data.debug(rsactData, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
+        data.debug(rsactData, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsactData');
 
         if (helper.errors.isErrorObject(rsactData)) {
             await this.sendError(helper.errors.profile.rsact);

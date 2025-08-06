@@ -165,7 +165,7 @@ export class UserBeatmaps extends OsuCommand {
             this.params = await this.getScoreCount(0);
         }
 
-        data.debug(this.mapsets, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
+        data.debug(this.mapsets, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
         data.storeFile(this.mapsets, this.osudata.id, 'this.mapsets', null, this.params.filterType);
 
         let obj: formatters.MapSetFormatter;

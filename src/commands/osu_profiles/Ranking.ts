@@ -138,7 +138,7 @@ export class Ranking extends OsuCommand {
 
 
         try {
-            data.debug(rankingdata, 'command', this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rankingData');
+            data.debug(rankingdata, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rankingData');
         } catch (e) {
             return;
         }

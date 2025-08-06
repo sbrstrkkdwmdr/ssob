@@ -339,7 +339,7 @@ export class ScoreListCommand extends OsuCommand {
                 (req as osuapi.types_v2.ScoreArrA).scores :
                 req as osuapi.types_v2.Score[];
 
-        data.debug(req, 'command', this.type, this.input.message?.guildId ?? this.input.interaction?.guildId, this.type + 'data');
+        data.debug(req, this.type, this.input.message?.guildId ?? this.input.interaction?.guildId, this.type + 'data');
         data.storeFile(req, getid, fname);
 
         if (helper.errors.isErrorObject(tempscores) || tempscores.length == 0 || !(tempscores[0]?.user?.username || tempscores[0]?.user_id)) {

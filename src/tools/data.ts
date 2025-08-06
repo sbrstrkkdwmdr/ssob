@@ -336,16 +336,16 @@ export function writePreviousId(type: 'map' | 'user' | 'score', serverId: string
     return;
 }
 
-export function debug(data: any, type: string, name: string, serverId: string, params: string) {
+export function debug(data: any, name: string, serverId: string, params: string) {
     const pars = params.replaceAll(',', '=');
-    if (!fs.existsSync(`${helper.path.cache}/debug/${type}`)) {
-        fs.mkdirSync(`${helper.path.cache}/debug/${type}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug`);
     }
-    if (!fs.existsSync(`${helper.path.cache}/debug/${type}/${name}/`)) {
-        fs.mkdirSync(`${helper.path.cache}/debug/${type}/${name}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug/${name}/`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug/${name}`);
     }
     try {
-        fs.writeFileSync(`${helper.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
+        fs.writeFileSync(`${helper.path.cache}/debug/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
         console.log('Error writing debug file');
         console.log(error);
