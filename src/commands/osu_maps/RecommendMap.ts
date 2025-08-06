@@ -1,5 +1,6 @@
 import Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
+import * as helper from '../../helper';
 import * as data from '../../tools/data';
 import * as osuapi from '../../tools/osuapi';
 import { OsuCommand } from '../command';
@@ -26,19 +27,13 @@ export class RecommendMap extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.maxRange = this.setParam(this.params.maxRange, ['r', 'random', 'f2', 'rdm', 'range', 'diff'], 'number', {});
+        this.params.useType = this.setParam(this.params.useType, ['closest'], 'bool', { bool_setValue: 'closest' });
 
-
-        if (!this.params.maxRange) this.params.useType = this.setParam(this.params.useType, ['-closest'], 'bool', { bool_setValue: 'closest' });
-        {
-            this.setParamMode();
+        this.setParamMode('');
+        if (this.params.mode == '' as unknown) {
+            this.params.mode = null;
         }
-
-
-        this.params.user = this.input.args.join(' ')?.replaceAll('"', '');
-        if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid)) {
-            this.params.user = null;
-        }
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
+        this.setUserParams();
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -63,11 +58,14 @@ export class RecommendMap extends OsuCommand {
 
         let osudata: osuapi.types_v2.User;
 
-        try {
-            const t = await this.getProfile(this.params.user, this.params.mode);
-            osudata = t;
-        } catch (e) {
-            return;
+        if (this.params.useType == 'closest') {
+            try {
+                const t = await this.getProfile(this.params.user, this.params.mode ?? 'osu');
+                osudata = t;
+            } catch (e) {
+                await this.sendError(helper.errors.profile.user(this.params.user));
+                return;
+            }
         }
 
         const randomMap = data.recommendMap(+(osumodcalc.extra.recdiff(osudata.statistics.pp)).toFixed(2), this.params.useType, this.params.mode, this.params.maxRange ?? 1);

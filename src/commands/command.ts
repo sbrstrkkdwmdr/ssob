@@ -247,6 +247,16 @@ export class Command {
         builder.components[3].setDisabled(true);
         builder.components[4].setDisabled(true);
     }
+    /**
+     * will check whether to prioritise user or searchid
+     */
+    protected setUserParams() {
+        this.params.user = this.argParser.getRemaining().join(' ')?.replaceAll('"', '');
+        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
+        if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid) || this.params.user == '') {
+            this.params.user = null;
+        }
+    }
 }
 
 // gasp capitalised o
@@ -277,8 +287,8 @@ export class OsuCommand extends Command {
         }
         return defaultValue;
     }
-    protected setParamMode() {
-        this.params.mode = this.setParamBoolList('osu',
+    protected setParamMode(defaultMode = 'osu') {
+        this.params.mode = this.setParamBoolList(defaultMode,
             { set: 'osu', flags: ['-o', '-osu', '-std'] },
             { set: 'taiko', flags: ['-t', '-taiko'] },
             { set: 'fruits', flags: ['-f', '-fruits', '-ctb', '-catch'] },
@@ -668,7 +678,11 @@ export class ArgsParser {
      * get remaining args that haven't already been parsed
      */
     getRemaining(): string[] {
-        return this.args.filter((_, i) => !this.used.has(i));
+        let remainder = [];
+        for (let i = 0; i < this.args.length; i++) {
+            if (!this.used.has(i)) remainder.push(this.args[i]);
+        }
+        return remainder;
     }
 
     /**
