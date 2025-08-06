@@ -6,7 +6,7 @@ import * as formatters from '../../tools/formatters';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import * as tooltypes from '../../types/tools';
-import { OsuCommand } from '../command';
+import { ArgsParser, OsuCommand } from '../command';
 export class Profile extends OsuCommand {
     declare protected params: {
         user: string;
@@ -93,6 +93,7 @@ export class Profile extends OsuCommand {
     }
     async setParamsLink() {
         this.input.args = this.input.message.content.split(' ');
+        this.argParser = new ArgsParser(this.input.args);
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
         if (usertemp?.mode && !this.params.mode) {

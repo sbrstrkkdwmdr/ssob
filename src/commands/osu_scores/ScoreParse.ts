@@ -3,6 +3,7 @@ import * as helper from '../../helper';
 import * as data from '../../tools/data';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
+import { ArgsParser } from '../command';
 import { SingleScoreCommand } from './SingleScoreCommand';
 
 export class ScoreParse extends SingleScoreCommand {
@@ -36,6 +37,7 @@ export class ScoreParse extends SingleScoreCommand {
     }
     async setParamsLink() {
         this.input.args = this.input.message.content.split(' ');
+        this.argParser = new ArgsParser(this.input.args);
         const temp = this.setParamScore();
         this.params.mode = temp.mode;
         this.params.scoreid = +temp.score;

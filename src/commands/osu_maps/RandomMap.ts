@@ -31,12 +31,6 @@ export class RandomMap extends OsuCommand {
             { set: 'Graveyard', flags: helper.argflags.mapGraveyard },
         );
     }
-    async setParamsInteract() {
-    }
-    async setParamsBtn() {
-    }
-    async setParamsLink() {
-    }
     async execute() {
         await this.setParams();
         this.logInput();

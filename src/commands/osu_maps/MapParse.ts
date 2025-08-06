@@ -10,7 +10,7 @@ import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import * as performance from '../../tools/performance';
-import { OsuCommand } from '../command';
+import { ArgsParser, OsuCommand } from '../command';
 
 export class MapParse extends OsuCommand {
     declare protected params: {
@@ -126,8 +126,12 @@ export class MapParse extends OsuCommand {
         if (this.input.args[0] && this.input.args[0].startsWith('query')) {
             this.params.query = this.input.args[1];
         } else if (messagenohttp.includes('q=')) {
+            this.input.args.push(messagenohttp);
+            this.argParser = new ArgsParser(this.input.args);
             this.params.query = this.setParamMapSearch().query;
         } else {
+            this.input.args.push(messagenohttp);
+            this.argParser = new ArgsParser(this.input.args);
             const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
             this.params.mode = mapTemp.mode ?? this.params.mode;
