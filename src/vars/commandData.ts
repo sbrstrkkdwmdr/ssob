@@ -494,7 +494,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
         ]
     },
     {
-        name: 'Map',
+        name: 'MapParse',
         description: 'Shows information about a beatmap.',
         usage: 'map [query] [id] +[mods] [detailed] [bpm] [speed] [cs] [ar] [od] [hp] [ppcalc] [bg]',
         category: 'osu_map',
@@ -517,7 +517,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 description: 'Returns beatmap 725718 with HDHR'
             }
         ],
-        aliases: ['m'],
+        aliases: ['m', 'map'],
         args: [
             {
                 name: 'query',
