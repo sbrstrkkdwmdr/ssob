@@ -89,6 +89,9 @@ export const score = {
     ms: 'Missing arg <SCORE ID>'
 };
 export const scores = {
+    generic: ((id: any) => {
+        return 'Could not find ' + id + '\'s scores';
+    }),
     // normal - API error
     // ms - API success but result is an empty array
     pinned: ((id: any) => {
