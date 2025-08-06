@@ -71,10 +71,10 @@ export class Debug extends Command {
             case 'servers': this.serverList();
                 break;
             //list all channels of server x
-            case 'channels':
+            case 'channels': this.channelList();
                 break;
             //list all users of server x
-            case 'users':
+            case 'users': this.userList();
                 break;
             case 'maps': this.mapList();
                 break;

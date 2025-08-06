@@ -9,7 +9,7 @@ newest-oldest
 #### commands
 
 -   [x] Clear
--   [ ] Debug
+-   [x] Debug
 -   [x] MapParse
 -   [ ] RandomMap
 -   [ ] RecommendMap
