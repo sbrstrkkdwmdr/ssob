@@ -113,7 +113,7 @@ export class Debug extends Command {
         try {
             inFiles = fs.readdirSync(`${inpath}/${found}`);
         } catch (err) {
-            this.ctn.content = `No files found for command \`${this.params.inputstr}\``
+            this.ctn.content = `No files found for command \`${this.params.inputstr}\``;
             return;
         }
         this.ctn.content = `Files found for command \`${this.params.inputstr}\``;
@@ -149,7 +149,7 @@ export class Debug extends Command {
 
     commandFileById() {
         let cmdidcur = `${(+this.input.id) - 1}`;
-        if (!this.params.inputstr || isNaN(+this.params.inputstr)) {
+        if (!this.params.inputstr) {
             cmdidcur = fs.readFileSync(`${helper.path.main}/id.txt`, 'utf-8');
         } else {
             cmdidcur = this.params.inputstr;
@@ -158,12 +158,7 @@ export class Debug extends Command {
         if (files.length < 1) {
             this.ctn.content = 'Cache folder is currently empty';
         } else {
-            const searchfiles = files.filter(x => {
-                return (`${x}`.includes(`${cmdidcur}-`))
-                    &&
-                    `${x}`.indexOf(`${cmdidcur}-`) == 0;
-            }
-            );
+            const searchfiles = files.filter(x => `${x}`.includes(cmdidcur));
             if (searchfiles.length < 1) {
                 this.ctn.content = `No files found with the id ${cmdidcur}`;
             } else {

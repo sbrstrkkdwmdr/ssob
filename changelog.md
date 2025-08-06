@@ -18,6 +18,7 @@
 -   updated osumodcalculator
 -   edit parts of command data for clarity
 -   no chokes show estimated total performance in author section
+-   `Debug` commandfile can search for any stored data in cache, (e.g. mapdata<type><mapid> not just <commandid><file>)
 
 ### Removed
 
@@ -35,7 +36,10 @@
 -   change how command errors are handled
 -   add separate method(s) for disabling pages
 -   config checker
+-   rename `Map` => `MapParse`
 -   change message sender into a class
+-   debug files are now stored in `/debug/` instead of `/debug/<type>/`
+-   `Debug` commandfiletype uses `commandTools.getCommand()` instead of long switch statement
 
 ## [5.2.0] - 2025-07-02
 
