@@ -66,7 +66,9 @@ export class ButtonHandler extends InputHandler {
             return;
         }
 
-        await this.handleButtons(buttonType, interaction, cmd.toLowerCase());
+        if (await this.handleButtons(buttonType, interaction, cmd.toLowerCase(), buttonsplit[4])) {
+            return;
+        }
         if (await this.specialCommands(buttonsplit, buttonType, interaction, cmd.toLowerCase())) {
             return;
         }
@@ -77,19 +79,11 @@ export class ButtonHandler extends InputHandler {
         } catch (err) { }
     }
 
-    async handleButtons(buttonType: helper.bottypes.buttonType, interaction: Discord.ButtonInteraction, cmd: string) {
-        const PageOnlyCommands = [
-            'Firsts', 'MapLeaderboard', 'NoChokes', 'OsuTop', 'Pinned', 'Ranking', 'Recent', 'RecentList', 'RecentActivity', 'MapScores', 'UserBeatmaps',
-            'Changelog',
-        ];
-        const ScoreSortCommands = [
-            'Firsts', 'MapLeaderboard', 'NoChokes', 'OsuTop', 'Pinned', 'RecentList', 'MapScores',
-
-        ];
-        if (buttonType == 'Search' && PageOnlyCommands.includes(cmd)) {
+    async handleButtons(buttonType: helper.bottypes.buttonType, interaction: Discord.ButtonInteraction, cmd: string, id: string) {
+        if (buttonType == 'Search') {
             const menu = new Discord.ModalBuilder()
                 .setTitle('Page')
-                .setCustomId(`${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${commandTools.getCmdId()}`)
+                .setCustomId(`${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${id}`)
                 .addComponents(
                     //@ts-expect-error - TextInputBuilder not assignable to AnyInputBuilder
                     new Discord.ActionRowBuilder()
@@ -103,7 +97,7 @@ export class ButtonHandler extends InputHandler {
 
             interaction.showModal(menu)
                 .catch(error => { });
-            return;
+            return true;
         }
         if (buttonType.includes('Select')) {
             switch (cmd) {
@@ -124,13 +118,16 @@ export class ButtonHandler extends InputHandler {
                     }
                     break;
             }
+            return true;
         }
 
-        if (buttonType == 'Sort' && ScoreSortCommands.includes(cmd)) {
+        if (buttonType == 'Sort') {
             interaction.deferUpdate();
-            return;
+            return true;
         }
-        if (buttonType == 'SearchMenu' && PageOnlyCommands.includes(cmd)) {
+
+        // page selector
+        if (buttonType == 'SearchMenu') {
             //interaction is converted to a base interaction first because button interaction and modal submit interaction don't overlap
             const tst = parseInt(((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(0).value);
             if (tst.toString().length < 1) {
@@ -138,11 +135,14 @@ export class ButtonHandler extends InputHandler {
             } else {
                 this.overrides.page = parseInt(((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(0).value);
             }
+            return false;
         }
-        if (buttonType == 'SortMenu' && ScoreSortCommands.includes(cmd)) {
+        if (buttonType == 'SortMenu') {
             this.overrides.sort = ((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(0).value;
             this.overrides.reverse = ((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(1).value as unknown as boolean;
+            return false;
         }
+        return false;
     }
 
     async specialCommands(buttonsplit: string[], buttonType: helper.bottypes.buttonType, interaction: Discord.ButtonInteraction, cmd: string) {
