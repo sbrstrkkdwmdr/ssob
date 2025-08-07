@@ -78,7 +78,7 @@ export class LinkHandler extends InputHandler {
         }
     }
     async onInteraction(interaction: Discord.Interaction) { }
-    async runCommand(message: Discord.Message, tid?: number) {
+    async runCommand(message: Discord.Message, tid?: string) {
         this.selected.setInput({
             message,
             interaction: null,

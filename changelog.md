@@ -20,6 +20,7 @@
 -   edit parts of command data for clarity
 -   no chokes show estimated total performance in author section
 -   `Debug` commandfile can search for any stored data in cache, (e.g. mapdata<type><mapid> not just <commandid><file>)
+-   command IDs are UUIDs instead of ints
 
 ### Removed
 

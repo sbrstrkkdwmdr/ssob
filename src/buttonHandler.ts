@@ -74,7 +74,7 @@ export class ButtonHandler extends InputHandler {
 
         try {
             this.commandSelect(cmd.toLowerCase(), interaction);
-            this.runCommand(interaction, buttonType, +buttonsplit[4], null, true);
+            this.runCommand(interaction, buttonType, buttonsplit[4], null, true);
         } catch (err) { }
     }
 
@@ -284,7 +284,7 @@ export class ButtonHandler extends InputHandler {
         }
     }
 
-    async runCommand(interaction: Discord.ButtonInteraction, buttonType: helper.bottypes.buttonType, id: number, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
+    async runCommand(interaction: Discord.ButtonInteraction, buttonType: helper.bottypes.buttonType, id: string, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
         if (defer) {
             await interaction.deferUpdate()
                 .catch(error => { });

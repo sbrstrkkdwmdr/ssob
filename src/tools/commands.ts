@@ -421,7 +421,7 @@ export function cleanArgs(args: string[]) {
 
 export function getCmdId() {
     helper.vars.id++;
-    return helper.vars.id;
+    return crypto.randomUUID().replaceAll('-', '');
 }
 
 export function startType(object: Discord.Message | Discord.Interaction) {
