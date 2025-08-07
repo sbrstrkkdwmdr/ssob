@@ -37,10 +37,15 @@ export class MapLeaderboard extends OsuCommand {
         }
 
         const tmod = this.setParamMods();
-        if (tmod) {
+        if (tmod.mods) {
             this.params.mapmods = tmod.mods;
+        } else {
+            const temp = this.setParam(this.params.mapmods, ['-mods'], 'string', {});
+            const mods = osumodcalc.mod.fromString(temp.toUpperCase());
+            if (mods && mods.length > 0) {
+                this.params.mapmods = mods;
+            }
         }
-
         {
             const mapTemp = this.setParamMap();
             this.params.mapid = mapTemp.map;
@@ -101,7 +106,6 @@ export class MapLeaderboard extends OsuCommand {
         await this.setParams();
         this.logInput();
         // do stuff
-
         this.fixMapid();
         await this.sendLoading();
 

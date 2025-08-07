@@ -310,7 +310,7 @@ export class OsuCommand extends Command {
         if (this.input.args.join(' ').includes('+')) {
             const temp = this.argParser.getParamFlexible(['+{param}']);
             if (temp) {
-                mods = osumodcalc.mod.fromString(temp);
+                mods = osumodcalc.mod.fromString(temp.toUpperCase());
                 apiMods = mods.map(x => { return { acronym: x }; });
             }
             // this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');

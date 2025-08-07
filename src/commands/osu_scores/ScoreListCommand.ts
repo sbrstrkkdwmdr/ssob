@@ -83,9 +83,9 @@ export class ScoreListCommand extends OsuCommand {
         }
         this.params.reverse = this.setParam(this.params.reverse, ['-reverse', '-rev'], 'bool', {});
 
-        this.params.modsInclude = osumodcalc.mod.fromString(this.setParam(this.params.modsInclude, ['-mods'], 'string', {}));
-        this.params.modsExact = osumodcalc.mod.fromString(this.setParam(this.params.modsExact, ['-mx', '-modx'], 'string', {}));
-        this.params.modsExclude = osumodcalc.mod.fromString(this.setParam(this.params.modsExclude, ['-exmod', '-me'], 'string', {}));
+        this.params.modsInclude = osumodcalc.mod.fromString(this.setParam(this.params.modsInclude, ['-mods'], 'string', {}).toUpperCase());
+        this.params.modsExact = osumodcalc.mod.fromString(this.setParam(this.params.modsExact, ['-mx', '-modx'], 'string', {}).toUpperCase());
+        this.params.modsExclude = osumodcalc.mod.fromString(this.setParam(this.params.modsExclude, ['-exmod', '-me'], 'string', {}).toUpperCase());
 
         this.params.sort = this.setParam(this.params.sort, ['-sort',], 'string', {}) ??
             this.setParamBoolList(this.params.sort,
@@ -124,7 +124,7 @@ export class ScoreListCommand extends OsuCommand {
         );
 
         const tmod = this.setParamMods();
-        if (tmod) {
+        if (tmod && !this.params.modsInclude) {
             this.params.modsInclude = tmod.mods;
         }
 
