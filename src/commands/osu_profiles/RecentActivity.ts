@@ -131,7 +131,7 @@ export class RecentActivity extends OsuCommand {
         const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
         this.disablePageButtons_check(pgbuttons,
             rsactData.length <= 5,
-            this.params.page >= Math.ceil(rsactData.length / pageLength) - 1,
+            this.params.page == 0,
             this.params.page >= Math.ceil(rsactData.length / pageLength) - 1
         );
 

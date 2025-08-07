@@ -18,11 +18,11 @@ newest-oldest
 -   [ ] Saved
 -   [ ] ServerLeaderboard
 -   [ ] Set
--   [x] WhatIf (note: sometimes when fetching user it will use the last-used accounts scores)
+-   [x] WhatIf
 -   [x] Badges
 -   [x] BWS
 -   [x] Profile
--   [ ] Ranking
+-   [x] Ranking
 -   [ ] rsact
 -   [ ] maplb
 -   [ ] recent
