@@ -18,7 +18,7 @@ newest-oldest
 -   [ ] Saved
 -   [ ] ServerLeaderboard
 -   [ ] Set
--   [ ] WhatIf
+-   [x] WhatIf (note: sometimes when fetching user it will use the last-used accounts scores)
 -   [x] Badges
 -   [x] BWS
 -   [x] Profile
@@ -30,6 +30,7 @@ newest-oldest
 -   [ ] simulate
 -   [ ] scoreparse
 -   [ ] scorelist
+-   [ ] scorestats (pp and combo muiltiplied by 100)
 
 #### tools
 

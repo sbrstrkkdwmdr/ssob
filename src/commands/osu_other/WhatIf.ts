@@ -5,7 +5,7 @@ import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
-import { OsuCommand } from '../command';
+import { ArgsParser, OsuCommand } from '../command';
 
 export class WhatIf extends OsuCommand {
     declare protected params: {
@@ -25,15 +25,6 @@ export class WhatIf extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        this.setParamMode();
-        if (!isNaN(+this.input.args[0])) {
-            this.params.pp = +this.input.args[0];
-        }
-        this.input.args.forEach(x => {
-            if (!isNaN(+x)) {
-                this.params.pp = +x;
-            }
-        });
         for (const x of this.input.args) {
             if (!isNaN(+x)) {
                 this.params.pp = +x;
@@ -42,8 +33,9 @@ export class WhatIf extends OsuCommand {
         }
         if (this.params.pp && !isNaN(this.params.pp)) {
             this.input.args.splice(this.input.args.indexOf(this.params.pp + ''), 1);
+            this.argParser = new ArgsParser(this.input.args);
         }
-
+        this.setParamMode();
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
         if (usertemp?.mode && !this.params.mode) {
