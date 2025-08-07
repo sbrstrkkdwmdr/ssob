@@ -83,10 +83,6 @@ export class ScoreListCommand extends OsuCommand {
         }
         this.params.reverse = this.setParam(this.params.reverse, ['-reverse', '-rev'], 'bool', {});
 
-        this.params.modsInclude = osumodcalc.mod.fromString(this.setParam(this.params.modsInclude, ['-mods'], 'string', {}).toUpperCase());
-        this.params.modsExact = osumodcalc.mod.fromString(this.setParam(this.params.modsExact, ['-mx', '-modx'], 'string', {}).toUpperCase());
-        this.params.modsExclude = osumodcalc.mod.fromString(this.setParam(this.params.modsExclude, ['-exmod', '-me'], 'string', {}).toUpperCase());
-
         this.params.sort = this.setParam(this.params.sort, ['-sort',], 'string', {}) ??
             this.setParamBoolList(this.params.sort,
                 { set: 'recent', flags: ['-r', '-recent'] },
@@ -122,12 +118,7 @@ export class ScoreListCommand extends OsuCommand {
             { set: 'd', flags: ['-d'] },
             { set: 'f', flags: ['-f'] },
         );
-
-        const tmod = this.setParamMods();
-        if (tmod && !this.params.modsInclude) {
-            this.params.modsInclude = tmod.mods;
-        }
-
+        this.modParams();
         await this.paramsMsgExtra();
 
         const usertemp = this.setParamUser();
@@ -136,6 +127,22 @@ export class ScoreListCommand extends OsuCommand {
             this.params.mode = usertemp?.mode;
         }
         this.setUserParams();
+    }
+    modParams() {
+        const mi = this.setParam(this.params.modsInclude, ['-mods'], 'string', {});
+        this.params.modsInclude = mi && mi.length > 1 ? osumodcalc.mod.fromString(mi.toUpperCase()) : null;
+        const mexa = this.setParam(this.params.modsExact, ['-mx', '-modx'], 'string', {});
+        if (mexa != 'NONE') {
+            this.params.modsExact = mexa && mexa.length > 1 ? osumodcalc.mod.fromString(mexa.toUpperCase()) : null;
+        } else {
+            this.params.modsExact = ['NONE'];
+        }
+        const mexc = this.setParam(this.params.modsExclude, ['-exmod', '-me'], 'string', {});
+        this.params.modsExclude = mexc && mexc.length > 1 ? osumodcalc.mod.fromString(mexc.toUpperCase()) : null;
+        const tmod = this.setParamMods();
+        if (tmod && !this.params.modsInclude) {
+            this.params.modsInclude = tmod.mods;
+        }
     }
     async setParamsInteract() {
         let interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -496,7 +503,6 @@ export class ScoreListCommand extends OsuCommand {
         await this.setParams();
         this.getOverrides();
         this.logInput();
-
         await this.fixUser();
 
         if (this.type == 'map') {
