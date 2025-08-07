@@ -147,20 +147,25 @@ export class ScoreFormatter {
     }
     filterIncludeMods() {
         this.indexed = this.indexed.filter(score => {
-            let x: boolean = true;
-            score.mods.forEach(mod => {
-                if (!osumodcalc.mod.fix(this.filter.modsInclude, osumodcalc.mode.toName(score.ruleset_id)).includes(mod.acronym as osumodcalc.types.Mod)) {
-                    x = false;
-                }
-            });
-            return x;
+            const mods = score.mods.map(x => x.acronym);
+            for (const mod of this.filter.modsInclude) {
+                if (!mods.includes(mod)) return false;
+            }
+            return true;
         });
     }
     filterExactMods() {
         if (this.filter?.modsExact.includes('NONE')) {
             this.indexed = this.indexed.filter(score => score.mods.length == 0 || score.mods.map(x => x.acronym).join('') == 'CL' || score.mods.map(x => x.acronym).join('') == 'LZ');
         } else {
-            this.indexed = this.indexed.filter(score => score.mods.map(x => x.acronym).join('') == osumodcalc.mod.fix(this.filter.modsExact as osumodcalc.types.Mod[], osumodcalc.mode.toName(score.ruleset_id)).join(''));
+            this.indexed = this.indexed.filter(score => {
+                const mods = score.mods.map(x => x.acronym) as osumodcalc.types.Mod[];
+                if (mods.length != this.filter.modsExact.length) return false;
+                for (const mod of mods) {
+                    if (!this.filter.modsExact.includes(mod)) return false;
+                }
+                return true;
+            });
         }
     }
     filterExcludeMods() {
