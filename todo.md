@@ -30,8 +30,9 @@ newest-oldest
 -   [ ] simulate
 -   [x] scoreparse
 -   [x] scorelist
--   [ ] commands via buttons
--   [ ] fix "ephemeral" option (deprecated)
+-   [x] scorestats
+-   [x] commands via buttons
+-   [x] fix "ephemeral" option (deprecated)
 -   [ ] page selector not loading
 
 #### tools

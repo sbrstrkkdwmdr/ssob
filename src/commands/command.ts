@@ -80,6 +80,9 @@ export class Command {
                 this.commanduser = this.input.message.author;
                 await this.setParamsLink();
                 break;
+            case 'other':
+                this.commanduser = this.input.interaction?.member?.user ?? this.input.interaction?.user ?? this.input.message.author;
+                break;
         }
     }
     async setParamsMsg() {

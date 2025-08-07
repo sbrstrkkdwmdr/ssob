@@ -67,7 +67,6 @@ export class ButtonHandler extends InputHandler {
         }
 
         await this.handleButtons(buttonType, interaction, cmd.toLowerCase());
-
         if (await this.specialCommands(buttonsplit, buttonType, interaction, cmd.toLowerCase())) {
             return;
         }
@@ -174,7 +173,6 @@ export class ButtonHandler extends InputHandler {
             this.overrides.commanduser = interaction.member.user as Discord.User;
 
             this.selected = new osu_profiles.Profile();
-
             await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
             return true;
         }
@@ -301,7 +299,7 @@ export class ButtonHandler extends InputHandler {
                 type: overrideType ?? "button",
                 buttonType
             });
-            await this.selected.execute().catch(() => { });
+            await this.selected.execute().catch((e) => { console.log(e); });
         } else {
             this.runFail(interaction);
         }
