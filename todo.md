@@ -25,13 +25,14 @@ newest-oldest
 -   [x] Ranking
 -   [x] rsact
 -   [x] maplb
--   [ ] recent
+-   [x] recent
 -   [ ] replay
 -   [ ] simulate
--   [ ] scoreparse
--   [ ] scorelist
--   [ ] scorestats (pp and combo muiltiplied by 100)
+-   [x] scoreparse
+-   [x] scorelist
 -   [ ] commands via buttons
+-   [ ] fix "ephemeral" option (deprecated)
+-   [ ] page selector not loading
 
 #### tools
 

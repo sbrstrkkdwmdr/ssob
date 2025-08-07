@@ -183,6 +183,9 @@ export class ScoreStats extends OsuCommand {
         }));
         const grades = calculate.findMode(this.scores.map(x => x.rank));
         const acc = calculate.stats(this.scores.map(x => x.accuracy));
+        for (const key in acc) {
+            acc[key] *= 100;
+        }
         const combo = calculate.stats(this.scores.map(x => x.max_combo));
         let pp = calculate.stats(this.scores.map(x => x.pp));
         let totpp = '';
@@ -312,10 +315,10 @@ export class ScoreStats extends OsuCommand {
         return {
             name,
             value: `
-Highest: ${(stat?.highest * 100)?.toFixed(2)}${suffix}
-Lowest: ${(stat?.lowest * 100)?.toFixed(2)}${suffix}
-Average: ${(stat?.mean * 100)?.toFixed(2)}${suffix}
-Median: ${(stat?.median * 100)?.toFixed(2)}${suffix}
+Highest: ${stat?.highest?.toFixed(2)}${suffix}
+Lowest: ${stat?.lowest?.toFixed(2)}${suffix}
+Average: ${stat?.mean?.toFixed(2)}${suffix}
+Median: ${stat?.median?.toFixed(2)}${suffix}
 ${stat?.ignored > 0 ? `Skipped: ${stat?.ignored}` : ''}
 `,
             inline: true
