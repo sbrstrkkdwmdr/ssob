@@ -12,6 +12,7 @@
 -   `Rankings` not missing all args in `setParamsMsg`
 -   `osuapi` cached oauthkey not updating when expired
 -   `Recent` "F if pass"
+-   `Rankings` not supporting country rankings
 
 ### Changed
 

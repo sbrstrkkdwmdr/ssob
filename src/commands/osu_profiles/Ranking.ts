@@ -40,6 +40,7 @@ export class Ranking extends OsuCommand {
 
         }
         this.params.country = this.setParam(this.params.country, ['-country'], 'string', {});
+        if(this.params.country.length != 2) this.params.country = 'ALL';
         this.params.type = this.setParamBoolList(this.params.type,
             { set: 'charts', flags: ['-charts', '-chart'] },
             { set: 'country', flags: ['-countries'] },
@@ -52,7 +53,6 @@ export class Ranking extends OsuCommand {
             this.params.parse = Boolean(this.params.parseId);
         }
 
-        this.input.args[0] && this.input.args[0].length == 2 ? this.params.country = this.input.args[0].toUpperCase() : this.params.country = 'ALL';
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
@@ -106,9 +106,9 @@ export class Ranking extends OsuCommand {
                 await this.send();
                 return;
             }
-            if (this.params.type == 'performance') {
-                extras['country'] = this.params.country;
-            }
+            // if (this.params.type == 'performance') {
+            extras['country'] = this.params.country;
+            // }
         }
         if (this.params.type == 'charts' && !isNaN(+this.params.spotlight)) {
             extras['spotlight'] = this.params.spotlight;
@@ -155,11 +155,11 @@ export class Ranking extends OsuCommand {
             ifchart = `[${rankingdata.spotlight.name}](https://osu.ppy.sh/rankings/${this.params.mode}/charts?spotlight=${rankingdata.spotlight.id})`;
         }
 
-        if (this.input.buttonType == null) {
-            data.userStatsCache(rankingdata.ranking, other.modeValidator(this.params.mode), 'Stat');
+        if (this.input.buttonType == null && this.params.type != 'country') {
+            data.userStatsCache(rankingdata.ranking as osuapi.types_v2.UserStatistics[], other.modeValidator(this.params.mode), 'Stat');
         }
 
-        if (this.params.parse) {
+        if (this.params.parse && this.params.type != 'country') {
             let pid = parseInt(this.params.parseId) - 1;
             if (pid < 0) {
                 pid = 0;
@@ -170,7 +170,7 @@ export class Ranking extends OsuCommand {
 
             this.input.overrides = {
                 mode: this.params.mode,
-                id: rankingdata?.ranking[pid]?.user.id,
+                id: (rankingdata?.ranking[pid] as osuapi.types_v2.UserStatistics)?.user.id,
                 commanduser: this.commanduser,
                 commandAs: this.input.type
             };
@@ -196,8 +196,12 @@ export class Ranking extends OsuCommand {
         this.params.country != 'ALL' ?
             embed.setThumbnail(`https://osuhelper.argflags.omkserver.nl${this.params.country}`)
             : '';
-
-        this.formatUL(embed, rankingdata);
+        // osuapi.types_v2.Rankings<osuapi.types_v2.UserStatistics>
+        if (this.params.type == 'country') {
+            this.formatCL(embed, rankingdata.ranking as osuapi.types_v2.CountryStatistics[]);
+        } else {
+            this.formatUL(embed, rankingdata.ranking as osuapi.types_v2.UserStatistics[]);
+        }
 
         if (this.params.page > Math.ceil(rankingdata.ranking.length / 5)) {
             this.params.page = Math.ceil(rankingdata.ranking.length / 5);
@@ -222,27 +226,49 @@ export class Ranking extends OsuCommand {
         this.ctn.components = [pgbuttons];
         await this.send();
     }
-
-    formatUL(embed: Discord.EmbedBuilder, rankingdata: osuapi.types_v2.Rankings) {
-        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.ranking.length; i++) {
-            const curuser = rankingdata.ranking[i + (this.params.page * 5)];
-            if (!curuser) break;
+    formatCL(embed: Discord.EmbedBuilder, rankingdata: osuapi.types_v2.CountryStatistics[]) {
+        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.length; i++) {
+            const country = rankingdata[i + (this.params.page * 5)];
+            if (!country) break;
+            let num = i + 1 + (this.params.page * 5);
+            embed.addFields(
+                [
+                    {
+                        name: `#${num} ${country.country.name}`,
+                        value:
+                            `:flag_${country.code.toLowerCase()}:
+Active Users: ${calculate.numberShorthand(country.active_users)}
+Play count: ${calculate.numberShorthand(country.play_count)}
+Ranked Score: ${calculate.numberShorthand(country.ranked_score)}
+Total PP: ${calculate.numberShorthand(country.performance)}
+`
+                        ,
+                        inline: false
+                    }
+                ]
+            );
+        }
+    }
+    formatUL(embed: Discord.EmbedBuilder, rankingdata: osuapi.types_v2.UserStatistics[]) {
+        for (let i = 0; i < 5 && i + (this.params.page * 5) < rankingdata.length; i++) {
+            const user = rankingdata[i + (this.params.page * 5)];
+            if (!user) break;
             let num = i + 1 + (this.params.page * 5);
             let parseGlobalRank =
-                num == curuser?.global_rank ?
+                num == user?.global_rank ?
                     '' :
-                    curuser.global_rank == null ?
+                    user.global_rank == null ?
                         '' :
-                        '(#' + calculate.separateNum(curuser.global_rank) + ' Global)';
+                        '(#' + calculate.separateNum(user.global_rank) + ' Global)';
             embed.addFields(
                 [
                     {
                         name: `#${num} ${parseGlobalRank}`,
                         value:
-                            `:flag_${curuser.user.country_code.toLowerCase()}: [${curuser.user.username}](https://osu.ppy.sh/users/${curuser.user.id}/${this.params.mode})
-    Score: ${curuser.total_score == null ? '---' : calculate.numberShorthand(curuser.total_score)} (${curuser.ranked_score == null ? '---' : calculate.numberShorthand(curuser.ranked_score)} ranked)
-    ${curuser.hit_accuracy == null ? '---' : curuser.hit_accuracy.toFixed(2)}% | ${curuser.pp == null ? '---' : calculate.separateNum(curuser.pp)}pp | ${curuser.play_count == null ? '---' : calculate.separateNum(curuser.play_count)} plays
-    `
+                            `:flag_${user.user.country_code.toLowerCase()}: [${user.user.username}](https://osu.ppy.sh/users/${user.user.id}/${this.params.mode})
+Score: ${user.total_score == null ? '---' : calculate.numberShorthand(user.total_score)} (${user.ranked_score == null ? '---' : calculate.numberShorthand(user.ranked_score)} ranked)
+${user.hit_accuracy == null ? '---' : user.hit_accuracy.toFixed(2)}% | ${user.pp == null ? '---' : calculate.separateNum(user.pp)}pp | ${user.play_count == null ? '---' : calculate.separateNum(user.play_count)} plays
+`
                         ,
                         inline: false
                     }

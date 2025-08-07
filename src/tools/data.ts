@@ -460,7 +460,7 @@ export async function userStatsCache(user: osuapi.types_v2.UserStatistics[] | os
                 }
                 let findname = await helper.vars.statsCache.findOne({
                     where: {
-                        osuid: curuser.user.id
+                        osuid: curuser?.user?.id
                     }
                 });
                 if (findname as any == Promise<{ pending; }>) {
