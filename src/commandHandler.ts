@@ -673,7 +673,7 @@ export class CommandHandler extends InputHandler {
                     canReply,
                     type,
                 });
-                this.selected.execute().catch(() => { });
+                this.selected.execute().catch((e) => { console.log(e); });
             }
         }
         this.selected = null;
