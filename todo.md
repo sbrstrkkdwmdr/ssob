@@ -23,14 +23,15 @@ newest-oldest
 -   [x] BWS
 -   [x] Profile
 -   [x] Ranking
--   [ ] rsact
--   [ ] maplb
+-   [x] rsact
+-   [x] maplb
 -   [ ] recent
 -   [ ] replay
 -   [ ] simulate
 -   [ ] scoreparse
 -   [ ] scorelist
 -   [ ] scorestats (pp and combo muiltiplied by 100)
+-   [ ] commands via buttons
 
 #### tools
 
