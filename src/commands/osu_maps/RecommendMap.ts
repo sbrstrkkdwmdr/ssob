@@ -27,7 +27,7 @@ export class RecommendMap extends OsuCommand {
     }
     async setParamsMsg() {
         this.params.maxRange = this.setParam(this.params.maxRange, ['r', 'random', 'f2', 'rdm', 'range', 'diff'], 'number', {});
-        this.params.useType = this.setParam(this.params.useType, ['closest'], 'bool', { bool_setValue: 'closest' });
+        this.params.useType = this.setParam(this.params.useType, ['closest'], 'bool', { bool_setValue: 'closest' }) as "random" | "closest";
 
         this.setParamMode('');
         if (this.params.mode == '' as unknown) {

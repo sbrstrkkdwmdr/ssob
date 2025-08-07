@@ -97,11 +97,11 @@ export class Command {
      * // => NaN
      * ```
      */
-    protected setParam(defaultValue: any, flags: string[], type: 'string' | 'number' | 'bool', typeParams: {
-        bool_setValue?: any,
+    protected setParam<T extends ParamTypes, U extends any>(defaultValue: any, flags: string[], type: T, typeParams: {
+        bool_setValue?: U,
         number_isInt?: boolean,
         string_isMultiple?: boolean,
-    }) {
+    }): ParamReturnType<T, U> {
         flags = this.setParamCheckFlags(flags);
         switch (type) {
             case 'string': {
@@ -772,3 +772,16 @@ class TEMPLATE extends Command {
         await this.send();
     }
 }
+
+type ParamTypes = 'string' | 'number' | 'bool';
+
+// bool_setValue param overrides return type
+// otherwise, return type is T
+type ParamReturnType<T, U> =
+    U extends string ? string :
+    U extends boolean ? boolean :
+    U extends number ? number :
+    T extends "string" ? string :
+    T extends "bool" ? boolean :
+    T extends "number" ? number :
+    never;

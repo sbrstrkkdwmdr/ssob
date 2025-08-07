@@ -217,7 +217,7 @@ export type params = {
     detailed?: number,
     filter?: string,
     list?: boolean, //recent
-    fails?: 1 | 0, //recent
+    fails?: boolean, //recent
     nochokes?: boolean, //top
     rankingtype?: osuapi.types_v2.RankingType, //ranking
     country?: string, //ranking

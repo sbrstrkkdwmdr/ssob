@@ -13,7 +13,7 @@ export class Recent extends SingleScoreCommand {
         searchid: string;
         page: number;
         mode: osuapi.types_v2.GameMode;
-        showFails: 1 | 0;
+        showFails: boolean;
         filter: string;
     };
     constructor() {
@@ -25,7 +25,7 @@ export class Recent extends SingleScoreCommand {
             searchid: undefined,
             page: 0,
             mode: null,
-            showFails: 1,
+            showFails: true,
             filter: null,
         };
     }
@@ -114,7 +114,7 @@ export class Recent extends SingleScoreCommand {
             this.scores = await osuapi.v2.scores.recent({
                 user_id: this.osudata.id,
                 mode: this.params.mode,
-                include_fails: this.params.showFails,
+                include_fails: Number(this.params.showFails) as 1 | 0,
             });
         }
 

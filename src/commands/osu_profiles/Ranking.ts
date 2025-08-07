@@ -17,7 +17,7 @@ export class Ranking extends OsuCommand {
         page: number;
         spotlight: number;
         parse: boolean;
-        parseId: string;
+        parseId: number;
     };
     constructor() {
         super();
@@ -160,7 +160,7 @@ export class Ranking extends OsuCommand {
         }
 
         if (this.params.parse && this.params.type != 'country') {
-            let pid = parseInt(this.params.parseId) - 1;
+            let pid = this.params.parseId - 1;
             if (pid < 0) {
                 pid = 0;
             }
