@@ -95,8 +95,6 @@ export class ScoreStats extends OsuCommand {
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
-        let scoresdata: osuapi.types_v2.Score[] = [];
-
         const dataFilename =
             this.params.scoreTypes == 'firsts' ?
                 'firstscoresdata' :
@@ -106,11 +104,11 @@ export class ScoreStats extends OsuCommand {
             !('error' in data.findFile(this.user.id, dataFilename)) &&
             this.input.buttonType != 'Refresh'
         ) {
-            scoresdata = data.findFile(this.user.id, dataFilename);
+            this.scores = data.findFile(this.user.id, dataFilename);
         } else {
             this.params.reachedMaxCount = await this.getScoreCount(0, this.params, this.input);
         }
-        data.storeFile(scoresdata, this.user.id, dataFilename);
+        data.storeFile(this.scores, this.user.id, dataFilename);
 
         // let useFiles: string[] = [];
 
