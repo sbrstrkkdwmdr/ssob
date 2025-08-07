@@ -173,7 +173,7 @@ export class MessageSender {
             files: this.args.files ?? [],
             components: this.args.components ?? [],
             allowedMentions: { repliedUser: false },
-            ephemeral: this.args.ephemeral ?? false,
+            // ephemeral: this.args.ephemeral ?? false,
             flags: this.args.ephemeral ? Discord.MessageFlags.Ephemeral : null,
         })
             .catch();
