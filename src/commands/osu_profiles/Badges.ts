@@ -36,7 +36,7 @@ export class Badges extends OsuCommand {
         this.logInput();
         // do stuff
 
-        this.fixUser(false);
+        await this.fixUser(false);
 
         await this.sendLoading();
 
@@ -46,9 +46,12 @@ export class Badges extends OsuCommand {
             const t = await this.getProfile(this.params.user, 'osu');
             osudata = t;
         } catch (e) {
+            console.log(this.params.user);
+            console.log(this.params.searchid);
+            console.log(e);
             return;
         }
-
+        console.log('continue');
         const cmdbuttons = new Discord.ActionRowBuilder()
             .addComponents(
                 new Discord.ButtonBuilder()
@@ -69,7 +72,7 @@ export class Badges extends OsuCommand {
 
         const fields: Discord.EmbedField[] = [];
 
-        for (let i = 0; i < 10 && i < osudata.badges.length; i++) {
+        for (let i = 0; i < 9 && i < osudata.badges.length; i++) {
             const badge = osudata?.badges[i];
             if (!badge) break;
             fields.push(

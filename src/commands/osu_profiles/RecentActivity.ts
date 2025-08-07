@@ -65,7 +65,7 @@ export class RecentActivity extends OsuCommand {
         // do stuff
 
         const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder();
-        this.fixUser(false);
+        await this.fixUser(false);
 
         this.fixPage();
         await this.sendLoading();

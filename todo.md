@@ -12,7 +12,7 @@ newest-oldest
 -   [x] Debug
 -   [x] MapParse
 -   [x] RandomMap
--   [ ] RecommendMap
+-   [x] RecommendMap
 -   [ ] UserBeatmaps
 -   [ ] Compare
 -   [ ] Saved
@@ -21,7 +21,7 @@ newest-oldest
 -   [ ] WhatIf
 -   [ ] Badges
 -   [ ] BWS
--   [ ] Profile
+-   [x] Profile
 -   [ ] Ranking
 -   [ ] rsact
 -   [ ] maplb

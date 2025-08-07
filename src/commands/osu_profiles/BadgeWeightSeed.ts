@@ -38,7 +38,7 @@ export class BadgeWeightSeed extends OsuCommand {
         this.logInput();
         // do stuff
 
-        this.fixUser(false);
+        await this.fixUser(false);
 
         await this.sendLoading();
 
