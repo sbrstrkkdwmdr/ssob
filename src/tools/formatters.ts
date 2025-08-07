@@ -113,12 +113,12 @@ export class ScoreFormatter {
             combo: 'max_combo',
         };
         for (const key in dict) {
-            if (this.filter[key]) {
+            if (this.filter?.[key]) {
                 this.indexed = this.indexed.filter(dict[key]);
             }
         }
         for (const key in argRangeDict) {
-            if (this.filter[key]) {
+            if (this.filter?.[key]) {
                 const tempArg = argRange(this.filter[key], true);
                 this.indexed = this.indexed.filter(score => {
                     filterArgRange(score[argRangeDict[key]] ?? 0, tempArg);
@@ -157,18 +157,18 @@ export class ScoreFormatter {
         });
     }
     filterExactMods() {
-        if (this.filter.modsExact.includes('NONE')) {
+        if (this.filter?.modsExact.includes('NONE')) {
             this.indexed = this.indexed.filter(score => score.mods.length == 0 || score.mods.map(x => x.acronym).join('') == 'CL' || score.mods.map(x => x.acronym).join('') == 'LZ');
         } else {
             this.indexed = this.indexed.filter(score => score.mods.map(x => x.acronym).join('') == osumodcalc.mod.fix(this.filter.modsExact as osumodcalc.types.Mod[], osumodcalc.mode.toName(score.ruleset_id)).join(''));
         }
     }
     filterExcludeMods() {
-        const xlModsArr = osumodcalc.mod.fix(this.filter.modsExclude, osumodcalc.mode.toName(this.indexed?.[0]?.ruleset_id ?? 0));
-        if (this.filter.modsExclude.includes('DT') && this.filter.modsExclude.includes('NC')) {
+        const xlModsArr = osumodcalc.mod.fix(this.filter?.modsExclude, osumodcalc.mode.toName(this.indexed?.[0]?.ruleset_id ?? 0));
+        if (this.filter?.modsExclude.includes('DT') && this.filter?.modsExclude.includes('NC')) {
             xlModsArr.push('DT');
         }
-        if (this.filter.modsExclude.includes('HT') && this.filter.modsExclude.includes('DC')) {
+        if (this.filter?.modsExclude.includes('HT') && this.filter?.modsExclude.includes('DC')) {
             xlModsArr.push('DC');
         }
         this.indexed = this.indexed.filter(score => {
@@ -487,7 +487,7 @@ export class MapSetFormatter {
             }),
         };
         for (const key in dict) {
-            if (this.filter[key]) {
+            if (this.filter?.[key]) {
                 const temp = this.indexed.filter(dict[key]);
                 this.indexed = temp;
             }
