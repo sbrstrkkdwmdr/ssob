@@ -1,6 +1,7 @@
 import Discord from 'discord.js';
 import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
+import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
 import * as osuapi from '../../tools/osuapi';
@@ -195,9 +196,6 @@ ${this.supporterStatus} ${this.onlineStatus}`);
     }
 
     async embedUserDetailed(embed: Discord.EmbedBuilder) {
-        this.ctn.embeds = await this.getGraphs();
-
-        // osudata.monthly_playcounts.map(x => x.count).reduce((a, b) => b + a)
         embed.addFields([
             {
                 name: 'Stats',
@@ -226,15 +224,14 @@ ${this.supporterStatus} ${this.onlineStatus}
                 inline: true
             }
         ]);
-        const mostplaytxt = await this.mpText();
+        let mostplaytxt = await this.mpText();
         embed.addFields([{
             name: 'Most Played Beatmaps',
             value: mostplaytxt != `` ? mostplaytxt : 'No data',
             inline: false
         }]
         );
-
-        this.ctn.embeds.push(embed);
+        this.ctn.embeds = [embed].concat(await this.getGraphs());
     }
     parseNumberStatistic(input?: number) {
         if (input) return calculate.separateNum(input);
@@ -330,10 +327,16 @@ ${this.supporterStatus} ${this.onlineStatus}
     protected async mpText() {
         const data = await this.mostPlayed();
         let text = [];
-        for (const bmpc of data) {
-            text.push(`\`${(bmpc.count.toString() + ' plays').padEnd(15, ' ')}\` | [${bmpc.beatmapset.title}[${bmpc.beatmap.version}]](https://osu.ppy.sh/b/${bmpc.beatmap_id})`);
+        for (let i = 0; i < data.length && i < 10; i++) {
+            const bmpc = data[i];
+            text.push(`\`${(bmpc.count.toString() + ' plays').padEnd(15, ' ')}\` | [${this.mapTitleMp(bmpc.beatmap, bmpc.beatmapset)}](https://osu.ppy.sh/b/${bmpc.beatmap_id})`);
         }
         return text.join('\n');
+    }
+    protected mapTitleMp(map: osuapi.types_v2.Beatmap, set: osuapi.types_v2.Beatmapset) {
+        const title = formatters.maxLength(set.title, 25);
+        const diff = formatters.maxLength(map.version, 25);
+        return `${title} [${diff}]`;
     }
     handleButtons() {
         const buttons = new Discord.ActionRowBuilder();

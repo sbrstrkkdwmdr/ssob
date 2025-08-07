@@ -1164,3 +1164,20 @@ const filterArgRange = (value: number, args: {
 export function splitStringBy(str: string, every: number) {
     return str.replace(eval(`/(.{${every}})/g`), "$1 ").split(' ');
 }
+
+export function maxLength(str: string, length: number) {
+    if (str.length > length) {
+        str = str.slice(0, length - 3) + '...';
+    }
+    return str;
+}
+
+export function strictLength(str: string, length: number) {
+    if (str.length > length) {
+        str = str.slice(0, length - 3) + '...';
+    }
+    if (str.length < length) {
+        str = str.padEnd(length);
+    }
+    return str;
+}
