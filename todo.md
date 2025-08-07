@@ -13,7 +13,7 @@ newest-oldest
 -   [x] MapParse
 -   [x] RandomMap
 -   [x] RecommendMap
--   [ ] UserBeatmaps
+-   [x] UserBeatmaps
 -   [ ] Compare
 -   [ ] Saved
 -   [ ] ServerLeaderboard
