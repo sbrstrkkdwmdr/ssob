@@ -158,6 +158,7 @@ export class Profile extends OsuCommand {
         }
     }
     async setEmbeds() {
+
         const osuEmbed = new Discord.EmbedBuilder()
             .setColor(helper.colours.embedColour.user.dec)
             .setTitle(`${this.user.username}'s ${this.params.mode ?? 'osu!'} profile`)
@@ -190,7 +191,9 @@ ${this.gradeCounts}
 ${this.previousNames}
 **Total Play Time:** ${calculate.secondsToTime(this.user?.statistics.play_time, true)}
 ${this.supporterStatus} ${this.onlineStatus}`);
+        this.ctn.embeds = [embed];
     }
+
     async embedUserDetailed(embed: Discord.EmbedBuilder) {
         this.ctn.embeds = await this.getGraphs();
 
