@@ -102,7 +102,7 @@ export class ScoreFormatter {
     async filterScores() {
         const dict: helper.tooltypes.Dict<(score: helper.tooltypes.indexed<osuapi.types_v2.Score>) => boolean> = {
             mapper: (score => matchesString(score.beatmapset.user.username, this.filter.mapper) || matchesString(score.beatmapset.user_id + '', this.filter.mapper) || matchesString((this.overrideMap ?? score.beatmap).user_id + '', this.filter.mapper)),
-            title: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
+            title: (score => matchesString(score.beatmapset.title, this.filter.title) || matchesString(score.beatmapset.title_unicode, this.filter.title)),
             artist: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
             version: (score => matchesString((this.overrideMap ?? score.beatmap).version, this.filter.version)),
         };
@@ -478,7 +478,7 @@ export class MapSetFormatter {
     filterMaps() {
         const dict: helper.tooltypes.Dict<(set: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>) => boolean> = {
             mapper: (set => matchesString(set.user.username, this.filter.mapper) || matchesString(set.user_id + '', this.filter.mapper) || matchesString(set.user_id + '', this.filter.mapper)),
-            title: (set => matchesString(set.artist, this.filter.artist) || matchesString(set.artist_unicode, this.filter.artist)),
+            title: (set => matchesString(set.title, this.filter.title) || matchesString(set.title_unicode, this.filter.title)),
             artist: (set => matchesString(set.artist, this.filter.artist) || matchesString(set.artist_unicode, this.filter.artist)),
             version: (set => {
                 for (const map of set.beatmaps) {
@@ -488,7 +488,8 @@ export class MapSetFormatter {
         };
         for (const key in dict) {
             if (this.filter[key]) {
-                this.indexed = this.indexed.filter(dict[key]);
+                const temp = this.indexed.filter(dict[key]);
+                this.indexed = temp;
             }
         }
     }
@@ -540,22 +541,7 @@ export class MapSetFormatter {
         }
     }
     syncIndexed() {
-        const temp: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[] = [];
-        const temp_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[] = [];
-        const setIndexes = this.indexed.map(x => x.originalIndex);
-        const pcIndexes = this.indexed_pc.map(x => x.originalIndex);
-        for (const pc of this.indexed_pc) {
-            if (setIndexes.includes(pc.originalIndex)) {
-                temp_pc.push(pc);
-            };
-        }
-        for (const map of this.indexed) {
-            if (pcIndexes.includes(map.originalIndex)) {
-                temp.push(map);
-            };
-        }
-        this.indexed = temp;
-        this.indexed_pc = temp_pc;
+
     }
     formatMaps(): tooltypes.formatterInfo<osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended> {
         const pages = this.handlePage();
@@ -584,10 +570,10 @@ export class MapSetFormatter {
     }
     handleEmpty() {
         switch (0) {
-            case this.playcounts.length:
+            case this?.playcounts?.length:
                 return '**ERROR**\nNo maps found';
                 break;
-            case this.indexed_pc.length:
+            case this?.indexed_pc?.length:
                 return '**ERROR**\nNo maps found matching the given filters';
                 break;
         }
@@ -596,7 +582,6 @@ export class MapSetFormatter {
     formatMap(mapset: osuapi.types_v2.BeatmapsetExtended, index: number, map?: osuapi.types_v2.BeatmapExtended) {
         let info = this.mapHeader(mapset, index);
         const topmap = map ?? mapset.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0];
-        if (this.mode == 'playcount') info += '\n' + `**${this.indexed_pc[index].count}x plays**`;
         info += '\n' + this.mapMeta(mapset, topmap);
         info += '\n' + this.mapCounts(mapset, topmap);
         info += '\n' + this.mapTimes(mapset, topmap);
@@ -661,8 +646,29 @@ export class MapPlayFormatter extends MapSetFormatter {
         }
         this.filterMaps();
         this.sortMaps();
+        this.syncIndexed();
         if (this.reverse) {
             this.indexed.reverse();
+        }
+    }
+    syncIndexed() {
+        if (this.indexed.length > 0 && this.indexed_pc.length > 0) {
+            const temp: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[] = [];
+            const temp_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[] = [];
+            const setIndexes = this.indexed.map(x => x.originalIndex);
+            const pcIndexes = this.indexed_pc.map(x => x.originalIndex);
+            for (const pc of this.indexed_pc) {
+                if (setIndexes.includes(pc.originalIndex)) {
+                    temp_pc.push(pc);
+                };
+            }
+            for (const map of this.indexed) {
+                if (pcIndexes.includes(map.originalIndex)) {
+                    temp.push(map);
+                };
+            }
+            this.indexed = temp;
+            this.indexed_pc = temp_pc;
         }
     }
     formatMaps() {
@@ -682,6 +688,25 @@ export class MapPlayFormatter extends MapSetFormatter {
             maxPage: pages.maxPage,
             used: (this.playcounts ?? this.mapsets)
         };
+    }
+    formatMap(mapset: osuapi.types_v2.BeatmapsetExtended, index: number, map?: osuapi.types_v2.BeatmapExtended) {
+        let info = this.mapHeader(mapset, index);
+        const topmap = map ?? mapset.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0];
+        info += '\n' + `**${this.indexed_pc[index].count}x plays**`;
+        info += '\n' + this.mapMeta(mapset, topmap);
+        info += '\n' + this.mapCounts(mapset, topmap);
+        return info;
+    }
+    mapMeta(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.Beatmap) {
+        const status = helper.emojis.rankedstatus[mapset.status];
+        const gamemode = helper.emojis.gamemodes[map.mode];
+        const length = calculate.secondsToTime(map.total_length);
+        return listLine(status, gamemode, length);
+    }
+    mapCounts(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.BeatmapExtended) {
+        const plays = `${calculate.separateNum(mapset.play_count)} plays`;
+        const favourites = `${calculate.separateNum(mapset.favourite_count)} favourites`;
+        return listLine(plays, favourites);
     }
 }
 

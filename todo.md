@@ -19,8 +19,8 @@ newest-oldest
 -   [ ] ServerLeaderboard
 -   [ ] Set
 -   [ ] WhatIf
--   [ ] Badges
--   [ ] BWS
+-   [x] Badges
+-   [x] BWS
 -   [x] Profile
 -   [ ] Ranking
 -   [ ] rsact

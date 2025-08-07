@@ -39,13 +39,14 @@ export class UserBeatmaps extends OsuCommand {
             mode: 'osu',
             detailed: 1,
         };
+        this.mapsets = [];
     }
     async setParamsMsg() {
         this.setParamPage();
 
         this.params.detailed = this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 });
 
-        this.params.filterType = this.setParamBoolList(this.params.filterType,
+        this.params.filterType = this.setParamBoolList('favourite',
             { set: 'ranked', flags: helper.argflags.mapRanked },
             { set: 'favourite', flags: helper.argflags.mapFavourite },
             { set: 'graveyard', flags: helper.argflags.mapGraveyard },
@@ -150,17 +151,16 @@ export class UserBeatmaps extends OsuCommand {
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
-        if (data.findFile(this.osudata.id, 'this.mapsets', null, this.params.filterType) &&
-            !('error' in data.findFile(this.osudata.id, 'this.mapsets', null, this.params.filterType)) &&
+        if (data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType) &&
+            !('error' in data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType)) &&
             this.input.buttonType != 'Refresh'
         ) {
-            this.mapsets = data.findFile(this.osudata.id, 'this.mapsets', null, this.params.filterType);
+            this.mapsets = data.findFile(this.osudata.id, 'maplistdata', null, this.params.filterType);
         } else {
-            this.params = await this.getScoreCount(0);
+            await this.getScoreCount(0);
         }
-
         data.debug(this.mapsets, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'mapListData');
-        data.storeFile(this.mapsets, this.osudata.id, 'this.mapsets', null, this.params.filterType);
+        data.storeFile(this.mapsets, this.osudata.id, 'maplistdata', null, this.params.filterType);
 
         let obj: formatters.MapSetFormatter;
 
@@ -276,11 +276,11 @@ export class UserBeatmaps extends OsuCommand {
             await this.sendError(helper.errors.map.group_nf(this.params.filterType));
             return;
         }
-        for (let i = 0; i < fd.length; i++) {
-            if (!fd[i] || typeof fd[i] == 'undefined') { break; }
+        for(const set of fd){
             //@ts-expect-error Beatmapset missing properties from BeatmapPlaycount
-            this.mapsets.push(fd[i]);
+            this.mapsets.push(set);
         }
+
         if (fd.length == 100 && this.params.filterType != 'most_played') {
             return await this.getScoreCount(cinitnum + 100);
         }
