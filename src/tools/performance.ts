@@ -53,18 +53,18 @@ export async function calcScore(input: {
         count_miss: 'misses',
         count_katu: 'nKatu',
     });
+    baseScore.combo
     scoreIterateKeys(input, baseScore, {
-        'cs': 'customCS',
-        'ar': 'customAR',
-        'od': 'customOD',
-        'hp': 'customHP',
+        'customCS': 'cs',
+        'customAR': 'ar',
+        'customOD': 'od',
+        'customHP': 'hp',
         'clockRate': 'clockRate',
     });
 
     if (input.mods.includes('CL')) {
         baseScore.lazer = false;
     }
-
     const perf: rosu.Performance = new rosu.Performance(baseScore);
 
     const final = perf.calculate(map);
@@ -351,6 +351,9 @@ function setBaseScoreValue(data: Dict, baseScore: rosu.PerformanceArgs, dKey: st
     }
 }
 
+/**
+ * for keys dict - key is for data, value is for base score
+ */
 function scoreIterateKeys(data: Dict, baseScore: rosu.PerformanceArgs, keys: Dict<string>) {
     for (const key in keys) {
         setBaseScoreValue(data, baseScore, key, keys[key]);
