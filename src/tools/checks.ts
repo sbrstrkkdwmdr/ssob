@@ -1,64 +1,71 @@
 import * as Discord from 'discord.js';
 import * as fs from 'fs';
+import { format } from 'util';
 import * as helper from '../helper';
 import * as path from '../path';
+import { Dict } from '../types/tools';
+import * as log from './log';
 
+type prototypes = 'undefined' | 'object' | 'boolean' | 'number' | 'bigint' | 'string' | 'symbol' | 'function' | 'array';
+type cfgKey = [boolean, Dict<cfgKey>, prototypes, any];
 export function checkConfig() {
-    const config = JSON.parse(fs.readFileSync(path.precomp + '/config/config.json', 'utf-8'));
-    if (!config.hasOwnProperty("token")) {
-        throw new Error('missing `token` value in config');
-    }
-    if (config.hasOwnProperty("osu")) {
-        if (!config["osu"].hasOwnProperty("clientId") && typeof config["important"]["clientId"] != "string") {
-            helper.log.stdout("Property `osu.clientId` is invalid or an incorrect type");
-            helper.log.stdout("The bot cannot run without this property");
-            process.exit(0);
-        }
-        if (!config["osu"].hasOwnProperty("clientSecret") && typeof config["important"]["clientSecret"] != "string") {
-            helper.log.stdout("Property `osu.clientSecret` is invalid or an incorrect type");
-            helper.log.stdout("The bot cannot run without this property");
-            process.exit(0);
-        }
+    console.log('Initialising config...');
+    let config = getcfg();
 
-    } else {
-        throw new Error('missing `osu` value in config');
-    }
-    if (!config.hasOwnProperty("prefix") || typeof config["prefix"] != "string") {
-        helper.log.stdout("Prefix value is either missing or an invalid type\nThe default value of `sbr-` will be used");
-        config['prefix'] = 'sbr-';
-    }
-    if (!config.hasOwnProperty("owners")) {
-        helper.log.stdout("owners value is either missing or an invalid type\nThe default value of `['INVALID_ID']` will be used");
-        config['owners'] = ['INVALID_ID'];
-    }
-    if (!config.hasOwnProperty("tenorKey") || typeof config["tenorKey"] != "string") {
-        config['tenorKey'] = 'INVALID_ID';
-        helper.log.stdout("tenorKey value is either missing or an invalid type\nThe default value of `['INVALID_ID']` will be used");
-    }
-    if (!config.hasOwnProperty("enableTracking") || typeof config["enableTracking"] != "boolean") {
-        helper.log.stdout("enableTracking value is either missing or an invalid type\nThe default value of `false` will be used");
-        config['enableTracking'] = false;
-    }
-    if (config.hasOwnProperty("logs")) {
-        if (!config["logs"].hasOwnProperty("console") || typeof config["logs"]["console"] != "boolean") {
-            helper.log.stdout("logs.console value is either missing or an invalid type\nThe default value of `true` will be used");
-            config['logs']['console'] = false;
+    // name: [{throw if invalid}, {children}, {type}, {default value}]
+    const keys: Dict<cfgKey> = {
+        'token': [true, null, 'string', null],
+        'osu': [true,
+            {
+                'clientId': [true, null, 'string', null],
+                'clientSecret': [true, null, 'string', null],
+            },
+            'object', null],
+        'prefix': [false, null, 'string', 'sbr-'],
+        'owners': [false, null, 'array', ['INVALID_ID']],
+        'tenorKey': [false, null, 'string', 'INVALID_ID'],
+        'enableTracking': [false, null, 'boolean', false],
+        'logs': [false,
+            {
+                'console': [false, null, 'boolean', true],
+                'file': [false, null, 'boolean', true],
+            },
+            'object', {
+                console: true,
+                file: true,
+            }],
+    };
 
-        }
-        if (!config["logs"].hasOwnProperty("file") || typeof config["logs"]["file"] != "boolean") {
-            helper.log.stdout("logs.file value is either missing or an invalid type\nThe default value of `true` will be used");
-            config['logs']['file'] = false;
+    config = iterateConfigKeys(config, keys);
 
-        }
-    } else {
-        helper.log.stdout("Missing log options. Using default values {console:true,file:true}");
-        config['logs'] = {
-            console: true,
-            file: true
-        };
-
-    }
     return config as helper.bottypes.config;
+}
+
+function iterateConfigKeys(cfg: any, keys: Dict<cfgKey>) {
+    for (const key in keys) {
+        console.log('Checking config key: ' + key);
+        if (keys[key][2] == 'object') {
+            if (cfg.hasOwnProperty(key)) {
+                cfg[key] = iterateConfigKeys(cfg[key], keys[key][1]);
+            } else if (keys[key][0]) {
+                throw new Error(`missing ${key} value in config`);
+            } else {
+                console.log(`Property ${key} is either missing or invalid. Setting to default value of ${format(keys[key][3])}`);
+                cfg[key] = keys[key][3];
+            }
+        } else if (keys[key][2] == 'array') {
+            if (!cfg.hasOwnProperty(key)) {
+                if (keys[key][0]) throw new Error(`Property ${key} is missing. Bot cannot run without this property`);
+                console.log(`Property ${key} is either missing or invalid. Setting to default value of ${format(keys[key][3])}`);
+                cfg[key] = keys[key][3];
+            }
+        } else if (!cfg.hasOwnProperty(key) || typeof cfg[key] != keys[key][2]) {
+            if (keys[key][0]) throw new Error(`Property ${key} is invalid. Make sure key is set to type ${format(keys[key][2])}`);
+            console.log(`Property ${key} is either missing or invalid. Setting to default value of ${format(keys[key][3])}`);
+            cfg[key] = keys[key][3];
+        }
+    }
+    return cfg;
 }
 
 /**
@@ -170,4 +177,27 @@ export function toHexadecimal(str: string | number) {
         .replaceAll(' ', '%20')
         .replace(/([^A-Za-z0-9 %])/g, '');
     return newstr;
+}
+
+function getcfg() {
+    try {
+        const p = JSON.parse(fs.readFileSync(path.precomp + '/config/config.json', 'utf-8'));
+        return p;
+    } catch (err) {
+        return {
+            "token": process.env.DISCORD_TOKEN ?? undefined,
+            "osu": {
+                "clientId": process.env.OSU_CLIENT_ID ?? undefined,
+                "clientSecret": process.env.OSU_CLIENT_SECRET ?? undefined
+            },
+            "prefix": process.env.PREFIX ?? "sbr-",
+            "owners": ["id1", "id2"],
+            "tenorKey": process.env.TENOR_KEY,
+            "enableTracking": true,
+            "logs": {
+                "console": true,
+                "file": true
+            }
+        };
+    }
 }

@@ -99,12 +99,6 @@ export type config = {
 
 export type command = (input: commandInput) => Promise<void>;
 
-export type reminder = {
-    time: number,
-    text: string,
-    userID: string,
-};
-
 export type scoreSort = 'pp' | 'score' | 'acc' | 'recent' | 'combo' | 'miss' | 'rank' | 'bpm';
 export type userSort = 'pp' | 'rank' | 'acc' | 'playcount' | 'level' | 'joindate' | 'countryrank' | 'countrypp' | 'score' | 'score_ranked';
 export type mapSort = 'title' | 'artist' |

@@ -4,8 +4,12 @@ import * as moment from 'moment';
 import * as osumodcalc from 'osumodcalculator';
 import * as stats from 'simple-statistics';
 import * as helper from '../helper';
+import * as calculate from './calculate';
+import * as log from './log';
+import * as osuapi from './osuapi';
+import * as other from './other';
 
-export async function updateUserStats(user: helper.osuapi.types_v2.User, mode: string) {
+export async function updateUserStats(user: osuapi.types_v2.User, mode: string) {
     const allUsers = await helper.vars.userdata.findAll();
 
     let findname;
@@ -20,7 +24,6 @@ export async function updateUserStats(user: helper.osuapi.types_v2.User, mode: s
             case 'osu':
             default:
                 {
-
                     await helper.vars.userdata.update({
                         osupp: !isNaN(user?.statistics?.pp) ? user?.statistics?.pp : 0,
                         osurank: !isNaN(user?.statistics?.global_rank) ? user?.statistics?.global_rank : 0,
@@ -154,14 +157,14 @@ const cacheById = [
  * @param id command id. if storing a map use the map id/md5 or user id if storing a user
  * @param name 
  */
-export function storeFile(data: any, id: string | number, name: string, mode?: helper.osuapi.types_v2.GameMode, type?: string) {
-    mode = helper.other.modeValidator(mode);
+export function storeFile(data: any, id: string | number, name: string, mode?: osuapi.types_v2.GameMode, type?: string) {
+    mode = other.modeValidator(mode);
     try {
         let path = `${helper.path.main}/cache/commandData/`;
         if (cacheById.some(x => name.includes(x))) {
             switch (true) {
                 case (name.includes('mapdata')): {
-                    data = data as helper.osuapi.types_v2.Beatmap;
+                    data = data as osuapi.types_v2.Beatmap;
                     let status = '';
                     switch (data.status) {
                         case 'ranked':
@@ -183,7 +186,7 @@ export function storeFile(data: any, id: string | number, name: string, mode?: h
                     path += `${name.toLowerCase()}${status}${id}.json`;
                 } break;
                 case (name.includes('bmsdata')): {
-                    data = data as helper.osuapi.types_v2.Beatmapset;
+                    data = data as osuapi.types_v2.Beatmapset;
                     let status = '';
                     switch (data.status) {
                         case 'ranked':
@@ -221,7 +224,7 @@ export function storeFile(data: any, id: string | number, name: string, mode?: h
         fs.writeFileSync(path, JSON.stringify(data, null, 2));
         return true;
     } catch (error) {
-        helper.log.stdout(error);
+        log.stdout(error);
         return error;
     }
 }
@@ -232,7 +235,7 @@ export function storeFile(data: any, id: string | number, name: string, mode?: h
  * @param name 
  * @returns 
  */
-export function findFile(id: string | number, name: string, mode?: helper.osuapi.types_v2.GameMode, type?: string) {
+export function findFile(id: string | number, name: string, mode?: osuapi.types_v2.GameMode, type?: string) {
     const path = `${helper.path.cache}/commandData/`;
     if (cacheById.some(x => name.includes(x))) {
         if (fs.existsSync(path + `${name.toLowerCase()}${id}.json`)) {
@@ -289,20 +292,20 @@ export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) 
         const init = JSON.parse(
             fs.readFileSync(`${helper.path.cache}/previous/${type}${serverId}.json`, 'utf-8')) as {
                 id: string | false,
-                apiData: helper.osuapi.types_v2.Score,
-                mods: helper.osuapi.types_v2.Mod[],
+                apiData: osuapi.types_v2.Score,
+                mods: osuapi.types_v2.Mod[],
                 default: boolean,
-                mode: helper.osuapi.types_v2.GameMode,
+                mode: osuapi.types_v2.GameMode,
                 last_access: string,
             };
         return init;
     } catch (error) {
         const data: {
             id: string | false,
-            apiData: helper.osuapi.types_v2.Score,
-            mods: helper.osuapi.types_v2.Mod[];
+            apiData: osuapi.types_v2.Score,
+            mods: osuapi.types_v2.Mod[];
             default: boolean,
-            mode: helper.osuapi.types_v2.GameMode,
+            mode: osuapi.types_v2.GameMode,
             last_access: string,
         } = {
             id: false,
@@ -318,9 +321,9 @@ export function getPreviousId(type: 'map' | 'user' | 'score', serverId: string) 
 }
 export function writePreviousId(type: 'map' | 'user' | 'score', serverId: string, data: {
     id: string,
-    apiData: helper.osuapi.types_v2.Score,
-    mods: helper.osuapi.types_v2.Mod[],
-    mode?: helper.osuapi.types_v2.GameMode,
+    apiData: osuapi.types_v2.Score,
+    mods: osuapi.types_v2.Mod[],
+    mode?: osuapi.types_v2.GameMode,
     default?: boolean;
 }) {
     if (!data.mods || data.mods.length == 0) {
@@ -333,16 +336,16 @@ export function writePreviousId(type: 'map' | 'user' | 'score', serverId: string
     return;
 }
 
-export function debug(data: any, type: string, name: string, serverId: string, params: string) {
+export function debug(data: any, name: string, serverId: string, params: string) {
     const pars = params.replaceAll(',', '=');
-    if (!fs.existsSync(`${helper.path.cache}/debug/${type}`)) {
-        fs.mkdirSync(`${helper.path.cache}/debug/${type}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug`);
     }
-    if (!fs.existsSync(`${helper.path.cache}/debug/${type}/${name}/`)) {
-        fs.mkdirSync(`${helper.path.cache}/debug/${type}/${name}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug/${name}/`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug/${name}`);
     }
     try {
-        fs.writeFileSync(`${helper.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
+        fs.writeFileSync(`${helper.path.cache}/debug/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
         console.log('Error writing debug file');
         console.log(error);
@@ -356,7 +359,7 @@ export function randomMap(type?: 'Ranked' | 'Loved' | 'Approved' | 'Qualified' |
     //check if cache exists
     const cache = fs.existsSync(`${helper.path.cache}/commandData`);
     if (cache) {
-        let maps: helper.osuapi.types_v2.Beatmap[] = getStoredMaps();
+        let maps: osuapi.types_v2.Beatmap[] = getStoredMaps();
         if (type) {
             maps = maps.filter(x => x.status == type.toLowerCase());
         }
@@ -384,12 +387,12 @@ export function getStoredMaps() {
     const cache = fs.existsSync(`${helper.path.cache}/commandData`);
     if (cache) {
         const mapsExist = fs.readdirSync(`${helper.path.cache}/commandData`).filter(x => x.includes('mapdata'));
-        const maps: helper.osuapi.types_v2.Beatmap[] = [];
+        const maps: osuapi.types_v2.Beatmap[] = [];
 
         for (const data of mapsExist) {
             if (data.includes('.json')) {
                 const dataAsStr = fs.readFileSync(`${helper.path.cache}/commandData/${data}`, 'utf-8');
-                maps.push(JSON.parse(dataAsStr) as helper.osuapi.types_v2.Beatmap);
+                maps.push(JSON.parse(dataAsStr) as osuapi.types_v2.Beatmap);
             }
         }
         return maps;
@@ -397,7 +400,7 @@ export function getStoredMaps() {
     return [];
 }
 
-export function recommendMap(baseRating: number, retrieve: 'closest' | 'random', mode: helper.osuapi.types_v2.GameMode, maxRange?: number) {
+export function recommendMap(baseRating: number, retrieve: 'closest' | 'random', mode: osuapi.types_v2.GameMode, maxRange?: number) {
     const maps = getStoredMaps();
     const obj = {
         hasErr: false,
@@ -446,10 +449,10 @@ export function recommendMap(baseRating: number, retrieve: 'closest' | 'random',
 }
 
 
-export async function userStatsCache(user: helper.osuapi.types_v2.UserStatistics[] | helper.osuapi.types_v2.User[], mode: helper.osuapi.types_v2.GameMode, type: 'Stat' | 'User') {
+export async function userStatsCache(user: osuapi.types_v2.UserStatistics[] | osuapi.types_v2.User[], mode: osuapi.types_v2.GameMode, type: 'Stat' | 'User') {
     switch (type) {
         case 'Stat': {
-            user = user as helper.osuapi.types_v2.UserStatistics[];
+            user = user as osuapi.types_v2.UserStatistics[];
             for (let i = 0; i < user.length; i++) {
                 const curuser = user[i];
                 if (!(curuser?.pp || !curuser?.global_rank)) {
@@ -457,7 +460,7 @@ export async function userStatsCache(user: helper.osuapi.types_v2.UserStatistics
                 }
                 let findname = await helper.vars.statsCache.findOne({
                     where: {
-                        osuid: curuser.user.id
+                        osuid: curuser?.user?.id
                     }
                 });
                 if (findname as any == Promise<{ pending; }>) {
@@ -488,7 +491,7 @@ export async function userStatsCache(user: helper.osuapi.types_v2.UserStatistics
             }
         } break;
         case 'User': {
-            user = user as helper.osuapi.types_v2.User[];
+            user = user as osuapi.types_v2.User[];
             for (let i = 0; i < user.length; i++) {
                 const curuser = user[i];
                 if (!(
@@ -536,7 +539,7 @@ export async function userStatsCache(user: helper.osuapi.types_v2.UserStatistics
     }
 }
 
-export async function userStatsCacheFix(mode: helper.osuapi.types_v2.GameMode) {
+export async function userStatsCacheFix(mode: osuapi.types_v2.GameMode) {
     const users = await helper.vars.statsCache.findAll();
     const actualusers: {
         pp: string,
@@ -575,7 +578,7 @@ export async function userStatsCacheFix(mode: helper.osuapi.types_v2.GameMode) {
     }
 }
 
-export async function getRankPerformance(type: 'pp->rank' | 'rank->pp', value: number, mode: helper.osuapi.types_v2.GameMode): Promise<{
+export async function getRankPerformance(type: 'pp->rank' | 'rank->pp', value: number, mode: osuapi.types_v2.GameMode): Promise<{
     value: number,
     isEstimated: boolean,
 }> {
@@ -599,17 +602,17 @@ export async function getRankPerformance(type: 'pp->rank' | 'rank->pp', value: n
         switch (type) {
             case 'pp->rank': {
                 //pp within 10
-                return (helper.calculate.isWithinPercentage(+x.pp, +x.pp * 0.000001, +value) || helper.calculate.isWithinValue(+x.pp, 1, +value)) ?? false;
+                return (calculate.isWithinPercentage(+x.pp, +x.pp * 0.000001, +value) || calculate.isWithinValue(+x.pp, 1, +value)) ?? false;
             } break;
             case 'rank->pp': {
                 //rank within 1%
-                return helper.calculate.isWithinPercentage(+x.rank, 1, +value) ?? false;
+                return calculate.isWithinPercentage(+x.rank, 1, +value) ?? false;
             } break;
         }
     });
     if (tempChecking.length > 0) {
-        const rankData = helper.calculate.stats(tempChecking.map(x => x.rank));
-        const ppData = helper.calculate.stats(tempChecking.map(x => x.pp));
+        const rankData = calculate.stats(tempChecking.map(x => x.rank));
+        const ppData = calculate.stats(tempChecking.map(x => x.pp));
         switch (type) {
             case 'pp->rank': {
                 return { value: rankData.median ?? rankData.mean, isEstimated: false };

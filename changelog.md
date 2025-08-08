@@ -6,13 +6,58 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.3.0] - 2025-08-08
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/3170470ec55324d1991163daa9c7adf71ed1b9c8)</br>
+
+### Fixed
+
+-   added back missing param handlers in scorelist commands for these filters: map creator, map artist, map version/difficulty & rank
+-   `Rankings` not missing all args in `setParamsMsg`
+-   `osuapi` cached oauthkey not updating when expired
+-   `Recent` "F if pass"
+-   `Rankings` not supporting country rankings
+-   `Simulate` map pp now applies custom stats
+-   `Set` setting mode to `osu` if mode param is null/undefined
+
 ### Changed
 
-- updated osumodcalculator
+-   updated osumodcalculator
+-   edit parts of command data for clarity
+-   no chokes show estimated total performance in author section
+-   `Debug` commandfile can search for any stored data in cache, (e.g. mapdata<type><mapid> not just <commandid><file>)
+-   command IDs are UUIDs instead of ints
+-   `Simulate` map details now show both old and new stats
+
+### Added
+
+-   `Compare` added `-u1` and `-u2` params
+
+### Removed
+
+-   `Remind` command
+
+### Refactor
+
+-   remove methods and commands from helper module (circular refs)
+-   move commands to separate helper module
+-   status changer updates every 5 minutes instead of using song length (caused memory leaks)
+-   `Map` split `execute()` into multiple smaller methods
+-   convert input handlers into classes
+-   rewrite how params are managed (added `ArgParser` class)
+-   `UserBeatmaps` rename `filter` to `filterType`
+-   change how command errors are handled
+-   add separate method(s) for disabling pages
+-   config checker
+-   rename `Map` => `MapParse`
+-   change message sender into a class
+-   debug files are now stored in `/debug/` instead of `/debug/<type>/`
+-   `Debug` commandfiletype uses `commandTools.getCommand()` instead of long switch statement
+-   move searchid and nulling user to separate method
 
 ## [5.2.0] - 2025-07-02
 
-[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/4d53bcc4be3d917b88bc610eac2ec373d5608793)</br>
 
 ### Fixed
 
@@ -41,7 +86,7 @@
 -   `BadgeWeightSeed` if user has no rank (eg. inactive, etc.) then attempt to use estimated rank from pp
 -   `MapScores` add `-b` and `-map` params to specify map (map url still works)
 -   move `ServerLeaderboard` to `osu_other` (same as in command data)
-- `ServerLeaderboard` slightly change spacing
+-   `ServerLeaderboard` slightly change spacing
 
 ### Added
 
@@ -56,7 +101,7 @@
 -   unused API stuff
 -   unused files from old versions
 -   `tz` arg in `Info`
-- `Requested by` sections on `Map`, `Profile`, `MapScores`, `MapLeaderboard`
+-   `Requested by` sections on `Map`, `Profile`, `MapScores`, `MapLeaderboard`
 
 ### BREAKING
 

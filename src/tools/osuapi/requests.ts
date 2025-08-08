@@ -78,35 +78,6 @@ export function checkCredentials(version: 1 | 2): [boolean, string] {
     return [true, ''];
 }
 
-export async function checkAuth() {
-    helper.log('Verifying OAuth');
-    let getting = true;
-    if (helper.credentials.auth) {
-        if (helper.credentials?.auth?.expires_in ?? 0 <= helper.credentials.lastAuthUpdate.getTime()) {
-            helper.log('OAuth expired!');
-            await PostOAuth();
-        }
-        getting = false;
-    }
-    try {
-        oAuth();
-    } catch (error) {
-        helper.log('Error fetching cached OAuth');
-        helper.log(error);
-        await PostOAuth();
-        getting = false;
-    }
-    if (fs.existsSync(`./osuauth.json`)) {
-        const stat = fs.statSync(`./osuauth.json`);
-        if ((helper.credentials.auth?.expires_in ?? 0) <= stat.mtime.getSeconds() && getting) {
-            helper.log('OAuth expired!');
-            // await PostOAuth();
-        }
-    } else if (getting) {
-        await PostOAuth();
-    }
-}
-
 export async function get_v2(url: string, params: Dict, tries: number = 0) {
     if (tries > 3) {
         throw new Error('Exceeded try count. Please ensure credentials are valid');
@@ -150,7 +121,7 @@ export async function get_v2(url: string, params: Dict, tries: number = 0) {
     if (data?.authentication) {
         helper.log('Authentication error...\nUpdating authentication and retrying...');
         try {
-            checkAuth();
+            await PostOAuth();
         } catch (error) {
             console.log(error);
             return {
@@ -208,7 +179,7 @@ export async function post_v2(url: string, params: Dict, body: Dict, tries: numb
     if (data?.authentication) {
         helper.log('Authentication error...\nUpdating authentication and retrying...');
         try {
-            checkAuth();
+            await PostOAuth();
         } catch (error) {
             console.log(error);
             return {
@@ -228,7 +199,6 @@ export async function get_v1(url: string, params: Dict, tries: number = 0) {
     if (c[0]) {
         throw new Error(c[1]);
     }
-    await checkAuth();
     let inp = new URL('https://osu.ppy.sh/api' + url);
     params.k = helper.credentials.key;
     for (const key in params) {

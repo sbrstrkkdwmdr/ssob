@@ -6,6 +6,9 @@ import * as osuclasses from 'osu-classes';
 import * as osuparsers from 'osu-parsers';
 import * as rosu from 'rosu-pp-js';
 import * as helper from '../helper';
+import * as colourcalc from './colourcalc';
+import * as log from './log';
+import * as osuapi from './osuapi';
 
 export function appendUrlParamsString(url: string, params: string[]) {
     let temp = url;
@@ -29,7 +32,7 @@ export function debug(data: any, type: string, name: string, serverId: string | 
     }
     try {
         if (data?.input?.config) {
-            data.helper.vars.config = helper.other.censorConfig();
+            data.helper.vars.config = censorConfig();
         }
         fs.writeFileSync(`${helper.path.main}/cache/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
@@ -38,7 +41,7 @@ export function debug(data: any, type: string, name: string, serverId: string | 
 }
 
 export function modeValidator(mode: string | number) {
-    let returnf: helper.osuapi.types_v2.GameMode = 'osu';
+    let returnf: osuapi.types_v2.GameMode = 'osu';
     switch (mode) {
         case 0: case 'osu': default: case 'o': case 'std': case 'standard':
             returnf = 'osu';
@@ -57,7 +60,7 @@ export function modeValidator(mode: string | number) {
 }
 
 export function modeValidatorAlt(mode: string | number) {
-    let returnf: helper.osuapi.types_v2.GameMode = 'osu';
+    let returnf: osuapi.types_v2.GameMode = 'osu';
 
     if (typeof mode == 'number') {
         switch (mode) {
@@ -272,18 +275,10 @@ export function timeForGraph(times: string[]) {
     return reformattedTimes;
 }
 
-/**
- * 
- * @param x 
- * @param y 
- * @param label name of graph
- * @param lineColour colour of graph line written as rgb(x, y, z)
- * @returns path to the graph
- */
-export async function graph(
-    x: number[] | string[],
-    y: number[],
-    label: string,
+type graphInput = {
+    x: number[] | string[];
+    y: number[];
+    label: string;
     other: {
         startzero?: boolean,
         fill?: boolean,
@@ -301,222 +296,176 @@ export async function graph(
         imgUrl?: string;
         blurImg?: boolean;
         barOutline?: true;
-    },
+    };
     extra?: {
         data: number[];
         label: string;
         separateAxis: boolean;
         customStack?: number;
         reverse?: boolean;
-    }[],
-    highlightPoints?: number[],
-) {
+    }[];
+};
 
-    if (other.startzero == null || typeof other.startzero == 'undefined') {
-        other.startzero = true;
-    }
-    if (other.fill == null || typeof other.fill == 'undefined') {
-        other.fill = false;
-    }
-    if (other.displayLegend == null || other.displayLegend == undefined || typeof other.displayLegend == 'undefined') {
-        other.displayLegend = false;
-    }
-    if (other.type == null || other.type == undefined || typeof other.displayLegend == 'undefined') {
-        other.type = 'line';
-    }
+/**
+ * 
+ * @param x 
+ * @param y 
+ * @param label name of graph
+ * @param lineColour colour of graph line written as rgb(x, y, z)
+ * @returns path to the graph
+ */
+export function graph({ x, y, label, other, extra = [] }: graphInput) {
+    const builder = new GraphBuilder({ x, y, label, other, extra });
+    return builder.execute();
+}
 
-    let curx: (string | number)[] = [];
-    let cury: number[] = [];
-
-    if (y.length > 200) {
-        const div = y.length / 200;
-        for (let i = 0; i < 200; i++) {
-            const offset = Math.ceil(i * div);
-            const curval = y[offset];
-            cury.push(curval);
-            curx.push(x[offset]);
-        }
-    } else {
-        curx = x;
-        cury = y;
-    }
-
-    let secondReverse = false;
-    // gradients just make the line invis for some reason
-    // if (other.gradient) {
-    //     const tmp = clrs.rainbow;
-    //     const gradient = `__BEGINFUNCTION__getGradientFillHelper("vertical", ${JSON.stringify([tmp.red, tmp.orange, tmp.yellow, tmp.green, tmp.blue, tmp.indigo, tmp.violet])})__ENDFUNCTION__`;
-    //     // other.lineColour = gradient
-    //     // //@ts-expect-error ts wants "quickchart.default.default" but the second default is undefined when compiled to js
-    //     // other.lineColour = quickchart.default.getGradientFillHelper('vertical', [tmp.red, tmp.orange, tmp.yellow, tmp.green, tmp.blue, tmp.indigo, tmp.violet]);
-    //     // //@ts-expect-error bro
-    //     // console.log(quickchart.default.getGradientFillHelper('vertical', [tmp.red, tmp.orange, tmp.yellow, tmp.green, tmp.blue, tmp.indigo, tmp.violet]));
-    //     // //`__BEGINFUNCTION__getGradientFillHelper(${JSON.stringify(direction)}, ${JSON.stringify(colors)}, ${JSON.stringify(dimensions)})__ENDFUNCTION__`;
-    // }
-    type dataset = {
-        label: string,
-        data: number[];
-        fill: boolean,
-        borderColor: string | ((colour) => string),
-        borderWidth: number,
-        pointRadius: number,
-        yAxisID: string,
+export class GraphBuilder {
+    x: string[];
+    y: number[];
+    label: string;
+    other: {
+        startzero?: boolean,
+        fill?: boolean,
+        displayLegend?: boolean,
+        lineColour?: string,
+        pointSize?: number;
+        gradient?: boolean;
+        type?: 'line' | 'bar';
+        stacked?: boolean;
+        title?: string;
+        showAxisX?: boolean;
+        showAxisY?: boolean;
+        stacksSeparate?: boolean;
+        reverse?: boolean;
+        imgUrl?: string;
+        blurImg?: boolean;
+        barOutline?: true;
     };
-
-    const datasets: dataset[] = [{
-        label: label,
-        data: cury,
-        fill: other.fill,
-        borderColor: other.lineColour ?? 'rgb(101, 101, 135)',
-        borderWidth: 1,
-        pointRadius: other.pointSize ?? 2,
-        yAxisID: '1y'
-    }];
-    if (other?.stacked == true) {
-        datasets[0]['stack'] = 'Stack 0';
+    extra?: {
+        data: number[];
+        label: string;
+        separateAxis: boolean;
+        customStack?: number;
+        reverse?: boolean;
+    }[];
+    highlightPoints?: number[];
+    constructor({ x, y, label, other, extra = [] }: graphInput) {
+        this.x = x.map((foo: string | number) => typeof foo == 'string' ? foo : foo + '');
+        this.y = y;
+        this.label = label;
+        this.other = other;
+        this.extra = extra;
+    };
+    checkSettings() {
+        if (this.other.startzero == null || typeof this.other.startzero == 'undefined') {
+            this.other.startzero = true;
+        }
+        if (this.other.fill == null || typeof this.other.fill == 'undefined') {
+            this.other.fill = false;
+        }
+        if (this.other.displayLegend == null || this.other.displayLegend == undefined || typeof this.other.displayLegend == 'undefined') {
+            this.other.displayLegend = false;
+        }
+        if (this.other.type == null || this.other.type == undefined || typeof this.other.displayLegend == 'undefined') {
+            this.other.type = 'line';
+        }
     }
-    let showSecondAxis = false;
-    if (!(extra == null || extra == undefined)) {
-        const diff = 360 / Math.floor(extra.length);
-        let i = 1;
-        for (const newData of extra) {
-            if (newData?.data?.length > 0) {
-                const nHSV = helper.colourcalc.rgbToHsv(101, 101, 135);
-                const newclr = helper.colourcalc.hsvToRgb(nHSV.h + (diff * i), nHSV.s, nHSV.v);
-                const xData = {
-                    label: newData.label,
-                    data: newData.data,
-                    fill: other.fill,
-                    borderColor: other.lineColour ?? `rgb(${newclr})`,
-                    borderWidth: 1,
-                    pointRadius: other.pointSize ?? 2,
-                    yAxisID: newData.separateAxis ? '2y' : '1y'
-                };
-                newData.reverse ? secondReverse = true : null;
-                if (other?.type == 'bar' && other?.stacked == true && other?.stacksSeparate == true) {
-                    newData.customStack ?
-                        xData['stack'] = `Stack ${newData.customStack}` :
-                        xData['stack'] = 'Stack 0';
-                }
-                datasets.push(xData);
-                if (newData.separateAxis) showSecondAxis = true;
-                i++;
+    checkData() {
+        if (this.y.length > 200) {
+            let curx: string[] = [];
+            let cury: number[] = [];
+            const div = this.y.length / 200;
+            for (let i = 0; i < 200; i++) {
+                const offset = Math.ceil(i * div);
+                const curval = this.y[offset];
+                const xval = this.x[offset];
+                cury.push(curval);
+                curx.push(xval);
+            }
+            this.x = curx;
+            this.y = cury;
+        }
+        const isNumbered = this.x.filter(x => typeof x == 'number');
+        if (isNumbered.length > 0) {
+            let temp: string[] = [];
+            for (const value of this.x) {
+                temp.push(value + '');
+            }
+            this.x = temp;
+        }
+    }
+    protected datasets: helper.tooltypes.dataset[];
+    protected secondary = {
+        axis: false,
+        reverse: false,
+    };
+    primaryData() {
+        this.datasets = [{
+            label: this.label,
+            data: this.y,
+            fill: this.other.fill,
+            borderColor: this.other.lineColour ?? 'rgb(101, 101, 135)',
+            borderWidth: 1,
+            pointRadius: this.other.pointSize ?? 2,
+            yAxisID: '1y'
+        }];
+        if (this.other?.stacked == true) {
+            this.datasets[0]['stack'] = 'Stack 0';
+        }
+    }
+    extraData() {
+        if (!(this.extra == null || this.extra == undefined)) {
+            const diff = 360 / Math.floor(this.extra.length);
+            let i = 1;
+            for (const newData of this.extra) {
+                i = this.extraDataItem(newData, i, diff);
             }
         }
     }
-
-    // if (highlightPoints && highlightPoints.length > 0) {
-    //     datasets[0].borderColor = (colour) => {
-    //         console.log(colour.index);
-    //         return highlightPoints.includes(colour.index) ?
-    //             'rgb(255, 106, 0)' :
-    //             other.lineColour ?? 'rgb(101, 101, 135)';
-    //     };
-    // }
-
-    const cfgopts = {
-        legend: {
-            display: other.displayLegend
-        },
-        title: {
-            display: other?.title ? true : false,
-            title: other?.title ?? 'No title'
-        },
-        scales: {
-            x: {
-                ticks: {
-                    color: 'rgb(128, 128, 128)'
-                },
-                grid: {
-                    display: true,
-                    drawOnChartArea: true,
-                    drawTicks: true,
-                    color: 'rgb(64, 64, 64)'
-                }
-            },
-            y: {
-                ticks: {
-                    color: 'rgb(128, 128, 128)'
-                },
-                grid: {
-                    display: true,
-                    drawOnChartArea: true,
-                    drawTicks: true,
-                    color: 'rgb(64, 64, 64)'
-                }
-            },
-            xAxes: [
-                {
-                    display: true,
-                    ticks: {
-                        autoSkip: true,
-                        maxTicksLimit: 10
-                    },
-                }
-            ],
-            yAxes: [
-                {
-                    id: '1y',
-                    type: 'linear',
-                    position: 'left',
-                    display: true,
-                    ticks: {
-                        reverse: other.reverse,
-                        beginAtZero: other.startzero
-                    },
-                }, {
-                    id: '2y',
-                    type: 'linear',
-                    position: 'right',
-                    display: showSecondAxis,
-                    ticks: {
-                        reverse: secondReverse,
-                        beginAtZero: other.startzero
-                    },
-                }
-            ]
-        },
-    };
-
-    if (other?.type == 'bar') {
-        cfgopts['elements'] = {
-            backgroundColor: other.lineColour ?? 'rgb(101, 101, 135)',
-            borderColor: other?.barOutline ? 'rgb(255, 255, 255)' : other.lineColour ?? 'rgb(101, 101, 135)',
-            borderWidth: 2
-        };
-    }
-    if (other?.type == 'bar' && other?.stacked == true) {
-        for (const elem of cfgopts['scales']['xAxes']) {
-            elem['stacked'] = other.stacked ?? false;
+    extraDataItem(data: {
+        data: number[];
+        label: string;
+        separateAxis: boolean;
+        customStack?: number;
+        reverse?: boolean;
+    }, index: number, diff: number) {
+        if (data?.data?.length > 0) {
+            const nHSV = colourcalc.rgbToHsv(101, 101, 135);
+            const newclr = colourcalc.hsvToRgb(nHSV.h + (diff * index), nHSV.s, nHSV.v);
+            const xData = {
+                label: data.label,
+                data: data.data,
+                fill: this.other.fill,
+                borderColor: this.other.lineColour ?? `rgb(${newclr})`,
+                borderWidth: 1,
+                pointRadius: this.other.pointSize ?? 2,
+                yAxisID: data.separateAxis ? '2y' : '1y'
+            };
+            if (data.reverse) this.secondary.reverse = true;
+            if (this.other?.type == 'bar' && this.other?.stacked == true && this.other?.stacksSeparate == true) {
+                data.customStack ?
+                    xData['stack'] = `Stack ${data.customStack}` :
+                    xData['stack'] = 'Stack 0';
+            }
+            this.datasets.push(xData);
+            if (data.separateAxis) this.secondary.axis = true;
+            return index++;
         }
-        for (const elem of cfgopts['scales']['yAxes']) {
-            elem['stacked'] = other.stacked ?? false;
-        }
+        return index;
     }
-
-    const tc = canvas.createCanvas(1500, 500);
-    const ctx = tc.getContext("2d");
-    const image = new canvas.Image();
-
-    const chart = new chartjs.Chart(ctx, {
-        type: other?.type ?? 'line',
-        data: {
-            labels: curx,
-            datasets: datasets
-        },
-        options: {
+    protected get defaultConfig_old() {
+        return {
+            legend: {
+                display: this.other.displayLegend
+            },
+            title: {
+                display: this.other?.title ? true : false,
+                title: this.other?.title ?? 'No title'
+            },
             scales: {
                 x: {
                     ticks: {
-                        color: 'rgb(128, 128, 128)',
-                        backdropColor: 'rgb(128, 128, 128)',
-                        callback: function (value, index, values) {
-                            // if (highlightPoints && highlightPoints.includes(index)) {
-                            //     this.backgroundColor = 'rgb(128, 128, 128)';
-                            // }
-                            // this.backgroundColor = 'rgb(255, 0, 0)';
-                            return '';
-                        }
+                        color: 'rgb(128, 128, 128)'
                     },
                     grid: {
                         display: true,
@@ -526,12 +475,8 @@ export async function graph(
                     }
                 },
                 y: {
-                    position: 'left',
-                    reverse: other.reverse,
-                    beginAtZero: other.startzero,
                     ticks: {
-                        color: 'rgb(128, 128, 128)',
-                        // beginAtZero: other.startzero
+                        color: 'rgb(128, 128, 128)'
                     },
                     grid: {
                         display: true,
@@ -540,85 +485,167 @@ export async function graph(
                         color: 'rgb(64, 64, 64)'
                     }
                 },
-                y1: {
-                    position: 'right',
-                    display: showSecondAxis,
-                    reverse: secondReverse,
-                    ticks: {
-                        // beginAtZero: other.startzero,
-                    },
-                }
-                // xAxes: [
-                //     {
-                //         display: true,
-                //         ticks: {
-                //             autoSkip: true,
-                //             maxTicksLimit: 10
-                //         },
-                //     }
-                // ],
-                // yAxes: [
-                //     {
-                //         id: '1y',
-                //         type: 'linear',
-                //         position: 'left',
-                //         display: true,
-                //         ticks: {
-                //             reverse: other.reverse,
-                //             beginAtZero: other.startzero
-                //         },
-                //     }, {
-                //         id: '2y',
-                //         type: 'linear',
-                //         position: 'right',
-                //         display: showSecondAxis,
-                //         ticks: {
-                //             reverse: secondReverse,
-                //             beginAtZero: other.startzero
-                //         },
-                //     }
-                // ]
+                xAxes: [
+                    {
+                        display: true,
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 10
+                        },
+                    }
+                ],
+                yAxes: [
+                    {
+                        id: '1y',
+                        type: 'linear',
+                        position: 'left',
+                        display: true,
+                        ticks: {
+                            reverse: this.other.reverse,
+                            beginAtZero: this.other.startzero
+                        },
+                    }, {
+                        id: '2y',
+                        type: 'linear',
+                        position: 'right',
+                        display: this.secondary.axis,
+                        ticks: {
+                            reverse: this.secondary.reverse,
+                            beginAtZero: this.other.startzero
+                        },
+                    }
+                ]
             },
-        },
-        plugins: [{
-            id: 'customImage',
-            beforeDraw: (chart) => {
-                // console.log(chart.chartArea);
-            }
-        }]
-    });
-
-    // issue - background image covers chart
-    // await new Promise(resolve => {
-    //     image.onload = function () {
-    //         const {
-    //             top,
-    //             left,
-    //             width,
-    //             height
-    //         } = chart.chartArea;
-    //         const x = left + width - image.width;
-    //         const y = top + height - image.height;
-    //         ctx.drawImage(image, x, y);
-    //         resolve(null);
-    //     };
-    //     image.src = other?.imgUrl ?? 'https://github.com/sbrstrkkdwmdr/sbrstrkkdwmdr/blob/main/blank.jpg?raw=true';
-    // })
-
-    const filename = `${(new Date).getTime()}`;
-    let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
-    try {
-        const buffer = tc.toBuffer();
-        fs.writeFileSync(curt, buffer);
-    } catch (err) {
-        helper.log.stdout(err);
-        curt = `${helper.path.precomp}/files/blank_graph.png`;
+        };
     }
-
-    return {
-        path: curt,
-        filename
-    };
+    protected get config_old() {
+        const cfgopts = this.defaultConfig_old;
+        if (this.other?.type == 'bar') {
+            cfgopts['elements'] = {
+                backgroundColor: this.other.lineColour ?? 'rgb(101, 101, 135)',
+                borderColor: this.other?.barOutline ? 'rgb(255, 255, 255)' : this.other.lineColour ?? 'rgb(101, 101, 135)',
+                borderWidth: 2
+            };
+        }
+        if (this.other?.type == 'bar' && this.other?.stacked == true) {
+            for (const elem of cfgopts['scales']['xAxes']) {
+                elem['stacked'] = this.other.stacked ?? false;
+            }
+            for (const elem of cfgopts['scales']['yAxes']) {
+                elem['stacked'] = this.other.stacked ?? false;
+            }
+        }
+        return cfgopts;
+    }
+    protected get xTicks() {
+        return {
+            color: 'rgb(128, 128, 128)',
+            backdropColor: 'rgb(128, 128, 128)',
+            callback: function (value, index, values) {
+                // if (highlightPoints && highlightPoints.includes(index)) {
+                //     this.backgroundColor = 'rgb(128, 128, 128)';
+                // }
+                // this.backgroundColor = 'rgb(255, 0, 0)';
+                return '';
+            }
+        };
+    }
+    protected get xGrid() {
+        return {
+            display: true,
+            drawOnChartArea: true,
+            drawTicks: true,
+            color: 'rgb(64, 64, 64)'
+        };
+    }
+    protected get yTicksPrimary() {
+        return {
+            color: 'rgb(128, 128, 128)',
+            // beginAtZero: other.startzero
+        };
+    }
+    protected get yGrid() {
+        return {
+            display: true,
+            drawOnChartArea: true,
+            drawTicks: true,
+            color: 'rgb(64, 64, 64)'
+        };
+    }
+    protected get yPrimary() {
+        return {
+            position: 'left' as helper.tooltypes.graphPosition,
+            reverse: this.other.reverse,
+            beginAtZero: this.other.startzero,
+            ticks: this.yTicksPrimary,
+            grid: this.yGrid,
+        };
+    }
+    protected get ySecondary() {
+        return {
+            position: 'right' as helper.tooltypes.graphPosition,
+            display: this.secondary.axis,
+            reverse: this.secondary.reverse,
+            ticks: {
+                // beginAtZero: other.startzero,
+            },
+        };
+    }
+    protected get scales() {
+        return {
+            x: {
+                ticks: this.xTicks,
+                grid: this.xGrid,
+            },
+            y: this.yPrimary,
+            y1: this.ySecondary,
+        };
+    }
+    canvas: canvas.Canvas;
+    protected createChart() {
+        this.canvas = canvas.createCanvas(1500, 500);
+        const ctx = this.canvas.getContext("2d");
+        const chart = new chartjs.Chart(ctx, {
+            type: this.other?.type ?? 'line',
+            data: {
+                labels: this.x,
+                datasets: this.datasets
+            },
+            options: {
+                scales: this.scales
+            },
+            plugins: [{
+                id: 'customImage',
+                beforeDraw: (chart) => {
+                    // console.log(chart.chartArea);
+                }
+            }]
+        });
+        return chart;
+    }
+    writeToFile() {
+        const filename = `${(new Date).getTime()}`;
+        let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
+        try {
+            const buffer = this.canvas.toBuffer();
+            fs.writeFileSync(curt, buffer);
+        } catch (err) {
+            log.stdout(err);
+            curt = `${helper.path.precomp}/files/blank_graph.png`;
+        }
+        return {
+            path: curt,
+            filename
+        };
+    }
+    execute() {
+        this.checkSettings();
+        this.checkData();
+        this.primaryData();
+        this.extraData();
+        this.createChart();
+        return this.writeToFile();
+    }
 }
 
 export function formatHours(arr: string[]) {
@@ -652,9 +679,9 @@ export function formatHours(arr: string[]) {
 }
 
 export function ubitflagsAsName(flags: Discord.UserFlagsBitField) {
-    helper.log.stdout(flags);
+    log.stdout(flags);
     const fl = flags.toArray();
-    helper.log.stdout(fl);
+    log.stdout(fl);
     return 'aa';
 }
 
@@ -674,7 +701,7 @@ export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     return newArr;
 }
 
-export function scoreTotalHits(stats: helper.osuapi.types_v2.ScoreStatistics) {
+export function scoreTotalHits(stats: osuapi.types_v2.ScoreStatistics) {
     let total = 0;
     for (const value in stats) {
         total += stats[value];
@@ -683,7 +710,7 @@ export function scoreTotalHits(stats: helper.osuapi.types_v2.ScoreStatistics) {
 }
 
 export function scoreIsComplete(
-    stats: helper.osuapi.types_v2.ScoreStatistics,
+    stats: osuapi.types_v2.ScoreStatistics,
     circles: number,
     sliders: number,
     spinners: number,
@@ -696,7 +723,7 @@ export function scoreIsComplete(
     };
 }
 
-export function filterScoreQuery(scores: helper.osuapi.types_v2.Score[], search: string) {
+export function filterScoreQuery(scores: osuapi.types_v2.Score[], search: string) {
     return scores.filter((score) =>
         (
             score.beatmapset.title.toLowerCase().replaceAll(' ', '')
@@ -738,7 +765,7 @@ export async function getFailPoint(
 
         }
     } else {
-        helper.log.stdout("Path does not exist:" + mapPath);
+        log.stdout("Path does not exist: " + mapPath);
     }
     return time;
 }
@@ -753,8 +780,8 @@ export function validCountryCodeA2(code: string) {
  * @param defaultToNan - if the stat isnt found, return NaN instead of 0 
  * @returns 
  */
-export function lazerToOldStatistics(stats: helper.osuapi.types_v2.ScoreStatistics, mode: rosu.GameMode, defaultToNan?: boolean): helper.osuapi.types_v2.Statistics {
-    let foo: helper.osuapi.types_v2.Statistics;
+export function lazerToOldStatistics(stats: osuapi.types_v2.ScoreStatistics, mode: rosu.GameMode, defaultToNan?: boolean): osuapi.types_v2.Statistics {
+    let foo: osuapi.types_v2.Statistics;
     let dv = defaultToNan ? NaN : 0;
     switch (mode) {
         case 0:
@@ -801,7 +828,7 @@ export function lazerToOldStatistics(stats: helper.osuapi.types_v2.ScoreStatisti
     return foo;
 }
 
-export function getTotalScore(score: helper.osuapi.types_v2.Score): number {
+export function getTotalScore(score: osuapi.types_v2.Score): number {
     return score.mods.map(x => x.acronym).includes('CL') ?
         scoreIsStable(score) ?
             score?.legacy_total_score :
@@ -813,7 +840,7 @@ export function getTotalScore(score: helper.osuapi.types_v2.Score): number {
 /**
  * true for stable, false for lazer
  */
-export function scoreIsStable(score: helper.osuapi.types_v2.Score): boolean {
+export function scoreIsStable(score: osuapi.types_v2.Score): boolean {
     /**
  * check score is on stable or lazer
  * stable ->
@@ -832,8 +859,8 @@ export function scoreIsStable(score: helper.osuapi.types_v2.Score): boolean {
 }
 
 export function listItems(list: string[]) {
-    let string = ''
-    if(list.length > 1){
+    let string = '';
+    if (list.length > 1) {
 
         for (let i = 0; i < list.length - 2; i++) {
             string += list[i] + ', ';

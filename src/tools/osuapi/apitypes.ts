@@ -582,12 +582,22 @@ export interface Notification {
 
 export type RankingType = ('charts' | 'country' | 'performance' | 'score');
 
-export interface Rankings {
+export interface Rankings<T = UserStatistics | CountryStatistics> {
     beatmapsets?: Beatmapset[],
     cursor: Cursor,
-    ranking: UserStatistics[],
+    ranking: T[],
     spotlight?: SpotLight | null,
     total: number,
+}
+
+// not mentioned in API docs
+export interface CountryStatistics {
+    code: CountryCode,
+    active_users: number,
+    play_count: number,
+    ranked_score: number,
+    performance: number,
+    country: Country;
 }
 
 // taken from https://github.com/cyperdark/osu-api-extended/blob/master/types/v2/rooms_list.ts

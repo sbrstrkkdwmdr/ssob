@@ -1,4 +1,5 @@
-import * as helper from '../helper';
+import moment from 'moment';
+import * as osuapi from './osuapi';
 /**
  * eg 1,000 -> 1k
  * 1,000,000 -> 1m
@@ -326,95 +327,39 @@ export function factorial(part1: number) {
  */
 export function timeToMs(str: string) {
     if (str.includes('d') || str.includes('h') || str.includes('m') || str.includes('s')) {
-        let daysstr = '0';
-        let hoursstr = '0';
-        let minutesstr = '0';
-        let secondsstr = '0';
-
-        if (str.includes('d')) {
-            daysstr = str.split('d')[0];
-            if (str.includes('h')) {
-                hoursstr = str.split('d')[1].split('h')[0];
-                if (str.includes('m')) {
-                    minutesstr = str.split('d')[1].split('h')[1].split('m')[0];
-                }
-                if (str.includes('s')) {
-                    secondsstr = str.split('d')[1].split('h')[1].split('m')[1].split('s')[0];
-                }
-            }
-            if (str.includes('m') && !str.includes('h')) {
-                minutesstr = str.split('d')[1].split('m')[0];
-                if (str.includes('s')) {
-                    secondsstr = str.split('d')[1].split('m')[1].split('s')[0];
-                }
-            }
-            if (str.includes('s') && !str.includes('m') && !str.includes('h')) {
-                secondsstr = str.split('d')[1].split('s')[0];
-            }
-        }
-        if (str.includes('h') && !str.includes('d')) {
-            hoursstr = str.split('h')[0];
-            if (str.includes('m')) {
-                minutesstr = str.split('h')[1].split('m')[0];
-                if (str.includes('s')) {
-                    secondsstr = str.split('h')[1].split('m')[1].split('s')[0];
-                }
-            }
-            if (str.includes('s') && !str.includes('m')) {
-                secondsstr = str.split('h')[1].split('s')[0];
-            }
-        }
-        if (str.includes('m') && !str.includes('h') && !str.includes('d')) {
-            minutesstr = str.split('m')[0];
-            if (str.includes('s')) {
-                secondsstr = str.split('m')[1].split('s')[0];
-            }
-        }
-        if (str.includes('s') && !str.includes('m') && !str.includes('h') && !str.includes('d')) {
-            secondsstr = str.split('s')[0];
-        }
-
-
-        const days = parseInt(daysstr);
-        const hours = parseInt(hoursstr);
-        const minutes = parseInt(minutesstr);
-        const seconds = parseInt(secondsstr);
-        const ms = (days * 24 * 60 * 60 * 1000) + (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1000);
-
-        return ms;
-    } else if (str.includes(':') || str.includes('.')) {
-        let hours = 0;
-        let minutes = 0;
-        let seconds = 0;
-        let milliseconds = 0;
-        let coloncount = 0;
-        for (let i = 0; i < str.length; i++) {
-            if (str[i] === ':') {
-                coloncount++;
-            }
-        }
-        if (coloncount === 2) {
-            hours = parseInt(str.split(':')[0]);
-            minutes = parseInt(str.split(':')[1]);
-            seconds = parseInt(str.split(':')[2]);
-        }
-        if (coloncount === 1) {
-            minutes = parseInt(str.split(':')[0]);
-            seconds = parseInt(str.split(':')[1]);
-        }
-        if (str.includes('.')) {
-            milliseconds = parseInt(str.split('.')[1]);
-            if (coloncount === 0) {
-                seconds = parseInt(str.split('.')[0]);
-            }
-        }
-        const ms = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000) + (seconds * 1000) + milliseconds;
-        return ms;
-
+        return timeToMs_dhms(str);
     } else {
-        return NaN;
+        return timeToMs_timer(str);
     }
 }
+
+function timeToMs_dhms(str: string) {
+    const keys = {
+        'd': 24 * 60 * 60 * 1000,
+        'h': 60 * 60 * 1000,
+        'm': 60 * 1000,
+        's': 1000,
+    };
+    let tstr = '';
+    let ms = 0;
+    for (const char of str) {
+        if (isNaN(+(tstr + char))) {
+            ms += parseInt(tstr) * (keys[char] ?? 0);
+            tstr = '';
+        } else {
+            tstr += char;
+        }
+    }
+    return ms;
+}
+
+function timeToMs_timer(str: string) {
+    if (str.includes(':') && str.split(':').length == 2) {
+        // HH:MM:SS.ZZZ
+        str += ':00';
+    }
+    return moment.duration(str).asMilliseconds();
+};
 
 // 
 export function findMode(input: string[]) {
@@ -479,6 +424,16 @@ export function findWeight(index: number) {
     return (0.95 ** (index));
 }
 
+export function totalWeightedPerformance(input: number[]) {
+    const values = input.slice().sort((a, b) => b - a);
+    let n = 0;
+    for (let i = 0; i < values.length; i++) {
+        const weighted = values[i] * findWeight(i);
+        n += weighted;
+    }
+    return n;
+}
+
 export function isWithinPercentage(input: number, percentage: number, against: number) {
     if (percentage < 0 || percentage > 100) {
         throw new Error('Percentage should be between 0 and 100.');
@@ -495,32 +450,32 @@ export function isWithinValue(input: number, value: number, against: number) {
 }
 
 
-export function modOverrides(mods: helper.osuapi.types_v2.Mod[]) { 
-    let speed:number;
-    let cs:number;
-    let ar:number;
-    let od:number;
-    let hp:number;
+export function modOverrides(mods: osuapi.types_v2.Mod[]) {
+    let speed: number;
+    let cs: number;
+    let ar: number;
+    let od: number;
+    let hp: number;
     mods.forEach(mod => {
-        if(mod?.settings?.speed_change){
-            speed = mod?.settings?.speed_change
+        if (mod?.settings?.speed_change) {
+            speed = mod?.settings?.speed_change;
         }
-        if(mod?.settings?.circle_size){
-            cs = mod?.settings?.circle_size
+        if (mod?.settings?.circle_size) {
+            cs = mod?.settings?.circle_size;
         }
-        if(mod?.settings?.approach_rate){
-            ar = mod?.settings?.approach_rate
+        if (mod?.settings?.approach_rate) {
+            ar = mod?.settings?.approach_rate;
         }
-        if(mod?.settings?.overall_difficulty){
-            od = mod?.settings?.overall_difficulty
+        if (mod?.settings?.overall_difficulty) {
+            od = mod?.settings?.overall_difficulty;
         }
-        if(mod?.settings?.drain_rate){
-            hp = mod?.settings?.drain_rate
+        if (mod?.settings?.drain_rate) {
+            hp = mod?.settings?.drain_rate;
         }
     });
 
     return {
         cs, ar, hp, od, speed
-    }
+    };
 
 }

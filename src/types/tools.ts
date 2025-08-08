@@ -35,3 +35,28 @@ export type guildSettings = {
     osuParseScreenshots: boolean,
     osuParseReplays: boolean,
 };
+
+export type Dict<T = any> = { [key: string]: T; };
+export type DictEntry<T = any> = { (key: string): T; };
+export type indexed<T = any> = T & {
+    originalIndex: number,
+};
+
+export type formatterInfo<T> = {
+    text: string,
+    curPage: number,
+    maxPage: number,
+    used: T[]
+};
+
+export type dataset = {
+    label: string,
+    data: number[];
+    fill: boolean,
+    borderColor: string | ((colour) => string),
+    borderWidth: number,
+    pointRadius: number,
+    yAxisID: string,
+};
+
+export type graphPosition = 'left' | 'top' | 'center' | 'right' | 'bottom'
