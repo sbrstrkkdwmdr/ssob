@@ -98,7 +98,7 @@ export async function mapLookup(i: {
     checksum?: string,
     id?: number,
 }) {
-    if (!(i.filename && i.checksum && i.id)) throw new Error('Please input a filename, checksum or ID to lookup');
+    if (!(i.filename || i.checksum || i.id)) throw new Error('Please input a filename, checksum or ID to lookup');
     if (!helper.allowed('public')) throw new Error('Missing scope: public');
 
     const url = `/beatmaps/lookup`;
