@@ -33,7 +33,7 @@ newest-oldest
 -   [x] scorestats
 -   [x] commands via buttons
 -   [x] fix "ephemeral" option (deprecated)
--   [ ] page selector not loading
+-   [x] page selector not loading
 
 #### tools
 

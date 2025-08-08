@@ -89,7 +89,7 @@ export class LinkHandler extends InputHandler {
             canReply: true,
             type: "link",
         });
-        await this.selected.execute().catch(() => { });
+        await this.selected.execute().catch((e) => { console.log(e); });
         this.selected = null;
     }
 }

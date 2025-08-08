@@ -765,7 +765,7 @@ export async function getFailPoint(
 
         }
     } else {
-        log.stdout("Path does not exist:" + mapPath);
+        log.stdout("Path does not exist: " + mapPath);
     }
     return time;
 }
