@@ -542,6 +542,18 @@ export class OsuCommand extends Command {
         await cmd.execute();
         return;
     }
+    protected totalHits(stats: osuapi.types_v2.ScoreStatistics, ruleset: osuapi.Ruleset) {
+        switch (ruleset) {
+            case osuapi.Ruleset.osu: default:
+                return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+            case osuapi.Ruleset.taiko:
+                return stats.great + (stats.good ?? 0) + (stats.miss ?? 0);
+            case osuapi.Ruleset.fruits:
+                return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + stats.small_tick_hit + (stats.miss ?? 0);
+            case osuapi.Ruleset.mania:
+                return (stats.perfect ?? 0) + stats.great + stats.good + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+        }
+    }
 }
 
 export class ArgsParser {

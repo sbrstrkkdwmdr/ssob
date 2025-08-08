@@ -5,28 +5,36 @@ import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
+import * as formatters from '../../tools/formatters';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import { OsuCommand } from '../command';
 import { SingleScoreCommand } from './SingleScoreCommand';
 
 export class ReplayParse extends SingleScoreCommand {
+    declare protected params: {
+        detailed: 1;
+    };
     constructor() {
         super();
         this.name = 'ReplayParse';
+        this.params = {
+            detailed: 1
+        };
     }
 
     async execute() {
+        await this.setParams();
         this.logInput(true);
         // do stuff
-
         const decoder = new osuparsers.ScoreDecoder();
         const score = await decoder.decodeFromPath(`${helper.path.files}/replays/${this.input.id}.osr`);
-        data.debug(score,  this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'replayData');
+        data.debug(score, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'replayData');
         this.setScore(score);
         try {
             this.map = await this.getMap(score?.info?.beatmapHashMD5);
         } catch (e) {
+            console.log(e);
             return;
         }
 
@@ -70,9 +78,50 @@ export class ReplayParse extends SingleScoreCommand {
 
         const e = await this.renderEmbed();
         e.setImage(`attachment://${chartInit.filename}.jpg`);
+        this.ctn.embeds = [e];
         this.ctn.files = [chartFile];
         await this.send();
     }
+
+    async renderEmbed() {
+        let hitlist = formatters.returnHits(this.score.statistics, this.score.ruleset_id).short;
+
+        const [perfs, ppissue, fcflag] = await this.perf({
+            passed: true,
+            percentage: 100,
+            objectsHit: null
+        });
+
+        let modadjustments = '';
+        if (this.score.mods.filter(x => x?.settings?.speed_change).length > 0) {
+            modadjustments += ' (' + this.score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
+        }
+
+        let scorerank = (this?.score?.rank_global ? ` #${this.score.rank_global} global` : '') +
+            (this?.score?.rank_country ? ` #${this.score.rank_country} ${this.osudata.country_code.toUpperCase()} :flag_${this.osudata.country_code.toLowerCase()}:` : '')
+            ;
+        if (scorerank != '') {
+            scorerank = '| ' + scorerank;
+        }
+
+        const embed = this.setEmbed({
+            trycountstr: `try #${this.getTryCount(this.scores, this.map.id)}`,
+            rsgrade: helper.emojis.grades[this.grade().rank.toUpperCase()],
+            rspassinfo: '',
+            mxcombo: perfs?.[0]?.difficulty.maxCombo ?? this?.score?.max_combo,
+            fcflag,
+            ppissue,
+            fulltitle: `${this.mapset.artist} - ${this.mapset.title} [${this.map.version}]`,
+            hitlist,
+            scorerank,
+            perfs,
+            modadjustments
+        });
+
+        this.ctn.embeds = [embed];
+        return embed;
+    }
+
     map: osuapi.types_v2.BeatmapExtended;
     /**
      * mapid should be beatmapHash
@@ -88,7 +137,7 @@ export class ReplayParse extends SingleScoreCommand {
         if (helper.errors.isErrorObject(this.map)) {
             await this.sendError(helper.errors.map.m(hash));
         }
-        data.debug(this.map,  this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
+        data.debug(this.map, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
         data.storeFile(this.map, this.map.id, 'this.map');
         data.storeFile(this.map, hash, 'this.map');
         return this.map;

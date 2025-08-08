@@ -25,26 +25,13 @@ export class SingleScoreCommand extends OsuCommand {
     mapset: osuapi.types_v2.Beatmapset;
 
     async renderEmbed() {
-        const gamehits = this.score.statistics;
         let rspassinfo = '';
-        let totalhits: number;
+        let totalhits = this.totalHits(this.score.statistics, this.score.ruleset_id);
 
-        switch (this.score.ruleset_id) {
-            case osuapi.Ruleset.osu: default:
-                totalhits = gamehits.great + (gamehits.ok ?? 0) + (gamehits.meh ?? 0) + (gamehits.miss ?? 0);
-                break;
-            case osuapi.Ruleset.taiko:
-                totalhits = gamehits.great + (gamehits.good ?? 0) + (gamehits.miss ?? 0);
-                break;
-            case osuapi.Ruleset.fruits:
-                totalhits = gamehits.great + (gamehits.ok ?? 0) + (gamehits.meh ?? 0) + gamehits.small_tick_hit + (gamehits.miss ?? 0);
-                break;
-            case osuapi.Ruleset.mania:
-                totalhits = (gamehits.perfect ?? 0) + gamehits.great + gamehits.good + (gamehits.ok ?? 0) + (gamehits.meh ?? 0) + (gamehits.miss ?? 0);
-        }
-        let hitlist: string;
+        const getHits = formatters.returnHits(this.score.statistics, this.score.ruleset_id);
+        let hitlist: string = this.params.detailed == 2 ?
+            getHits.short : getHits.long;
 
-        const getHits = formatters.returnHits(gamehits, this.score.ruleset_id);
         const failed = other.scoreIsComplete(
             this.score.statistics,
             this.map.count_circles,
@@ -53,17 +40,6 @@ export class SingleScoreCommand extends OsuCommand {
         );
 
         const [perfs, ppissue, fcflag] = await this.perf(failed);
-
-        switch (this.params.detailed) {
-            default: {
-                hitlist = getHits.short;
-            }
-                break;
-            case 2: {
-                hitlist = getHits.long;
-            }
-                break;
-        }
 
         const curbmhitobj = this.map.count_circles + this.map.count_sliders + this.map.count_spinners;
         let msToFail: number, curbmpasstime: number, guesspasspercentage: number;
@@ -79,10 +55,6 @@ export class SingleScoreCommand extends OsuCommand {
             rsgrade = helper.emojis.grades.F + `(${helper.emojis.grades[this.grade().rank.toUpperCase()]} if pass)`;
         }
 
-        const fulltitle = `${this.mapset.artist} - ${this.mapset.title} [${this.map.version}]`;
-        const trycountstr = `try #${this.getTryCount(this.scores, this.map.id)}`;
-        const mxcombo =
-            perfs[0].difficulty.maxCombo;
         // map.max_combo;
         let modadjustments = '';
         if (this.score.mods.filter(x => x?.settings?.speed_change).length > 0) {
@@ -90,7 +62,6 @@ export class SingleScoreCommand extends OsuCommand {
         }
 
         let scorerank =
-
             (this?.score?.rank_global ? ` #${this.score.rank_global} global` : '') +
             (this?.score?.rank_country ? ` #${this.score.rank_country} ${this.osudata.country_code.toUpperCase()} :flag_${this.osudata.country_code.toLowerCase()}:` : '')
             ;
@@ -99,13 +70,13 @@ export class SingleScoreCommand extends OsuCommand {
         }
 
         const embed = this.setEmbed({
-            trycountstr,
+            trycountstr: `try #${this.getTryCount(this.scores, this.map.id)}`,
             rsgrade,
             rspassinfo,
-            mxcombo,
+            mxcombo: perfs[0]?.difficulty?.maxCombo,
             fcflag,
             ppissue,
-            fulltitle,
+            fulltitle: `${this.mapset.artist} - ${this.mapset.title} [${this.map.version}]`,
             hitlist,
             scorerank,
             perfs,
@@ -123,19 +94,19 @@ export class SingleScoreCommand extends OsuCommand {
     }): Promise<[rosu.PerformanceAttributes[], string, string]> {
         let ppissue: string = '';
         let fcflag = '';
-        let perfs: rosu.PerformanceAttributes[];
+        let perfs: rosu.PerformanceAttributes[] = [];
         try {
             const overrides = calculate.modOverrides(this.score.mods);
             perfs = await performance.fullPerformance(
-                this.score.beatmap.id,
-                this.score.ruleset_id,
+                this.score?.beatmap?.id ?? this.map?.id ?? 0,
+                this.score?.ruleset_id ?? this.map?.mode_int ?? 0,
                 this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                 this.score.accuracy,
                 overrides.speed,
                 this.score.statistics,
                 this.score.max_combo,
                 failed.objectsHit,
-                new Date(this.score.beatmap.last_updated),
+                new Date(this.score?.beatmap?.last_updated ?? this.map.last_updated),
                 overrides.cs,
                 overrides.ar,
                 overrides.od,
@@ -143,7 +114,7 @@ export class SingleScoreCommand extends OsuCommand {
             );
             data.debug(perfs, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalcing');
 
-            const mxCombo = perfs[0].difficulty.maxCombo ?? this.map?.max_combo;
+            const mxCombo = perfs[0]?.difficulty?.maxCombo ?? this.map?.max_combo;
 
             if (this.score.accuracy < 1 && this.score.max_combo == mxCombo) {
                 fcflag = `FC\n**${perfs[2].pp.toFixed(2)}**pp IF SS`;
@@ -157,8 +128,7 @@ export class SingleScoreCommand extends OsuCommand {
                 fcflag = 'FC';
             }
         } catch (error) {
-            ppissue = helper.errors.performance.crash;
-            log.commandErr(error, this.input.id, 'firsts', this.input.message, this.input.interaction);
+            ppissue = 'Error - ' + helper.errors.performance.crash;
         }
         return [perfs, ppissue, fcflag];
     }
@@ -255,15 +225,15 @@ ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.sco
         switch (this.type) {
             case 'default':
                 embed.setTitle(fulltitle)
-                    .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments + ' |' : ''} <t:${new Date(this.score.ended_at).getTime() / 1000}:R>
-    ${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
+                    .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments + ' |' : ''} ${formatters.relativeTime(this.score.ended_at)}
+    ${(perfs[0]?.difficulty?.stars ?? this.map?.difficulty_rating ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
     `);
                 formatters.userAuthor(this.osudata, embed, this.params.overrideAuthor);
                 break;
             case 'recent':
-                embed.setTitle(`#${this.params.page + 1} most recent ${this.params.showFails == 1 ? 'play' : 'pass'} for ${this.score.user.username} | <t:${new Date(this.score.ended_at).getTime() / 1000}:R>`)
+                embed.setTitle(`#${this.params.page + 1} most recent ${this.params.showFails == 1 ? 'play' : 'pass'} for ${this.score.user.username} | ${formatters.relativeTime(this.score.ended_at)}`)
                     .setDescription(`[\`${fulltitle}\`](https://osu.ppy.sh/b/${this.map.id}) ${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments : ''} 
-    ${(perfs[0].difficulty.stars ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
+    ${(perfs[0]?.difficulty?.stars ?? this.map?.difficulty_rating ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
     ${formatters.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
     `);
 
