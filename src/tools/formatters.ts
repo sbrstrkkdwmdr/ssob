@@ -948,113 +948,62 @@ export function nonNullStats(hits: osuapi.types_v2.ScoreStatistics): osuapi.type
     };
 }
 
-export function returnHits(hits: osuapi.types_v2.ScoreStatistics, mode: osuapi.types_v2.Ruleset) {
-    const object: {
-        short: string,
-        long: string,
-        ex: { name: string, value: string | number; }[];
-    } = {
-        short: '',
-        long: '',
-        ex: []
+class hitListFormatter {
+    public ex: tooltypes.Dict<number>;
+    public get short(): string {
+        let str = [];
+        for (const key in this.ex) {
+            str.push(this.ex[key]);
+        }
+        return str.join('/') ?? '';
+    }
+    public get long(): string {
+        let str = '';
+        for (const key in this.ex) {
+            str += `**${key}:** ${this.ex[key]}`;
+        }
+        return str;
     };
+};
+
+export function returnHits(hits: osuapi.types_v2.ScoreStatistics, mode: osuapi.types_v2.Ruleset) {
+    const object: hitListFormatter = new hitListFormatter();
     hits = nonNullStats(hits);
     switch (mode) {
         case osuapi.Ruleset.osu:
-            object.short = `${hits.great}/${hits.ok}/${hits.meh}/${hits.miss}`;
-            object.long = `**300:** ${hits.great} \n **100:** ${hits.ok} \n **50:** ${hits.meh} \n **Miss:** ${hits.miss}`;
-            object.ex = [
-                {
-                    name: '300',
-                    value: hits.great
-                },
-                {
-                    name: '100',
-                    value: hits.ok
-                },
-                {
-                    name: '50',
-                    value: hits.meh
-                },
-                {
-                    name: 'Miss',
-                    value: hits.miss
-                }
-            ];
+            object.ex = {
+                Great: hits.great,
+                Ok: hits.ok,
+                Meh: hits.meh,
+                Miss: hits.miss
+            };
             break;
         case osuapi.Ruleset.taiko:
-            object.short = `${hits.great}/${hits.good}/${hits.miss}`;
-            object.long = `**Great:** ${hits.great} \n **Good:** ${hits.good} \n **Miss:** ${hits.miss}`;
-            object.ex = [
-                {
-                    name: 'Great',
-                    value: hits.great
-                },
-                {
-                    name: 'Good',
-                    value: hits.good
-                },
-                {
-                    name: 'Miss',
-                    value: hits.miss
-                }
-            ];
+            object.ex = {
+                Great: hits.great,
+                Good: hits.good,
+                Miss: hits.miss
+            };
             break;
         case osuapi.Ruleset.fruits:
-            object.short = `${hits.great}/${hits.ok}/${hits.small_tick_hit}/${hits.miss}/${hits.small_tick_miss}`;
-            object.long = `**Fruits:** ${hits.great} \n **Drops:** ${hits.ok} \n **Droplets:** ${hits.small_tick_hit} \n **Miss:** ${hits.miss} \n **Miss(droplets):** ${hits.small_tick_miss}`;
-            object.ex = [
-                {
-                    name: 'Fruits',
-                    value: hits.great
-                },
-                {
-                    name: 'Drops',
-                    value: hits.ok
-                },
-                {
-                    name: 'Droplets',
-                    value: hits.small_tick_hit
-                },
-                {
-                    name: 'Miss',
-                    value: hits.miss
-                },
-                {
-                    name: 'Miss(droplets)',
-                    value: hits.small_tick_miss
-                },
-            ];
+            object.ex = {
+                Fruits: hits.great,
+                Drops: hits.ok,
+                Droplets: hits.small_tick_hit,
+                Miss: hits.miss,
+                'Droplets miss': hits.small_tick_miss
+            };
             break;
         case osuapi.Ruleset.mania:
-            object.short = `${hits.perfect}/${hits.great}/${hits.good}/${hits.ok}/${hits.meh}/${hits.miss}`;
-            object.long = `**300+:** ${hits.perfect} \n **300:** ${hits.great} \n **200:** ${hits.good} \n **100:** ${hits.ok} \n **50:** ${hits.meh} \n **Miss:** ${hits.miss}`;
-            object.ex = [
-                {
-                    name: '300+',
-                    value: hits.perfect
-                },
-                {
-                    name: '300',
-                    value: hits.great
-                },
-                {
-                    name: '200',
-                    value: hits.good
-                },
-                {
-                    name: '100',
-                    value: hits.ok
-                },
-                {
-                    name: '50',
-                    value: hits.meh
-                },
-                {
-                    name: 'Miss',
-                    value: hits.miss
-                }
-            ];
+            object.ex =
+            {
+                Perfect: hits.perfect,
+                Great: hits.great,
+                Good: hits.good,
+                Ok: hits.ok,
+                Meh: hits.meh,
+                Miss: hits.miss
+            };
             break;
     }
     return object;
