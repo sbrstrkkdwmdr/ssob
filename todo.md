@@ -14,7 +14,7 @@ newest-oldest
 -   [x] RandomMap
 -   [x] RecommendMap
 -   [x] UserBeatmaps
--   [ ] Compare
+-   [x] Compare
 -   [x] Saved
 -   [x] ServerLeaderboard
 -   [x] Set

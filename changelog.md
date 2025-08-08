@@ -25,6 +25,10 @@
 -   command IDs are UUIDs instead of ints
 -   `Simulate` map details now show both old and new stats
 
+### Added
+
+-   `Compare` added `-u1` and `-u2` params
+
 ### Removed
 
 -   `Remind` command

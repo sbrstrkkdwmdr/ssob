@@ -29,7 +29,7 @@ const user: helper.bottypes.commandInfoOption = {
     type: 'string/integer/user mention',
     required: false,
     description: 'The user to show',
-    format: ['{user}', '@{discord user}', '-u {user}', '-user {user}', '-uid {user}', 'osu.ppy.sh/u/{user}', 'osu.ppy.sh/users/{user}'],
+    format: ['-u {user}', '-user {user}', '-uid {user}', '{user}', '@{discord user}', 'osu.ppy.sh/u/{user}', 'osu.ppy.sh/users/{user}'],
     defaultValue: 'The user who ran the command',
 };
 const mode: helper.bottypes.commandInfoOption = {
@@ -430,7 +430,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The first user to compare',
-                format: user.format,
+                format: ['-u1', '-1', '-first'].concat(user.format.slice(3)),
                 defaultValue: 'The user who ran the command',
             },
             {
@@ -438,7 +438,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 type: 'string',
                 required: false,
                 description: 'The second user to compare',
-                format: user.format,
+                format: ['-u2', '-2', '-second'].concat(user.format.slice(3)),
                 defaultValue: 'most recent user fetched in the guild',
             },
             page

@@ -53,6 +53,16 @@ export class Compare extends OsuCommand {
                 this.params.second = parseUsers[1];
             }
         }
+        if (!this.params.first) {
+            this.params.first = this.setParam(null, ['-u1', '-1', '-first'], 'string', { string_isMultiple: true });
+        }
+        if (!this.params.second) {
+            this.params.second = this.setParam(null, ['-u2', '-2', '-second'], 'string', { string_isMultiple: true });
+        }
+        if (!this.params.first && !this.params.second) {
+            this.params.first = this.argParser.getParam(['']);
+            this.params.second = this.argParser.getParam(['']);
+        }
         this.params.first != null && this.params.first.includes(this.params.firstsearchid) ? this.params.first = null : null;
         this.params.second != null && this.params.second.includes(this.params.secondsearchid) ? this.params.second = null : null;
     }
@@ -184,11 +194,11 @@ export class Compare extends OsuCommand {
     }
     async getTopData(user: number, mode: osuapi.types_v2.GameMode, n: 'first' | 'second') {
         let topdata: osuapi.types_v2.Score[];
-        if (data.findFile(this.input.id, 'osutopdata') &&
-            !('error' in data.findFile(this.input.id, 'osutopdata')) &&
+        if (data.findFile(user, 'osutopdata') &&
+            !('error' in data.findFile(user, 'osutopdata')) &&
             this.input.buttonType != 'Refresh'
         ) {
-            topdata = data.findFile(this.input.id, 'osutopdata');
+            topdata = data.findFile(user, 'osutopdata');
         } else {
             topdata = await osuapi.v2.scores.best({
                 user_id: user,
@@ -202,6 +212,8 @@ export class Compare extends OsuCommand {
             }
             return;
         }
+        data.debug(topdata, 'osutop', this.input.message?.guildId ?? this.input.interaction?.guildId, 'osutopdata');
+        data.storeFile(topdata, user, 'osutopdata');
         return topdata;
     }
     profiles(firstuser: osuapi.types_v2.User, seconduser: osuapi.types_v2.User, embed: Discord.EmbedBuilder) {
@@ -256,7 +268,7 @@ export class Compare extends OsuCommand {
             return;
         }
 
-        const filterfirst = [];
+        const filterfirst: osuapi.v2.types.Score[] = [];
         //filter so that scores that have a shared beatmap id with the second user are kept
         for (let i = 0; i < firsttopdata.length; i++) {
             if (secondtopdata.find(score => score.beatmap.id == firsttopdata[i].beatmap.id)) {
@@ -300,6 +312,11 @@ export class Compare extends OsuCommand {
             searchIdSecond: this.params.secondsearchid
         });
         const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        this.disablePageButtons_check(pgbuttons,
+            filterfirst.length <= 5,
+            this.params.page <= 0,
+            this.params.page >= Math.floor(filterfirst.length / 5)
+        );
         this.ctn.components = [pgbuttons];
         embed.setTitle('Comparing Top Scores')
             .setDescription(`**[${firstuser.username}](https://osu.ppy.sh/users/${firstuser.id})** and **[${seconduser.username}](https://osu.ppy.sh/users/${seconduser.id})** have ${filterfirst.length} shared scores`)
