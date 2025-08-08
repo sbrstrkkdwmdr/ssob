@@ -30,7 +30,8 @@ export class SingleScoreCommand extends OsuCommand {
 
         const getHits = formatters.returnHits(this.score.statistics, this.score.ruleset_id);
         let hitlist: string = this.params.detailed == 2 ?
-            getHits.short : getHits.long;
+            getHits.long :
+            '`' + getHits.short + '`';
 
         const failed = other.scoreIsComplete(
             this.score.statistics,
@@ -212,7 +213,7 @@ export class SingleScoreCommand extends OsuCommand {
                     value: `${calculate.separateNum(other.getTotalScore(this.score))} ${scorerank}
 ${(this.score.accuracy * 100).toFixed(2)}% | ${rsgrade}
 ${this.score.has_replay ? `[REPLAY](https://osu.ppy.sh/scores/${this.score.id}/download)\n` : ''}` +
-                        `${rspassinfo.length > 1 ? rspassinfo + '\n' : ''}\`${hitlist}\`
+                        `${rspassinfo.length > 1 ? rspassinfo + '\n' : ''}${hitlist}
 ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.score.max_combo}x`}/**${mxcombo}x** combo`,
                     inline: true
                 },
