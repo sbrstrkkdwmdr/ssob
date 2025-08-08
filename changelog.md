@@ -13,6 +13,7 @@
 -   `osuapi` cached oauthkey not updating when expired
 -   `Recent` "F if pass"
 -   `Rankings` not supporting country rankings
+-   `Simulate` map pp now applies custom stats
 
 ### Changed
 
@@ -21,6 +22,7 @@
 -   no chokes show estimated total performance in author section
 -   `Debug` commandfile can search for any stored data in cache, (e.g. mapdata<type><mapid> not just <commandid><file>)
 -   command IDs are UUIDs instead of ints
+-   `Simulate` map details now show both old and new stats
 
 ### Removed
 

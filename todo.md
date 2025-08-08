@@ -26,8 +26,8 @@ newest-oldest
 -   [x] rsact
 -   [x] maplb
 -   [x] recent
--   [ ] replay
--   [ ] simulate
+-   [x] replay
+-   [x] simulate
 -   [x] scoreparse
 -   [x] scorelist
 -   [x] scorestats
