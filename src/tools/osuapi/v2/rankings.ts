@@ -6,7 +6,7 @@ export async function kudosu(i: {
     page?: number;
 }) {
     if (!helper.allowed('public')) throw new Error('Missing scope: public');
-    
+
     const url = `/rankings/kudosu`;
 
     const params = helper.setParams(i, {}, ['page',]);
@@ -21,16 +21,20 @@ export async function kudosu(i: {
  * 
  * country is ISO 3166-1 alpha-2, global type only
  */
-export async function ranking(i: {
+export async function ranking<T extends apitypes.RankingType>(i: {
     mode: apitypes.GameMode,
-    type: apitypes.RankingType,
+    type: T,
     ruleset?: apitypes.GameMode,
     country?: string,
     cursor?: string,
     filter?: string,
     spotlight?: string,
     variant?: string,
-}) {
+}): Promise<
+    T extends 'country' ?
+    apitypes.Rankings<apitypes.CountryStatistics> :
+    apitypes.Rankings<apitypes.UserStatistics>
+> {
     if (!i.mode) throw new Error('Missing mode');
     if (!i.type) throw new Error('Missing type');
     if (!helper.allowed('public')) throw new Error('Missing scope: public');
@@ -41,16 +45,16 @@ export async function ranking(i: {
 
     return await helper.requests.get_v2(
         url, params
-    ) as Promise<apitypes.Rankings>;
+    );
 }
 
 export async function spotlights() {
     if (!helper.allowed('public')) throw new Error('Missing scope: public');
-    
+
     const url = `/spotlights`;
-    
+
     const params: Dict = {};
-    
+
     return await helper.requests.get_v2(
         url, params
     ) as Promise<apitypes.SpotLights>;
