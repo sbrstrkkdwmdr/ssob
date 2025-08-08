@@ -17,13 +17,13 @@ export class Set extends OsuCommand {
         this.name = 'Set';
         this.params = {
             name: null,
-            mode: 'osu',
+            mode: null,
             skin: null,
         };
     }
     async setParamsMsg() {
         {
-            this.setParamMode();
+            this.setParamMode(null);
         }
 
         this.params.skin = this.setParam(this.params.skin, ['-skin'], 'string', { string_isMultiple: true });

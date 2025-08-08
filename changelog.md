@@ -14,6 +14,7 @@
 -   `Recent` "F if pass"
 -   `Rankings` not supporting country rankings
 -   `Simulate` map pp now applies custom stats
+-   `Set` setting mode to `osu` if mode param is null/undefined
 
 ### Changed
 

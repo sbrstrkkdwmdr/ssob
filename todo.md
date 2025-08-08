@@ -15,9 +15,9 @@ newest-oldest
 -   [x] RecommendMap
 -   [x] UserBeatmaps
 -   [ ] Compare
--   [ ] Saved
--   [ ] ServerLeaderboard
--   [ ] Set
+-   [x] Saved
+-   [x] ServerLeaderboard
+-   [x] Set
 -   [x] WhatIf
 -   [x] Badges
 -   [x] BWS
