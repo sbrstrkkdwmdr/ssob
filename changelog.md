@@ -8,7 +8,8 @@
 
 ### Fixed
 
--   score list sending multiple errors if empty list
+-   score list sending multiple errors if empty
+-   "F if pass" on score list commands
 
 ## [5.3.1] - 2025-08-08
 
