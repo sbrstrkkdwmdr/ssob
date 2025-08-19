@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Fixed
+
+-   score list sending multiple errors if empty list
+
 ## [5.3.1] - 2025-08-08
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/f492b83b50570e9cb43b4cf1d74f2b6849581a99)</br>

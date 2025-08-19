@@ -538,11 +538,7 @@ export class ScoreListCommand extends OsuCommand {
                 .setStyle(helper.buttons.type.current)
                 .setEmoji(helper.buttons.label.extras.user),
         );
-        try {
-            await this.getScores();
-        } catch (e) {
-            await this.sendError(helper.errors.scores.generic(this.params.user));
-        }
+        await this.getScores();
 
         if (this.params.parseScore) {
             const user = this.osudata.username;
