@@ -1,6 +1,6 @@
 import Discord from 'discord.js';
+import * as helper from '../../helper';
 import { ScoreListCommand } from './ScoreListCommand';
-
 export class Firsts extends ScoreListCommand {
     constructor() {
         super();
@@ -50,18 +50,19 @@ export class MapScores extends ScoreListCommand {
         this.type = 'map';
         this.name = 'MapScores';
     }
-    async argsMsgExtra(): Promise<void> {
+    async paramsMsgExtra(): Promise<void> {
         const temp = this.setParamMap();
         this.params.mapid = temp.map;
-        if (this.params.mapid != null) {
-            this.input.args.splice(this.input.args.indexOf(this.input.args.find(arg => arg.includes('https://osu.ppy.sh/'))), 1);
+        if (!this.params.mapid) {
+            this.params.mapid = this.setParam(this.params.mapid, helper.argflags.beatmap, 'number', { number_isInt: true });
         }
+        if(+this.params.user == this.params.mapid) this.params.user = null;
     }
-    async argsInteractExtra(): Promise<void> {
+    async paramsInteractExtra(): Promise<void> {
         let interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
         this.params.mapid = interaction.options.getNumber('id');
     }
-    async argsButtonsExtra(): Promise<void> {
+    async paramsButtonsExtra(): Promise<void> {
 
     }
 
