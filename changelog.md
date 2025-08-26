@@ -10,6 +10,7 @@
 
 -   score list sending multiple errors if empty
 -   "F if pass" on score list commands
+-   missing prefix in command examples
 
 ## [5.3.1] - 2025-08-08
 

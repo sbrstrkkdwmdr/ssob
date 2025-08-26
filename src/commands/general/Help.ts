@@ -155,13 +155,6 @@ export class Help extends Command {
             usetxt += `### Link Usage\n${command.linkUsage.map(x => `\`${x}\``).join('\n')}`;
         }
 
-        // let exceedTxt = '';
-        // let exceeds = false;
-
-        const commandaliases = command.aliases && command.aliases.length > 0 ? command.aliases.join(', ') : 'none';
-        // let commandexamples = command.examples && command.examples.length > 0 ? command.examples.join('\n').replaceAll('PREFIXMSG', helper.vars.config.prefix) : 'none'
-        const commandexamples = command.examples && command.examples.length > 0 ? command.examples.slice(0, 5).map(x => x.text).join('\n').replaceAll('PREFIXMSG', helper.vars.config.prefix) : 'none';
-
         embed.setTitle("Command info for: " + command.name)
             .setURL(`https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands.html`)
             .setDescription("To see full details about this command, visit [here](https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands.html)\n\n" + command.description + "\n")
@@ -173,15 +166,28 @@ export class Help extends Command {
                 },
                 {
                     name: 'Aliases',
-                    value: commandaliases,
+                    value: this.commandAliases(command),
                     inline: false
                 },
                 {
                     name: 'Examples',
-                    value: commandexamples,
+                    value: this.commandExamples(command),
                     inline: false
                 },
             ]);
+    }
+    commandAliases(command: helper.bottypes.commandInfo) {
+        if (command?.aliases && command.aliases.length > 0) return command.aliases.join(', ');
+        return 'none';
+
+    }
+    commandExamples(command: helper.bottypes.commandInfo) {
+        let text = '';
+        for (const example of command.examples) {
+            text += `${helper.vars.config.prefix}${example.text}`;
+        }
+        if (text == '') return 'none';
+        return text;
     }
     /**
      *  TDL - fix this
