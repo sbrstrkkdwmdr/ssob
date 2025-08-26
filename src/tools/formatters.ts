@@ -366,7 +366,7 @@ export class ScoreFormatter {
         if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
             modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
         }
-        const rank = `${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[score.rank]} if pass)`}`;
+        const rank = `${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[this.grade(score).rank.toUpperCase()]} if pass)`}`;
         const scoreStat = `\`${calculate.numberShorthand(other.getTotalScore(score))}\``;
         const mods = `${score.mods.length > 0 && this.preset != 'single_map' ?
             ' **' + osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' :
@@ -374,6 +374,19 @@ export class ScoreFormatter {
         const str: string[] = [rank, scoreStat];
         if (mods != '') str.push(mods);
         return listLine(str);
+    }
+    grade(score: osuapi.types_v2.Score) {
+        const stats = score.statistics;
+        switch (score.ruleset_id) {
+            case 0:
+                return osumodcalc.accuracy.standard(stats.great, stats.ok ?? 0, stats.meh ?? 0, stats.miss ?? 0);
+            case 1:
+                return osumodcalc.accuracy.taiko(stats.great, stats.good ?? 0, stats.miss ?? 0);
+            case 2:
+                return osumodcalc.accuracy.fruits(stats.great, stats.ok ?? 0, stats.small_tick_hit ?? 0, stats.small_tick_miss ?? 0, stats.miss ?? 0);
+            case 3:
+                return osumodcalc.accuracy.mania(stats.perfect ?? 0, stats.great, stats.good ?? 0, stats.ok ?? 0, stats.meh ?? 0, stats.miss ?? 0);
+        }
     }
     scoreStatsHitsComboAcc(score: osuapi.types_v2.Score, perfs: PerformanceAttributes[]) {
         let str: string[] = [];

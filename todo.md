@@ -4,6 +4,8 @@ newest-oldest
 
 ## current
 
+- [ ] script to delete non-cache files in /dist/ before running `tsc`
+
 ### refactor list
 
 #### commands

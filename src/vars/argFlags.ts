@@ -74,6 +74,8 @@ export const user = toFlag([
     'u', 'user', 'uid'
 ]);
 
+export const beatmap = toFlag(['b', 'map']);
+
 export function toFlag(args: string[]) {
     return args.map(x => `-${x}`);
 }

@@ -84,6 +84,9 @@ export class Simulate extends OsuCommand {
                 }
             }
         }
+        if (!this.params.mapid) {
+            this.params.mapid = this.setParam(this.params.mapid, helper.argflags.beatmap, 'number', { number_isInt: true });
+        }
     }
     async setParamsInteract() {
         const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
