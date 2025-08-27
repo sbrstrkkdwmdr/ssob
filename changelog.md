@@ -9,6 +9,10 @@
 
 ## [5.3.2] - 2025-08-26
 
+### Fixed
+
+- documentation URLs
+
 ### Added
 
 - score stats show individual mod usage

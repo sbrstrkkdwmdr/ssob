@@ -26,7 +26,7 @@ export class Info extends Command {
             .addComponents(
                 new Discord.ButtonBuilder()
                     .setLabel('Info')
-                    .setURL('https://sbrstrkkdwmdr.github.io/projects/ssob_docs/')
+                    .setURL('https://docs.sbrstrkkdwmdr.me/ssob')
                     .setStyle(Discord.ButtonStyle.Link)
             );
 
@@ -47,7 +47,7 @@ sqlite3: [${pkgjson.dependencies['sqlite3'].replace('^', '')}](https://github.co
             preServer: serverpfx.includes('`') ? `"${serverpfx}"` : `\`${serverpfx}\``,
             server: helper.versions.serverURL,
             website: helper.versions.website,
-            creator: 'https://sbrstrkkdwmdr.github.io/',
+            creator: 'https://sbrstrkkdwmdr.me/',
             source: `https://github.com/sbrstrkkdwmdr/ssob/`,
             shards: helper.vars.client?.shard?.count ?? 1,
             guilds: helper.vars.client.guilds.cache.size,

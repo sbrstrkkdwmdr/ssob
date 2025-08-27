@@ -4,7 +4,7 @@ A discord bot for osu! related stuff
 
 <div align="center">
 
-[![website](https://img.shields.io/badge/website-FFA41C?style=for-the-badge&logoColor=white)](https://sbrstrkkdwmdr.github.io/projects/ssob_docs/)</br>
+[![website](https://img.shields.io/badge/website-FFA41C?style=for-the-badge&logoColor=white)](https://docs.sbrstrkkdwmdr.me/ssob)</br>
 [![CodeFactor](https://www.codefactor.io/repository/github/sbrstrkkdwmdr/ssob/badge)](https://www.codefactor.io/repository/github/sbrstrkkdwmdr/ssob)
 [![license](https://img.shields.io/github/license/sbrstrkkdwmdr/ssob?label=license)](https://github.com/sbrstrkkdwmdr/ssob/LICENSE)
 [![stars](https://img.shields.io/github/stars/sbrstrkkdwmdr/ssob)](https://github.com/sbrstrkkdwmdr/ssob)
