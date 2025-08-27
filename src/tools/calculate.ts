@@ -366,7 +366,6 @@ export function findMode(input: string[]) {
     const array: {
         string: string,
         count: number,
-        percentage: number;
     }[] = [];
     input.forEach(x => {
         const indx = array.findIndex(y => y.string == x);
@@ -374,14 +373,12 @@ export function findMode(input: string[]) {
             array.push({
                 string: x,
                 count: 1,
-                percentage: 0
             });
         } else {
             array[indx].count++;
         }
     });
     array.sort((a, b) => b.count - a.count);
-    array.forEach(x => x.percentage = (x.count / input.length) * 100);
     return array;
 }
 
