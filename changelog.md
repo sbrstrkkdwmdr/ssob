@@ -2,7 +2,6 @@
 
 # changelog
 
-
 ## [WIP] - xxxx-xx-xx
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
@@ -11,15 +10,20 @@
 
 ### Fixed
 
-- documentation URLs
+-   documentation URLs
+-   command examples not being on new lines
+
+### Changed
+
+-   command examples and aliases are side-by-side
 
 ### Added
 
-- score stats show individual mod usage
+-   score stats show individual mod usage
 
 ### Removed
 
-- percentages in score stats
+-   percentages in score stats
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/385e6c253860790f7e1444520dee8d28aaa7a4be)</br>
 

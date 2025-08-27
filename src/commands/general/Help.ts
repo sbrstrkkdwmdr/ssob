@@ -165,14 +165,14 @@ export class Help extends Command {
                     inline: false,
                 },
                 {
-                    name: 'Aliases',
-                    value: this.commandAliases(command),
-                    inline: false
-                },
-                {
                     name: 'Examples',
                     value: this.commandExamples(command),
-                    inline: false
+                    inline: true
+                },
+                {
+                    name: 'Aliases',
+                    value: this.commandAliases(command),
+                    inline: true
                 },
             ]);
     }
@@ -184,7 +184,7 @@ export class Help extends Command {
     commandExamples(command: helper.bottypes.commandInfo) {
         let text = '';
         for (const example of command.examples) {
-            text += `${helper.vars.config.prefix}${example.text}`;
+            text += `${helper.vars.config.prefix}${example.text}\n`;
         }
         if (text == '') return 'none';
         return text;
