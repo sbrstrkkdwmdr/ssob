@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Changed
+
+-   command help links to specific commands instead of the general command list page
+
 ## [5.3.2] - 2025-08-26
 
 ### Fixed

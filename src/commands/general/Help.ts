@@ -157,7 +157,7 @@ export class Help extends Command {
 
         embed.setTitle("Command info for: " + command.name)
             .setURL(`https://docs.sbrstrkkdwmdr.me/ssob/commands`)
-            .setDescription("To see full details about this command, visit [here](https://docs.sbrstrkkdwmdr.me/ssob/commands)\n\n" + command.description + "\n")
+            .setDescription(`To see full details about this command, visit [here](https://docs.sbrstrkkdwmdr.me/ssob/commands?command=${command.name})\n\n` + command.description + "\n")
             .addFields([
                 {
                     name: 'Usage',
