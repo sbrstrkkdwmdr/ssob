@@ -38,7 +38,7 @@ export class Simulate extends OsuCommand {
             n100: null,
             n50: null,
             nMiss: null,
-            overrideSpeed: 1,
+            overrideSpeed: null,
             overrideBpm: null,
             customCS: null,
             customAR: null,
