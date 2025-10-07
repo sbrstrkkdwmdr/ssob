@@ -6,6 +6,12 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Fixed
+
+- `MapParse` default speed param overriding mods (dt, ht, etc.)
+- `MapParse` OD being on the same line as AR
+- link command args not working
+
 ### Changed
 
 -   command help links to specific commands instead of the general command list page
