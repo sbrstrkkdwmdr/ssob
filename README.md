@@ -4,7 +4,7 @@ A discord bot for osu! related stuff
 
 <div align="center">
 
-[![website](https://img.shields.io/badge/website-FFA41C?style=for-the-badge&logoColor=white)](https://docs.sbrstrkkdwmdr.me/ssob)</br>
+[![website](https://img.shields.io/badge/website-FFA41C?style=for-the-badge&logoColor=white)](https://ssob.sbrstrkkdwmdr.me)</br>
 [![CodeFactor](https://www.codefactor.io/repository/github/sbrstrkkdwmdr/ssob/badge)](https://www.codefactor.io/repository/github/sbrstrkkdwmdr/ssob)
 [![license](https://img.shields.io/github/license/sbrstrkkdwmdr/ssob?label=license)](https://github.com/sbrstrkkdwmdr/ssob/LICENSE)
 [![stars](https://img.shields.io/github/stars/sbrstrkkdwmdr/ssob)](https://github.com/sbrstrkkdwmdr/ssob)
@@ -18,14 +18,17 @@ A discord bot for osu! related stuff
 [![sequelize](https://img.shields.io/badge/Sequelize-02AFEF?style=for-the-badge&logo=sequelize&logoColor=white)](https://sequelize.org/)
 [![nodejs](https://img.shields.io/badge/NodeJS-83CD29?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/en/)
 [![chartjs](https://img.shields.io/badge/chartjs-FE777B?style=for-the-badge&logo=chart.js&logoColor=white)](https://www.chartjs.org/)
+[![express](https://img.shields.io/badge/express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 
 </div>
 
 ## Install/setup
 
-install nodejs (v16) [here](https://nodejs.org/en/download/)
+Requires both NodeJS and Rust (for rosu-pp-js)
 
-install rust [here](https://www.rust-lang.org/tools/install)
+install NodeJS [here](https://nodejs.org/en/download/)
+
+install Rust [here](https://www.rust-lang.org/tools/install)
 
 install all dependencies with `npm i` in the main directory
 
@@ -44,6 +47,7 @@ in the `./config/` folder rename `tempconfig.json` to `config.json`
     "owners": ["xxx"],
     "tenorKey": "xxx",
     "enableTracking": true,
+    "port": 80
     "logs": {
         "console": true,
         "file": true
@@ -64,12 +68,10 @@ to compile then immediately use `npm run br` </br>
 
 disabling these permissions will disable the commands listed
 
-| Permission     | Usage                                                     | Affected Commands         |
-| -------------- | --------------------------------------------------------- | ------------------------- |
-| EmbedLinks     | Most commands display information via the use of _embeds_ | All commands              |
-| AddReactions   | The poll/vote command requires reactions for voting       | poll                      |
-| ManageMessages | To bulk delete messages                                   | purge                     |
-| Administrator  | To access certain data                                    | checkperms, get, userinfo |
+| Permission    | Usage                                                     | Affected Commands |
+| ------------- | --------------------------------------------------------- | ----------------- |
+| EmbedLinks    | Most commands display information via the use of _embeds_ | All commands      |
+| Administrator | To access certain data                                    | checkperms, find  |
 
 ## Config Properties
 
@@ -80,6 +82,7 @@ disabling these permissions will disable the commands listed
 | prefix         | string   | a string at the start of each message to detect if a message is a command. eg. `!` => `!ping` would ping the bot and `?ping` or `ping` wouldn't.                                                      |
 | owners         | string[] | an array of user ids stored as strings. users with these ids can use any command                                                                                                                      |
 | tenorKey       | string   | Used for running gif commands (hug, punch, slap). see [here](https://developers.google.com/tenor/guides/quickstart)                                                                                   |
+| port           | number   | Used to host the documentation. Access via `localhost:{port}`                                                                                                                                                                        |
 | enableTracking | boolean  | Enables/disables osu!track                                                                                                                                                                            |
 | logs           | object   | see [here](#config-logging-properties)                                                                                                                                                                |
 

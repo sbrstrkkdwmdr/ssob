@@ -8,6 +8,7 @@
     "owners": ["id1", "id2"],
     "tenorKey": "https://developers.google.com/tenor/guides/quickstart",
     "enableTracking": true,
+    "port": 80, 
     "logs": {
         "console": true,
         "file": true
