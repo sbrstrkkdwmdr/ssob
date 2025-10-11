@@ -41,7 +41,7 @@ export class MapParse extends OsuCommand {
             detailed: 1,
             isppCalc: false,
             searchRestrict: 'any',
-            overrideSpeed: 1,
+            overrideSpeed: null,
             overrideBpm: null,
             overwriteModal: null,
             customCS: 'current',
@@ -291,7 +291,7 @@ export class MapParse extends OsuCommand {
                     }
                 }
                 if (!this.params.overrideSpeed && tempStats.bpm != 1) {
-                    this.params.overrideSpeed = tempStats.bpm;
+                    this.params.overrideSpeed = null;
                 }
             }
             this.params.mode = temp.mode;
@@ -979,7 +979,8 @@ ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[10].ppFlashlight?.
     }
     protected mapstats(map: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string) {
         return `CS${allvals.cs != map.cs ? `${map.cs}=>${allvals.cs}` : allvals.cs}
-AR${allvals.ar != map.ar ? `${map.ar}=>${allvals.ar}` : allvals.ar}OD${allvals.od != map.accuracy ? `${map.accuracy}=>${allvals.od}` : allvals.od}
+AR${allvals.ar != map.ar ? `${map.ar}=>${allvals.ar}` : allvals.ar}
+OD${allvals.od != map.accuracy ? `${map.accuracy}=>${allvals.od}` : allvals.od}
 HP${allvals.hp != map.drain ? `${map.drain}=>${allvals.hp}` : allvals.hp}
 ⭐${totaldiff}`;
     }

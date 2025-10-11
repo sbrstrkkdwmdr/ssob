@@ -91,6 +91,7 @@ export type config = {
     owners: string[],
     tenorKey: string,
     enableTracking: boolean,
+    port: number,
     logs: {
         console: boolean,
         file: boolean,

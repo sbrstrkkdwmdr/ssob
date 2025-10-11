@@ -197,7 +197,12 @@ export class ScoreStats extends OsuCommand {
         }
         embed.setFields([
             this.embedData_statFieldStr('Mappers', mappers),
-            this.embedData_statFieldStr('Mods', mods),
+            this.embedData_statFieldStr('Mods', calculate.findMode(this.individualMods())),
+            this.embedData_statFieldStr('Mod combinations', calculate.findMode(this.scores.map(x => {
+                return x.mods.length == 0 ?
+                    'NM' :
+                    osumodcalc.mod.order(x.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('');
+            }))),
             this.embedData_statFieldStr('Ranks', grades),
             this.embedData_statFieldRange('Accuracy', acc, '%'),
             this.embedData_statFieldRange('Combo', combo),
@@ -225,6 +230,19 @@ export class ScoreStats extends OsuCommand {
                 this.embedData_statFieldRange('Performance', pp, 'pp'),
             );
         }
+    }
+    individualMods() {
+        const mods: osumodcalc.types.Mod[] = [];
+        for (const score of this.scores) {
+            if (!score.mods || score.mods.length == 0) {
+                mods.push('NM' as unknown as osumodcalc.types.Mod);
+                continue;
+            }
+            for (const mod of score.mods) {
+                mods.push(mod.acronym as osumodcalc.types.Mod);
+            }
+        }
+        return mods;
     }
     async embedData_isAll() {
         const calculations = await this.embedData_isAll_calc();
@@ -279,7 +297,6 @@ export class ScoreStats extends OsuCommand {
     embedData_statFieldStr(name: string, stats: {
         string: string;
         count: number;
-        percentage: number;
     }[]): Discord.EmbedField {
         const str = this.embedData_statStr(stats);
         return {
@@ -293,11 +310,10 @@ export class ScoreStats extends OsuCommand {
     embedData_statStr(stats: {
         string: string;
         count: number;
-        percentage: number;
     }[]) {
         let str = '';
         for (let i = 0; i < stats.length && i < 5; i++) {
-            str += `#${i + 1}. ${stats[i].string} - ${calculate.separateNum(stats[i].count)} | ${stats[i].percentage.toFixed(2)}%\n`;
+            str += `#${i + 1}. ${stats[i].string} - ${calculate.separateNum(stats[i].count)}\n`;
         }
         return str;
     }

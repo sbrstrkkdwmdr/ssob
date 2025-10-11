@@ -610,7 +610,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 name: 'ppcalc',
                 type: 'boolean',
                 required: false,
-                description: 'Shows only the pp calculations for the map. See [here](https://sbrstrkkdwmdr.github.io/projects/ssob_docs/commands.html#osucmd-ppcalc) for more info.',
+                description: 'Shows only the pp calculations for the map. See [here](https://docs.sbrstrkkdwmdr.me/ssob/commands#osucmd-ppcalc) for more info.',
                 format: ['-ppcalc'],
                 defaultValue: 'false',
             },

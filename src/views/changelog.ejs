@@ -1,0 +1,61 @@
+<link href="/cmd.css" rel="stylesheet" />
+<h1 class="pageTitle">Changelog</h1>
+<section id="clist" class="accordion">
+
+</section>
+<script src="/changelog.js"></script>
+<script>
+    let content = '<%- content %>';
+    generate(content);
+    getAll();
+</script>
+<style>
+        button {
+        border: none;
+        width: 100%;
+        text-align: left;
+        font-size: inherit;
+        font-family: inherit;
+    }
+    .fixed {
+        color: #b58900;
+    }
+
+    .changed {
+        color: #268bd2;
+    }
+
+    .added {
+        color: #859900;
+    }
+
+    .removed {
+        color: #dc322f;
+    }
+
+    .deprecated {
+        color: #d33682;
+    }
+
+    .info {
+        color: #2aa198;
+    }
+
+    .refactor {
+        color: #2aa198;
+    }
+
+    .clogSectionTitle {
+        margin-top: 20px;
+        font-weight: bold;
+    }
+    code {
+        background-color: #2a2a2a;
+        color: var(--clrs-yellow);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: monospace;
+        font-size: 0.95em;
+        white-space: nowrap;
+    }
+</style>

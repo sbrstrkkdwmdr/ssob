@@ -2,12 +2,42 @@
 
 # changelog
 
-
 ## [WIP] - xxxx-xx-xx
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.4.0] - 2025-10-11
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/1ff4bf2cf7bb8bc901d258567b6b8f2ca4c75408)</br>
+
+### Fixed
+
+- `MapParse` default speed param overriding mods (dt, ht, etc.)
+- `MapParse` OD being on the same line as AR
+- link command args not working
+
+### Changed
+
+-   command help links to specific commands instead of the general command list page
+
 ## [5.3.2] - 2025-08-26
+
+### Fixed
+
+-   documentation URLs
+-   command examples not being on new lines
+
+### Changed
+
+-   command examples and aliases are side-by-side
+
+### Added
+
+-   score stats show individual mod usage
+
+### Removed
+
+-   percentages in score stats
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/385e6c253860790f7e1444520dee8d28aaa7a4be)</br>
 

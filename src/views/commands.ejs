@@ -1,0 +1,38 @@
+<link href="/cmd.css" rel="stylesheet" />
+<h1 class="pageTitle">Command List</h1>
+<div class="category-nav-container">
+    <h3 class="sectionTitle">Categories</h3>
+    <div class="category-nav" id="category-nav">
+    </div>
+</div>
+<ul class="explain">
+    <li>Arguments are shown as either <span class="inlineCodeblock">&ltarg&gt</span> or <span
+            class="inlineCodeblock">[arg]</span>. Angled brackets <span class="inlineCodeblock">&ltarg&gt</span>
+        are required and
+        square brackets <span class="inlineCodeblock">[arg]</span> are optional.</li>
+    <li>Argument values can be specified with <span class="inlineCodeblock">-key value</span> (eg. <span
+            class="inlineCodeblock">-page 3</span>)</li>
+    <li>Argument values with spaces (such as names) can be specified with quotes eg. <span
+            class="inlineCodeblock">"saber strike"</span></li>
+    <li>You can use <span class="inlineCodeblock">osuset</span> to automatically set your osu! username
+        and
+        gamemode for commands such as
+        <span class="inlineCodeblock">recent</span> (rs)
+    </li>
+    <li>Mods are specified with +[mods] (include), -mx [mods] (match exact) or -me [mods] (exclude). -mx
+        overrides +[mods]</li>
+    <li>Gamemode can be specified by using -(mode) in commands that support it (eg. -taiko)</li>
+    <li>press <a href="types.html" class="highlightLink">here</a> for an explanation on option types</li>
+</ul>
+<section id="clist" class="accordion">
+
+</section>
+<script src="/commands.js"></script>
+<script>
+    let cmds = <%- cmds %>;
+    generate();
+    getAll();
+</script>
+<style>
+    
+</style>

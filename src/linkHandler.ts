@@ -18,7 +18,6 @@ export class LinkHandler extends InputHandler {
             canReply = false;
         }
 
-
         let settings: helper.tooltypes.guildSettings;
         try {
             const curGuildSettings = await helper.vars.guildSettings.findOne({ where: { guildid: message.guildId } });
@@ -47,14 +46,17 @@ export class LinkHandler extends InputHandler {
         }
 
         const messagenohttp = message.content.replace('https://', '').replace('http://', '').replace('www.', '');
+
+        const args = messagenohttp.split(' ') ?? [];
+
         if (messagenohttp.startsWith('osu.ppy.sh/b/') || messagenohttp.startsWith('osu.ppy.sh/beatmaps/') || messagenohttp.startsWith('osu.ppy.sh/beatmapsets/') || messagenohttp.startsWith('osu.ppy.sh/s/')) {
             this.selected = new osu_maps.MapParse();
-            await this.runCommand(message);
+            await this.runCommand(message, args);
             return;
         }
         if (messagenohttp.startsWith('osu.ppy.sh/u/') || messagenohttp.startsWith('osu.ppy.sh/users/')) {
             this.selected = new osu_profiles.Profile();
-            await this.runCommand(message);
+            await this.runCommand(message, args);
             return;
         }
         if (message.attachments.size > 0 && message.attachments.every(attachment => formatters.removeURLparams(attachment.url).endsWith('.osr'))) {
@@ -69,20 +71,20 @@ export class LinkHandler extends InputHandler {
             });
             setTimeout(async () => {
                 this.selected = new osu_scores.ReplayParse();
-                await this.runCommand(message, id);
+                await this.runCommand(message, args, id);
             }, 1500);
         }
         if (messagenohttp.startsWith('osu.ppy.sh/scores/')) {
             this.selected = new osu_scores.ScoreParse();
-            await this.runCommand(message);
+            await this.runCommand(message, args);
         }
     }
     async onInteraction(interaction: Discord.Interaction) { }
-    async runCommand(message: Discord.Message, tid?: string) {
+    async runCommand(message: Discord.Message, args: string[] = [], tid?: string) {
         this.selected.setInput({
             message,
             interaction: null,
-            args: [],
+            args,
             date: new Date(),
             id: tid ?? commandTools.getCmdId(),
             overrides: {},
