@@ -44,11 +44,11 @@ export function begin() {
             layout: 'layout',
             title: 'Changelog',
             content: doc
-            .replaceAll('\n', '\\n')
-            .replaceAll('\'', '\\\'')
-            .replaceAll('\"', '\\\"')
-            .replaceAll('\`', '\\\`')
-            
+                .replaceAll('\n', '\\n')
+                .replaceAll('\'', '\\\'')
+                .replaceAll('\"', '\\\"')
+                .replaceAll('\`', '\\\`')
+
             ,
         });
     });
@@ -66,7 +66,11 @@ export function begin() {
         });
     });
 
-    app.get('/{*any}', (err, req, res, next) => {
+    // app.get('/{*any}', (err, req, res, next) => {
+    //     res.status(404).send('Could not find resource');
+    // });
+
+    app.use(function (req, res) {
         res.status(404).send('Could not find resource');
     });
 
