@@ -19,13 +19,23 @@ export * as versions from './vars/versions';
 export * as bottypes from './types/bot';
 export * as tooltypes from './types/tools';
 
-export const vars = {
-    client: {} as Client<boolean>, // initialised in main.ts
+export const vars: {
+    client: Client<boolean>;
+    config: bottypes.config;
+    userdata: Sequelize.ModelCtor<Sequelize.Model<any, any>>;
+    guildSettings: Sequelize.ModelCtor<Sequelize.Model<any, any>>;
+    trackDb: Sequelize.ModelCtor<Sequelize.Model<any, any>>;
+    statsCache: Sequelize.ModelCtor<Sequelize.Model<any, any>>;
+    cooldownSet: Set<string>;
+    startTime: Date;
+    id: number;
+} = {
+    client: null, // initialised in bot.ts
     config: checks.checkConfig(),
-    userdata: null as any as Sequelize.ModelCtor<Sequelize.Model<any, any>>, // initialised in main.ts
-    guildSettings: null as any as Sequelize.ModelCtor<Sequelize.Model<any, any>>, // initialised in main.ts
-    trackDb: null as any as Sequelize.ModelCtor<Sequelize.Model<any, any>>, // initialised in main.ts
-    statsCache: {} as any as Sequelize.ModelCtor<Sequelize.Model<any, any>>, // initialised in main.ts
+    userdata: null, // initialised in app.ts
+    guildSettings: null, // initialised in app.ts
+    trackDb: null, // initialised in app.ts
+    statsCache: null, // initialised in app.ts
     cooldownSet: (new Set()) as Set<string>,
     startTime: new Date(),
     id: 0,

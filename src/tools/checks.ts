@@ -25,6 +25,7 @@ export function checkConfig() {
         'owners': [false, null, 'array', ['INVALID_ID']],
         'tenorKey': [false, null, 'string', 'INVALID_ID'],
         'enableTracking': [false, null, 'boolean', false],
+        'port': [false, null, 'number', 80],
         'logs': [false,
             {
                 'console': [false, null, 'boolean', true],
