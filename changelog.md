@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.4.0] - 2025-10-11
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+
 ### Fixed
 
 - `MapParse` default speed param overriding mods (dt, ht, etc.)
