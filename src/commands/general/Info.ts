@@ -26,7 +26,7 @@ export class Info extends Command {
             .addComponents(
                 new Discord.ButtonBuilder()
                     .setLabel('Info')
-                    .setURL('https://docs.sbrstrkkdwmdr.me/ssob')
+                    .setURL('https://ssob.sbrstrkkdwmdr.me/')
                     .setStyle(Discord.ButtonStyle.Link)
             );
 

@@ -2,7 +2,7 @@ import * as helper from '../helper';
 
 import * as buttonsObjs from './buttons';
 
-const mods = 'See [here](https://sbrstrkkdwmdr.me/projects/ssob_docs/helper.bottypes#mods)';
+const mods = 'See [here](https://ssob.sbrstrkkdwmdr.me/types#mods)';
 const scoreListString =
     `Mods can be specified with +[mods], -mx [exact mods] or -me [exclude mods]
 The arguments \`pp\`, \`score\`, \`acc\`, \`bpm\` and \`miss\` use the following format:
@@ -610,7 +610,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 name: 'ppcalc',
                 type: 'boolean',
                 required: false,
-                description: 'Shows only the pp calculations for the map. See [here](https://docs.sbrstrkkdwmdr.me/ssob/commands#osucmd-ppcalc) for more info.',
+                description: 'Shows only the pp calculations for the map. See [here](https://ssob.sbrstrkkdwmdr.me/commands#osucmd-ppcalc) for more info.',
                 format: ['-ppcalc'],
                 defaultValue: 'false',
             },
