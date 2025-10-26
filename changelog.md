@@ -12,13 +12,17 @@
 
 ### Fixed
 
-- `MapParse` default speed param overriding mods (dt, ht, etc.)
-- `MapParse` OD being on the same line as AR
-- link command args not working
+-   `MapParse` default speed param overriding mods (dt, ht, etc.)
+-   `MapParse` OD being on the same line as AR
+-   link command args not working
 
 ### Changed
 
 -   command help links to specific commands instead of the general command list page
+
+### Added
+
+-   locally host docs
 
 ## [5.3.2] - 2025-08-26
 

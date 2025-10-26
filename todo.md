@@ -7,6 +7,7 @@ newest-oldest
 - [ ] script to delete non-cache files in /dist/ before running `tsc`
 - [ ] fix pong replying to itself instead of editing original message
 - [ ] save emotes to config server id on start up
+- [ ] score lists show and (option to) sort by SR
 
 ### refactor list
 

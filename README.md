@@ -62,7 +62,7 @@ emoji images are found under `./files/emojis/` </br>
 to get the emoji id, type the emoji then put a `\` in front of it</br>
 to compile the bot the bot use `tsc` or `npm run build`</br>
 to run the compiled code use `npm run run` </br>
-to compile then immediately use `npm run br` </br>
+to run without docs use `npm run run-noweb` </br>
 
 ## required permissions
 
@@ -82,7 +82,7 @@ disabling these permissions will disable the commands listed
 | prefix         | string   | a string at the start of each message to detect if a message is a command. eg. `!` => `!ping` would ping the bot and `?ping` or `ping` wouldn't.                                                      |
 | owners         | string[] | an array of user ids stored as strings. users with these ids can use any command                                                                                                                      |
 | tenorKey       | string   | Used for running gif commands (hug, punch, slap). see [here](https://developers.google.com/tenor/guides/quickstart)                                                                                   |
-| port           | number   | Used to host the documentation. Access via `localhost:{port}`                                                                                                                                                                        |
+| port           | number   | Used to host the documentation. Access via `localhost:{port}`                                                                                                                                         |
 | enableTracking | boolean  | Enables/disables osu!track                                                                                                                                                                            |
 | logs           | object   | see [here](#config-logging-properties)                                                                                                                                                                |
 
