@@ -9,9 +9,9 @@
         "copy": "ts-node tools/copyAssets",
         "build": "npm-run-all clean tsc copy",
         "run": "node dist/src/app.js",
-        "run-noweb": "node dist/src/app_botonly.js",
+        "noweb": "node dist/src/app_botonly.js",
         "br": "npm-run-all build run",
-        "brw": "npm-run-all build run-noweb",
+        "brw": "npm-run-all build noweb",
         "start": "tsc && node dist/src/app.js",
         "memoryDebug": "node --expose-gc dist/src/app.js"
     },

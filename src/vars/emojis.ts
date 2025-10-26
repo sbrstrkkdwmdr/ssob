@@ -159,7 +159,7 @@ export const supporter = {
     0: '',
     1: '<:support1:1134082832273252473>',
     2: '<:support2:1134082835909713980>',
-    3: '<:support3:1134082838355005470>',
+    3: 'xyz'//'<:support3:1134082838355005470>',
 };
 
 export const discord = {

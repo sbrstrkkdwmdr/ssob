@@ -23,6 +23,7 @@ export function checkConfig() {
             'object', null],
         'prefix': [false, null, 'string', 'sbr-'],
         'owners': [false, null, 'array', ['INVALID_ID']],
+        'emojiGuild': [true, null, 'string', null],
         'tenorKey': [false, null, 'string', 'INVALID_ID'],
         'enableTracking': [false, null, 'boolean', false],
         'port': [false, null, 'number', 80],

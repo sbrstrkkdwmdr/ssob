@@ -20,6 +20,10 @@
 
 - `ScoreListCommand` sort by star rating
 
+### Refactor
+
+- Emojis are now added to a given guild instead of manually uploading and editing `src/vars/emojis.ts` and `src/vars/buttons.ts`. If the emojis are already in the guild then the bot will fetch them instead.
+
 ## [5.4.0] - 2025-10-11
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/1ff4bf2cf7bb8bc901d258567b6b8f2ca4c75408)</br>
