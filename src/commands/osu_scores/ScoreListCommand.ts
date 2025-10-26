@@ -16,7 +16,7 @@ export class ScoreListCommand extends OsuCommand {
         mode: osuapi.types_v2.GameMode,
         page: number;
         detailed: number;
-        sort: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss";
+        sort: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | 'sr';
         reverse: boolean;
         filterTitle: string;
         filterArtist: string;
@@ -87,6 +87,7 @@ export class ScoreListCommand extends OsuCommand {
             this.setParamBoolList(this.params.sort,
                 { set: 'recent', flags: ['-r', '-recent'] },
                 { set: 'pp', flags: ['-performance', '-perf'] },
+                { set: 'sr', flags: ['-sr', '-stars', '-difficulty'] },
             );
 
         // range args
@@ -258,6 +259,8 @@ export class ScoreListCommand extends OsuCommand {
     pgbuttons: Discord.ActionRowBuilder<Discord.ButtonBuilder>;
     buttons: Discord.ActionRowBuilder<Discord.ButtonBuilder>;
 
+    formatter: formatters.ScoreFormatter;
+
     protected async getScores() {
         let req: osuapi.types_v2.Score[] | osuapi.types_v2.ScoreArrA;
         let fname = '';
@@ -408,33 +411,8 @@ export class ScoreListCommand extends OsuCommand {
             .setThumbnail(`${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`)
             .setURL(seturl);
         formatters.userAuthor(this.osudata, scoresEmbed);
-        const obj = new formatters.ScoreFormatter({
-            scores: this.scores,
-            sort: this.params.sort,
-            filter: {
-                mapper: this.params.filteredMapper,
-                modsInclude: this.params.modsInclude,
-                title: this.params.filterTitle,
-                artist: this.params.filterArtist,
-                version: this.params.filterDifficulty,
-                rank: this.params.filterRank,
-                modsExact: this.params.modsExact,
-                modsExclude: this.params.modsExclude,
-                pp: this.params.pp,
-                score: this.params.score,
-                acc: this.params.acc,
-                combo: this.params.combo,
-                miss: this.params.miss,
-                bpm: this.params.bpm,
-                isnochoke: this.type == 'nochokes'
-            },
-            reverse: this.params.reverse,
-            page: this.params.page,
-            showOriginalIndex: true,
-            preset: this.type == 'map' ? 'single_map' : undefined,
-            overrideMap: this.map ?? undefined,
-        });
-        const scoresFormat = await obj.execute();
+
+        const scoresFormat = await this.formatter.execute();
         if (this.type == 'nochokes') {
             this.userPerf(scoresEmbed, scoresFormat.used);
         }
@@ -528,6 +506,33 @@ export class ScoreListCommand extends OsuCommand {
         );
         await this.getScores();
 
+        this.formatter = new formatters.ScoreFormatter({
+            scores: this.scores,
+            sort: this.params.sort,
+            filter: {
+                mapper: this.params.filteredMapper,
+                modsInclude: this.params.modsInclude,
+                title: this.params.filterTitle,
+                artist: this.params.filterArtist,
+                version: this.params.filterDifficulty,
+                rank: this.params.filterRank,
+                modsExact: this.params.modsExact,
+                modsExclude: this.params.modsExclude,
+                pp: this.params.pp,
+                score: this.params.score,
+                acc: this.params.acc,
+                combo: this.params.combo,
+                miss: this.params.miss,
+                bpm: this.params.bpm,
+                isnochoke: this.type == 'nochokes'
+            },
+            reverse: this.params.reverse,
+            page: this.params.page,
+            showOriginalIndex: true,
+            preset: this.type == 'map' ? 'single_map' : undefined,
+            overrideMap: this.map ?? undefined,
+        });
+
         if (this.params.parseScore) {
             const user = this.osudata.username;
             let tempEx = '';
@@ -546,7 +551,8 @@ export class ScoreListCommand extends OsuCommand {
                     tempEx = `${user}'s {idOrd} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}pinned score`;
                     break;
             }
-            await this.parseId(this.scores.map(x => x.id), +this.params.parseId, new ScoreParse(), helper.errors.score.nf + ` at index {id}`, tempEx);
+            await this.formatter.parseScores();
+            await this.parseId(this.formatter.data.map(x => x.id), +this.params.parseId, new ScoreParse(), helper.errors.score.nf + ` at index {id}`, tempEx);
             return;
         }
 

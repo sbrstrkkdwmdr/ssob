@@ -11,6 +11,7 @@
         "run": "node dist/src/app.js",
         "run-noweb": "node dist/src/app_botonly.js",
         "br": "npm-run-all build run",
+        "brw": "npm-run-all build run-noweb",
         "start": "tsc && node dist/src/app.js",
         "memoryDebug": "node --expose-gc dist/src/app.js"
     },

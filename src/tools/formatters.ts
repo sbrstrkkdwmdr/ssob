@@ -24,7 +24,7 @@ export class ScoreFormatter {
     public get data() {
         return this.indexed;
     }
-    private sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank';
+    private sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank' | 'sr';
     private filter: {
         mapper: string,
         title: string,
@@ -53,24 +53,8 @@ export class ScoreFormatter {
             scores, sort, filter, reverse, page, showOriginalIndex, preset, overrideMap
         }: {
             scores: osuapi.types_v2.Score[],
-            sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank',
-            filter: {
-                mapper: string,
-                title: string,
-                artist: string,
-                version: string,
-                modsInclude: osumodcalc.types.Mod[],
-                modsExact: (osumodcalc.types.Mod | 'NONE')[],
-                modsExclude: osumodcalc.types.Mod[],
-                rank: string,
-                pp: string,
-                score: string,
-                acc: string,
-                combo: string,
-                miss: string,
-                bpm: string,
-                isnochoke: boolean,
-            },
+            sort: typeof this.sort,
+            filter: typeof this.filter,
             reverse: boolean,
             page: number,
             showOriginalIndex: boolean,
@@ -188,9 +172,10 @@ export class ScoreFormatter {
     }
 
     async sortScores() {
+        await this.updateScores_modded();
         switch (this.sort) {
             case 'pp':
-                await this.sortScores_performance();
+                await this.updateScores_performance();
                 this.indexed.sort((a, b) => b.pp - a.pp);
                 break;
             case 'score':
@@ -211,13 +196,27 @@ export class ScoreFormatter {
             case 'rank':
                 this.indexed.sort((a, b) => this.ranks.indexOf(a.rank) - this.ranks.indexOf(b.rank));
                 break;
+            case 'sr':
+                this.indexed.sort((a, b) => (b?.beatmap?.difficulty_rating ?? 0) - (a?.beatmap?.difficulty_rating ?? 0));
+                break;
         }
     }
-    async sortScores_performance() {
+    async updateScores_performance() {
         const sc = [];
         for (const score of this.indexed) {
             sc.push(
                 !score.pp || isNaN(score.pp) ?
+                    await this.calculatePerformance(score) :
+                    score
+            );
+        }
+        this.indexed = sc;
+    }
+    async updateScores_modded() {
+        const sc = [];
+        for (const score of this.indexed) {
+            sc.push(
+                score.mods.length > 0 ?
                     await this.calculatePerformance(score) :
                     score
             );
@@ -244,7 +243,9 @@ export class ScoreFormatter {
             mapLastUpdated: new Date(score.ended_at),
         });
         score.pp = perf.pp;
-
+        if (score.beatmap) {
+            score.beatmap.difficulty_rating = perf.difficulty.stars;
+        }
         return score;
     }
     scoreAccuracy(score: osuapi.types_v2.Score) {
@@ -362,17 +363,21 @@ export class ScoreFormatter {
         return perfs;
     }
     scoreStatsRankScoreMods(score: osuapi.types_v2.Score) {
-        let modadjustments = '';
-        if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
-            modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
-        }
         const rank = `${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[this.grade(score).rank.toUpperCase()]} if pass)`}`;
         const scoreStat = `\`${calculate.numberShorthand(other.getTotalScore(score))}\``;
-        const mods = `${score.mods.length > 0 && this.preset != 'single_map' ?
-            ' **' + osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**' :
-            ''}`;
         const str: string[] = [rank, scoreStat];
-        if (mods != '') str.push(mods);
+        if (score?.beatmap?.difficulty_rating) {
+            const stars = `${score?.beatmap?.difficulty_rating?.toFixed(2)}⭐`;
+            str.push(stars);
+        }
+        if (score.mods.length > 0 && this.preset != 'single_map') {
+            let modadjustments = '';
+            if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
+                modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
+            }
+            const mods = ' **' + osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**';
+            str.push(mods);
+        }
         return listLine(str);
     }
     grade(score: osuapi.types_v2.Score) {

@@ -6,6 +6,20 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+### Fixed
+
+- fix mod speed calculations
+- `ScoreListCommand`, `UserBeatmaps`, `MapLeaderboard` fix `-parse` param being offset by +1
+- `ScoreListCommand` `-parse` now works with sort and filter params
+
+### Changed
+
+- `ScoreListCommand` display star rating ()
+
+### Added
+
+- `ScoreListCommand` sort by star rating
+
 ## [5.4.0] - 2025-10-11
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/1ff4bf2cf7bb8bc901d258567b6b8f2ca4c75408)</br>
