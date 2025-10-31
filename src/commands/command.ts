@@ -524,6 +524,7 @@ export class OsuCommand extends Command {
         return title;
     }
     protected async parseId(ids: number[], parseId: number, cmd: Command, iferr: string, ex: string = '') {
+        parseId--;
         if (isNaN(parseId) || parseId < 0) parseId = 1;
         if (parseId > ids.length) parseId = ids.length - 1;
 

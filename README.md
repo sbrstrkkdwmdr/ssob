@@ -4,14 +4,16 @@ A discord bot for osu! related stuff
 
 <div align="center">
 
-[![website](https://img.shields.io/badge/website-FFA41C?style=for-the-badge&logoColor=white)](https://ssob.sbrstrkkdwmdr.me)</br>
+[![website](https://img.shields.io/badge/website-FFA41C?style=for-the-badge&logoColor=white)](https://ssob.sbrstrkkdwmdr.me)
+
 [![CodeFactor](https://www.codefactor.io/repository/github/sbrstrkkdwmdr/ssob/badge)](https://www.codefactor.io/repository/github/sbrstrkkdwmdr/ssob)
 [![license](https://img.shields.io/github/license/sbrstrkkdwmdr/ssob?label=license)](https://github.com/sbrstrkkdwmdr/ssob/LICENSE)
 [![stars](https://img.shields.io/github/stars/sbrstrkkdwmdr/ssob)](https://github.com/sbrstrkkdwmdr/ssob)
-[![lastcommit](https://img.shields.io/github/last-commit/sbrstrkkdwmdr/ssob)](https://github.com/sbrstrkkdwmdr/ssob)</br>
+[![lastcommit](https://img.shields.io/github/last-commit/sbrstrkkdwmdr/ssob)](https://github.com/sbrstrkkdwmdr/ssob)
+
 [![changelog](https://img.shields.io/badge/Changelog-34A0DB)](https://github.com/sbrstrkkdwmdr/ssob/blob/main/changelog.md)
 [![credits](https://img.shields.io/badge/Credits-AEDD35)](https://github.com/sbrstrkkdwmdr/ssob/blob/main/CREDITS.md)
-[![todo](https://img.shields.io/badge/To_Do_List-E05735)](https://github.com/sbrstrkkdwmdr/ssob/blob/main/todo.md)</br>
+[![todo](https://img.shields.io/badge/To_Do_List-E05735)](https://github.com/sbrstrkkdwmdr/ssob/blob/main/todo.md)
 
 [![discordjs](https://img.shields.io/badge/DiscordJS-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.js.org/#/)
 [![typescript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://github.com/microsoft/TypeScript)
@@ -45,6 +47,7 @@ in the `./config/` folder rename `tempconfig.json` to `config.json`
     },
     "prefix": "xxx",
     "owners": ["xxx"],
+    "emojiGuild": "12345",
     "tenorKey": "xxx",
     "enableTracking": true,
     "port": 80
@@ -55,14 +58,20 @@ in the `./config/` folder rename `tempconfig.json` to `config.json`
 }
 ```
 
-change the values in `config.json` (see [here](#config-properties)) </br>
-rename `TEMPLATE.sqlite` to `database.sqlite`</br>
-check `src/consts/emojis.ts` and `src/consts/buttons.ts` and change the emojis that are formatted as <:name:ID:> (reupload\* to a private server that the bot is in) </br>
-emoji images are found under `./files/emojis/` </br>
-to get the emoji id, type the emoji then put a `\` in front of it</br>
-to compile the bot the bot use `tsc` or `npm run build`</br>
-to run the compiled code use `npm run run` </br>
-to compile then immediately use `npm run br` </br>
+change the values in `config.json` (see [here](#config-properties))  
+
+rename `TEMPLATE.sqlite` to `database.sqlite` 
+
+add the bot to an empty server and give it `create+manage expressions` permissions. Make sure there are no emojis in this server.
+
+## Deployment
+
+to compile the bot the bot use `tsc` or `npm run build`
+
+to run the compiled code use `npm run run` 
+
+to run without docs use `npm run noweb` 
+
 
 ## required permissions
 
@@ -81,8 +90,9 @@ disabling these permissions will disable the commands listed
 | osu            | object   | see [here](#config-osu-properties)                                                                                                                                                                    |
 | prefix         | string   | a string at the start of each message to detect if a message is a command. eg. `!` => `!ping` would ping the bot and `?ping` or `ping` wouldn't.                                                      |
 | owners         | string[] | an array of user ids stored as strings. users with these ids can use any command                                                                                                                      |
+| emojiGuild     | string   | ID of the guild to store emojis. Make sure the bot has create and manage expressions permissions in this server                                                                                       |
 | tenorKey       | string   | Used for running gif commands (hug, punch, slap). see [here](https://developers.google.com/tenor/guides/quickstart)                                                                                   |
-| port           | number   | Used to host the documentation. Access via `localhost:{port}`                                                                                                                                                                        |
+| port           | number   | Used to host the documentation. Access via `localhost:{port}`                                                                                                                                         |
 | enableTracking | boolean  | Enables/disables osu!track                                                                                                                                                                            |
 | logs           | object   | see [here](#config-logging-properties)                                                                                                                                                                |
 

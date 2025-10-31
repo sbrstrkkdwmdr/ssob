@@ -6,19 +6,47 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.5.0] - 2025-11-01
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/bfa78bbf0f23ef903fcceb9cc9fd12810c296154)</br>
+
+### Fixed
+
+-   fix mod speed calculations
+-   `ScoreListCommand`, `UserBeatmaps`, `MapLeaderboard` - fix `-parse` param being offset by +1
+-   `ScoreListCommand` - `-parse` now works with sort and filter params
+-   (docs) args not displaying required/optional
+-   `Ping` sending a second message instead of updating original message
+
+### Changed
+
+-   `ScoreListCommand` display star rating
+-   `ScoreListCommand` update star rating for modded scores
+-   Emojis are now added to a given guild instead of manually uploading and editing `src/vars/emojis.ts` and `src/vars/buttons.ts`. If the emojis are already in the guild then the bot will fetch them instead.
+-   (docs) edit styling of command args
+-   (scripts) `run` only runs the bot. use `run-web` for only docs or `run-full` for both docs and bot simultaneously.
+
+### Added
+
+-   `ScoreListCommand` sort by star rating
+
 ## [5.4.0] - 2025-10-11
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/1ff4bf2cf7bb8bc901d258567b6b8f2ca4c75408)</br>
 
 ### Fixed
 
-- `MapParse` default speed param overriding mods (dt, ht, etc.)
-- `MapParse` OD being on the same line as AR
-- link command args not working
+-   `MapParse` default speed param overriding mods (dt, ht, etc.)
+-   `MapParse` OD being on the same line as AR
+-   link command args not working
 
 ### Changed
 
 -   command help links to specific commands instead of the general command list page
+
+### Added
+
+-   locally host docs
 
 ## [5.3.2] - 2025-08-26
 

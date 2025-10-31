@@ -1,14 +1,14 @@
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import fs from 'fs';
 
+import { ButtonHandler } from './buttonHandler';
+import { CommandHandler } from './commandHandler';
+import { setup as emojisetup } from './emoji_setup';
 import * as helper from './helper';
+import { LinkHandler } from './linkHandler';
 import { heapLoop, loops } from './loops';
 import * as slashcmds from './slashCommands';
 import * as log from './tools/log';
-
-import { ButtonHandler } from './buttonHandler';
-import { CommandHandler } from './commandHandler';
-import { LinkHandler } from './linkHandler';
 
 export function begin() {
     const initdate = new Date();
@@ -41,6 +41,8 @@ export function begin() {
     helper.vars.client = client;
 
     client.once('ready', () => {
+        console.log('Initialising emojis...');
+        emojisetup();
         helper.vars.userdata.sync();
         helper.vars.guildSettings.sync();
         helper.vars.trackDb.sync();

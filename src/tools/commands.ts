@@ -226,7 +226,7 @@ export type params = {
     parseId?: number,
     filterTitle?: string,
     //scorelist
-    sortScore?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss",
+    sortScore?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | "sr",
     reverse?: boolean,
     filterMapper?: string,
     filterMods?: string,
@@ -241,7 +241,7 @@ export type params = {
     filterMiss?: string,
     filterBpm?: string,
 
-    sort?: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | helper.bottypes.ubmSort,
+    sort?: "sr" | "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | helper.bottypes.ubmSort,
 
     //map
     overrideSpeed?: number,

@@ -53,7 +53,7 @@ export async function calcScore(input: {
         count_miss: 'misses',
         count_katu: 'nKatu',
     });
-    baseScore.combo
+    baseScore.combo;
     scoreIterateKeys(input, baseScore, {
         'customCS': 'cs',
         'customAR': 'ar',
@@ -322,11 +322,20 @@ export async function fullPerformance(
     return [perf, fcperf, ssperf];
 }
 
+const speeds = {
+    '1.5': ['DT', 'NC'],
+    '0.75': ['HT', 'DC']
+};
+
 export function getModSpeed(mods: osuapi.types_v2.Mod[]) {
     let rate = 1.0;
     for (const mod of mods) {
         if (mod?.settings?.speed_change) {
             rate *= mod?.settings?.speed_change;
+        } else if (speeds['1.5'].includes(mod.acronym)) {
+            rate *= 1.5;
+        } else if (speeds['0.75'].includes(mod.acronym)) {
+            rate *= 0.75;
         }
     }
     return rate;
