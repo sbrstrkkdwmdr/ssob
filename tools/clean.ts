@@ -4,22 +4,31 @@ import { rimraf } from 'rimraf';
 const paths = [
     'commands',
     'consts',
+    'tests',
     'tools',
     'types',
     'vars',
+    'views',
 ];
 
 const files = [
+    'app',
+    'app_botonly',
+    'app_webonly',
+    'bot',
     'buttonHandler',
     'commandHandler',
     'commandHelper',
+    'emoji_setup',
     'helper',
     'linkHandler',
     'loops',
     'main',
     'osutrack',
     'path',
-    'slashCommands'
+    'setup',
+    'slashCommands',
+    'web',
 ];
 async function removeAll() {
     if (fs.existsSync('./dist')) {
