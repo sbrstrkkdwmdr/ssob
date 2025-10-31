@@ -98,24 +98,38 @@ async function generate() {
                     const argTitle = document.createElement('span');
                     argTitle.className = 'argName';
                     argTitle.innerText = arg.name;
+
                     const substr = document.createElement('span');
                     substr.className = 'argType';
                     substr.innerText = arg.type;
+
+                    const argreq = document.createElement('span');
+                    argreq.className = 'argReq';
+                    if (arg.required) {
+                        argreq.classList.add('required')
+                        argreq.innerText = "Required";
+                    } else {
+                        argreq.classList.add('optional')
+                        argreq.innerText = "Optional";
+                    }
+
                     const argdesc = document.createElement('span');
                     argdesc.className = 'argDesc';
                     argdesc.innerHTML = markdown(arg.description);
                     if (arg.defaultValue && arg.defaultValue != 'null' && arg.defaultValue != 'N/A') {
                         argdesc.innerHTML += '<br>Defaults to ' + arg.defaultValue + '<br>';
                     }
+
                     const argctn = document.createElement('div');
-                    argctn.append(argTitle, substr, argdesc);
+                    argctn.className = "arg";
+                    argctn.append(argTitle, substr, argreq, argdesc);
                     if (arg.format &&
                         (
                             (arg.format[0] == 'foo' && arg.format.length > 1) ||
                             arg.format[0] != 'foo'
                         )
                     ) {
-                        argdesc.innerHTML += '<br>Formatted as: ' +
+                        argdesc.innerHTML += 'Formatted as: ' +
                             arg.format.map(x => '<code>' + x + '</code>').join(' ');
                     }
                     args.appendChild(argctn);

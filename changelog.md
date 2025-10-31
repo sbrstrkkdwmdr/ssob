@@ -2,27 +2,30 @@
 
 # changelog
 
+
+
 ## [WIP] - xxxx-xx-xx
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
 ### Fixed
 
-- fix mod speed calculations
-- `ScoreListCommand`, `UserBeatmaps`, `MapLeaderboard` fix `-parse` param being offset by +1
-- `ScoreListCommand` `-parse` now works with sort and filter params
+-   fix mod speed calculations
+-   `ScoreListCommand`, `UserBeatmaps`, `MapLeaderboard` - fix `-parse` param being offset by +1
+-   `ScoreListCommand` - `-parse` now works with sort and filter params
+-   (docs) args not displaying required/optional
 
 ### Changed
 
-- `ScoreListCommand` display star rating ()
+-   `ScoreListCommand` display star rating ()
+-   `ScoreListCommand` update star rating for modded scores
+-   Emojis are now added to a given guild instead of manually uploading and editing `src/vars/emojis.ts` and `src/vars/buttons.ts`. If the emojis are already in the guild then the bot will fetch them instead.
+-   (docs) edit styling of command args
+-   (scripts) `run` only runs the bot. use `run-web` for only docs or `run-full` for both docs and bot simultaneously.
 
 ### Added
 
-- `ScoreListCommand` sort by star rating
-
-### Refactor
-
-- Emojis are now added to a given guild instead of manually uploading and editing `src/vars/emojis.ts` and `src/vars/buttons.ts`. If the emojis are already in the guild then the bot will fetch them instead.
+-   `ScoreListCommand` sort by star rating
 
 ## [5.4.0] - 2025-10-11
 
