@@ -5,7 +5,7 @@ newest-oldest
 ## current
 
 - [x] script to delete non-cache files in /dist/ before running `tsc`
-- [ ] fix pong replying to itself instead of editing original message
+- [x] fix pong replying to itself instead of editing original message
 - [x] save emotes to config server id on start up
 - [x] score lists show and (option to) sort by SR
 

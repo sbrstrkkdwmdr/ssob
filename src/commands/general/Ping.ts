@@ -47,7 +47,7 @@ export class Ping extends Command {
                                 edit: true,
                                 editAsMsg: true,
                             },
-                            canReply: this.input.canReply
+                            canReply: false
                         });
                     })
                         .catch();

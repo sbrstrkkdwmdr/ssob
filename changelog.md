@@ -2,8 +2,6 @@
 
 # changelog
 
-
-
 ## [WIP] - xxxx-xx-xx
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
@@ -14,10 +12,11 @@
 -   `ScoreListCommand`, `UserBeatmaps`, `MapLeaderboard` - fix `-parse` param being offset by +1
 -   `ScoreListCommand` - `-parse` now works with sort and filter params
 -   (docs) args not displaying required/optional
+-   `Ping` sending a second message instead of updating original message
 
 ### Changed
 
--   `ScoreListCommand` display star rating ()
+-   `ScoreListCommand` display star rating
 -   `ScoreListCommand` update star rating for modded scores
 -   Emojis are now added to a given guild instead of manually uploading and editing `src/vars/emojis.ts` and `src/vars/buttons.ts`. If the emojis are already in the guild then the bot will fetch them instead.
 -   (docs) edit styling of command args
