@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.5.0] - 2025-11-01
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+
 ### Fixed
 
 -   fix mod speed calculations
