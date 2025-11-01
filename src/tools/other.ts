@@ -871,3 +871,28 @@ export function listItems(list: string[]) {
     }
     return string;
 }
+
+export function objectIsEmpty(data: object, disallowNull = true, disallowNaN = true, disallowEmptyString = true): boolean {
+    if (Object.keys(data).length == 0) return true;
+    let temp = 0;
+    for (const value of Object.values(data)) {
+        if (dataIsEmpty(value)) {
+            temp++;
+        }
+    }
+    return temp == Object.keys(data).length;
+}
+
+export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true, disallowEmptyString = true): boolean {
+    const expressions = [
+        () => (value == undefined),
+        () => (value == null && disallowNull),
+        () => (typeof value == "number" && isNaN(value) && disallowNaN),
+        () => (typeof value == "string" && value.length == 0 && disallowEmptyString),
+        () => (typeof value == "object" && objectIsEmpty(value, disallowNull, disallowNaN, disallowEmptyString)),
+    ];
+    for (const ex of expressions) {
+        if (ex()) return true;
+    }
+    return false;
+}

@@ -35,7 +35,7 @@
         "osu-classes": "^3.1.0",
         "osu-parsers": "^4.1.7",
         "osumodcalculator": "^2.0.5",
-        "rosu-pp-js": "^3.0.1",
+        "rosu-pp-js": "^3.1.0",
         "sequelize": "^6.37.7",
         "shelljs": "^0.10.0",
         "simple-statistics": "^7.8.8",

@@ -131,6 +131,7 @@ export async function getEmbed(
         customCS: overrides.cs,
         customOD: overrides.od,
         clockRate: overrides.speed,
+        isLazer: !((curscore?.legacy_total_score ?? 1) > 0)
     });
     const fcperf = await performance.calcFullCombo({
         mods: curscore.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
@@ -143,6 +144,7 @@ export async function getEmbed(
         customCS: overrides.cs,
         customOD: overrides.od,
         clockRate: overrides.speed,
+        isLazer: !((curscore?.legacy_total_score ?? 1) > 0)
     });
 
     let pp: string;

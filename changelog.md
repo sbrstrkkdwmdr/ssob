@@ -16,6 +16,11 @@
 
 -   (docs) show arg options
 -   (docs) "default" values are now encased in code blocks
+-   update rosu-pp-js to `3.1.0`
+
+### Refactor
+
+-   move map folder creation from calcScore to map download method
 
 ## [5.5.0] - 2025-11-01
 

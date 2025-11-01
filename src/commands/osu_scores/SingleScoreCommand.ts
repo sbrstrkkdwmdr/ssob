@@ -103,6 +103,7 @@ export class SingleScoreCommand extends OsuCommand {
                 this.score?.ruleset_id ?? this.map?.mode_int ?? 0,
                 this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                 this.score.accuracy,
+                !((this.score?.legacy_total_score ?? 1) > 0),
                 overrides.speed,
                 this.score.statistics,
                 this.score.max_combo,

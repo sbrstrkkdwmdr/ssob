@@ -132,6 +132,7 @@ export class Simulate extends OsuCommand {
             0,
             this.params?.mods ?? [],
             this.fixAcc() / 100,
+            true,
             this.params.overrideSpeed,
             scorestat,
             this.params.combo,
@@ -154,6 +155,7 @@ export class Simulate extends OsuCommand {
             customAR: this.params.customAR,
             customOD: this.params.customOD,
             customHP: this.params.customHP,
+            isLazer: true,
         });
         this.ctn.embeds = [this.setEmbed(
             perfs, mapPerf,

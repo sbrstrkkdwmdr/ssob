@@ -24,17 +24,22 @@ export async function calcScore(input: {
     customAR?: number,
     customOD?: number,
     customHP?: number,
+    isLazer: boolean,
 }) {
     let data = { ...input };
-    if (!fs.existsSync(helper.path.main + '/files/maps/')) {
-        log.stdout('creating files/maps/');
-        fs.mkdirSync(helper.path.main + '/files/maps/');
-    }
+
+    // get beatmap
     const mapPath = await api.dlMap(data.mapid, 0, data.mapLastUpdated);
     const map = new rosu.Beatmap(fs.readFileSync(mapPath, 'utf-8'));
+
+    // handle conversions
     if (data.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(data.mode);
+    } else if (data.mode != map.mode && map.mode != rosu.GameMode.Osu) {
+        throw new Error('Cannot convert non-standard maps');
     }
+
+
     data.accuracy = fixAcc(data.accuracy);
 
     const baseScore: rosu.PerformanceArgs = {
@@ -42,9 +47,14 @@ export async function calcScore(input: {
         accuracy: data.accuracy ?? 100,
     };
     const oldStats = other.lazerToOldStatistics(data.stats, data.mode, true);
+
+    // pass data from inputs and move into baseScore
+    // key is key of input
+    // value is key of baseScore
     scoreIterateKeys(data, baseScore, {
         maxcombo: 'combo',
-        passedObjects: 'passedObjects'
+        passedObjects: 'passedObjects',
+        isLazer: 'lazer'
     });
     scoreIterateKeys(oldStats, baseScore, {
         count_300: 'n300',
@@ -53,7 +63,6 @@ export async function calcScore(input: {
         count_miss: 'misses',
         count_katu: 'nKatu',
     });
-    baseScore.combo;
     scoreIterateKeys(input, baseScore, {
         'customCS': 'cs',
         'customAR': 'ar',
@@ -62,10 +71,15 @@ export async function calcScore(input: {
         'clockRate': 'clockRate',
     });
 
-    if (input.mods.includes('CL')) {
-        baseScore.lazer = false;
-    }
+    // if (input.mods.includes('CL')) {
+    //     baseScore.lazer = false;
+    // }
     const perf: rosu.Performance = new rosu.Performance(baseScore);
+
+    if (other.objectIsEmpty(oldStats)) {
+        console.log('empty object - ' + input.mapid);
+        perf.hitresultPriority = rosu.HitResultPriority.Fastest;
+    }
 
     const final = perf.calculate(map);
     perf.free();
@@ -84,6 +98,7 @@ export async function calcFullCombo(input: {
     customAR?: number,
     customOD?: number,
     customHP?: number,
+    isLazer: boolean,
 }) {
     let stats = input.stats ? { ...input.stats } : formatters.nonNullStats(input.stats);
     if (stats.great == 0 && stats.perfect == 0) {
@@ -107,7 +122,8 @@ export async function calcFullCombo(input: {
         customCS: input.customCS,
         customAR: input.customAR,
         customOD: input.customOD,
-        customHP: input.customHP
+        customHP: input.customHP,
+        isLazer: input.isLazer,
     });
 }
 export async function calcMap(input: {
@@ -120,6 +136,7 @@ export async function calcMap(input: {
     customAR?: number,
     customOD?: number,
     customHP?: number,
+    isLazer: boolean,
 }) {
     const values: rosu.PerformanceAttributes[] = [];
     for (let i = 0; i < 11; i++) {
@@ -138,6 +155,7 @@ export async function calcMap(input: {
             customAR: input.customAR,
             customHP: input.customHP,
             customOD: input.customOD,
+            isLazer: input.isLazer,
         };
         const calc = await calcScore(temp);
         values.push(calc);
@@ -269,6 +287,7 @@ export async function fullPerformance(
     mode: rosu.GameMode,
     mods: osumodcalc.types.Mod[],
     accuracy: number,
+    isLazer: boolean,
     clockRate?: number,
     stats?: osuapi.types_v2.ScoreStatistics,
     maxcombo?: number,
@@ -293,6 +312,7 @@ export async function fullPerformance(
         customAR,
         customOD,
         customHP,
+        isLazer,
     });
     const fcperf = await calcFullCombo({
         mods,
@@ -306,6 +326,7 @@ export async function fullPerformance(
         customAR,
         customOD,
         customHP,
+        isLazer,
     });
     const ssperf = await calcFullCombo({
         mods,
@@ -318,6 +339,7 @@ export async function fullPerformance(
         customAR,
         customOD,
         customHP,
+        isLazer,
     });
     return [perf, fcperf, ssperf];
 }

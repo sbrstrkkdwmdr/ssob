@@ -502,7 +502,8 @@ export class MapParse extends OsuCommand {
                 customAR: this.params.customAR,
                 customOD: this.params.customOD,
                 customHP: this.params.customHP,
-                mapLastUpdated: new Date(map.last_updated)
+                mapLastUpdated: new Date(map.last_updated),
+                isLazer: true,
             });
             ppissue = '';
             try {
@@ -642,7 +643,8 @@ export class MapParse extends OsuCommand {
             customAR: +this.params.customAR,
             customOD: +this.params.customOD,
             customHP: +this.params.customHP,
-            mapLastUpdated: new Date(map.last_updated)
+            mapLastUpdated: new Date(map.last_updated),
+            isLazer: true,
         });
     }
     protected async embedStart(map: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[], buttons: Discord.ActionRowBuilder) {

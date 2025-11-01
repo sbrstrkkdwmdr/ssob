@@ -241,6 +241,7 @@ export class ScoreFormatter {
             maxcombo: score.max_combo,
             passedObjects: other.scoreTotalHits(score.statistics),
             mapLastUpdated: new Date(score.ended_at),
+            isLazer: !((score?.legacy_total_score ?? 1) > 0)
         });
         score.pp = perf.pp;
         if (score.beatmap) {
@@ -350,6 +351,7 @@ export class ScoreFormatter {
             score.ruleset_id,
             score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
             score.accuracy,
+            !((score?.legacy_total_score ?? 1) > 0),
             overrides.speed,
             score.statistics,
             score.max_combo,
