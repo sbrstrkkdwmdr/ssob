@@ -6,13 +6,13 @@ const mods = 'See [here](https://ssob.sbrstrkkdwmdr.me/types#mods)';
 const scoreListString =
     `Mods can be specified with +[mods], -mx [exact mods] or -me [exclude mods]
 The arguments \`pp\`, \`score\`, \`acc\`, \`bpm\` and \`miss\` use the following format:
-\`-key value\` to filter by that exact value (eg. -bpm 220)
-\`-key >value\` to filter scores above that value (eg. -pp >500)
-\`-key <value\` to filter scores below that value (eg. -acc <90)
-\`-key min..max\` to filter scores between min and max (eg. -miss 1..3)
-\`-key !value\` to filter scores that dont equal that value (eg. -bpm !200)
-The \`sort\` arg can be specified using -value (ie -recent)
-You can also show a single score by using \`-parse <id>\` (eg. -parse 5)
+\`-key value\` to filter by that exact value (eg. \`-bpm 220\`)
+\`-key >value\` to filter scores above that value (eg. \`-pp >500\`)
+\`-key <value\` to filter scores below that value (eg. \`-acc <90\`)
+\`-key min..max\` to filter scores between min and max (eg. \`-miss 1..3\`)
+\`-key !value\` to filter scores that dont equal that value (eg. \`-bpm !200\`)
+The \`sort\` arg can be specified using \`-value\` (ie \`-recent\`)
+You can also show a single score by using \`-parse <id>\` (eg. \`-parse 5\`)
 `;
 
 const range = (key: string): string[] => {
@@ -40,6 +40,15 @@ const mode: helper.bottypes.commandInfoOption = {
     options: ['osu', 'taiko', 'fruits', 'mania'],
     format: ['-{mode}'],
     defaultValue: 'osu',
+};
+const sort: helper.bottypes.commandInfoOption = {
+    name: 'sort',
+    type: 'string',
+    required: false,
+    description: 'The sort order of the scores',
+    options: ['pp', 'score', 'recent', 'acc', 'combo', 'miss', 'rank', 'sr'],
+    format: ['-{pp/recent/sr}', '-sort {sort}'],
+    defaultValue: 'pp (NoChokes/OsuTop), recent (Firsts/MapScores/Pinned/RecentList)',
 };
 const page: helper.bottypes.commandInfoOption = {
     name: 'page',
@@ -79,15 +88,6 @@ const mapformat = [
 ];
 const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
     user, mode,
-    {
-        name: 'sort',
-        type: 'string',
-        required: false,
-        description: 'The sort order of the scores',
-        options: ['pp', 'score', 'recent', 'acc', 'combo', 'miss', 'rank'],
-        format: ['-{pp or recent}', '-sort {sort}'],
-        defaultValue: 'pp',
-    },
     {
         name: 'reverse',
         type: 'boolean',
@@ -472,7 +472,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             }
         ],
         aliases: ['firstplaceranks', 'first', 'fpr', 'fp', '#1s', '1s', '#1'],
-        args: scoreListCommandOptions
+        args: [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions)
     },
     {
         name: 'ServerLeaderboard',
@@ -756,7 +756,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             }
         ],
         aliases: ['nc'],
-        args: scoreListCommandOptions
+        args: [user, mode, { ...sort, defaultValue: 'pp' }].concat(scoreListCommandOptions)
     },
     {
         name: 'Profile',
@@ -897,7 +897,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             'ctbtop', 'fruitstop', 'catchtop', 'topctb', 'topfruits', 'topcatch', 'tf', 'tctb', 'topf', 'topc',
             'maniatop', 'topmania', 'tm', 'topm',
         ],
-        args: scoreListCommandOptions
+        args: [user, mode, { ...sort, defaultValue: 'pp' }].concat(scoreListCommandOptions)
     },
     {
         name: 'Pinned',
@@ -924,7 +924,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             }
         ],
         aliases: ['pins'],
-        args: scoreListCommandOptions
+        args: [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions)
     },
     {
         name: 'PP',
@@ -1117,7 +1117,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
             'recentlistfruits', 'rlf', 'rlctb', 'rlc',
             'recentlistmania', 'rlm',
         ],
-        args: scoreListCommandOptions
+        args: [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions)
     },
     {
         name: 'RecentActivity',
@@ -1178,7 +1178,10 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 format: ['{score ID}', 'osu.ppy.sh/scores/{score ID}'],
                 defaultValue: 'null',
             },
-            mode
+            {
+                ...mode,
+                description: 'The mode to use. Only required if using the old score ID system.',
+            }
         ]
     },
     {
@@ -1210,7 +1213,7 @@ export const cmds: helper.bottypes.commandInfo[] = [
         ],
         aliases: ['c'],
         args:
-            scoreListCommandOptions.concat([
+            [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions).concat([
                 {
                     name: 'map id',
                     type: 'integer/map link',
