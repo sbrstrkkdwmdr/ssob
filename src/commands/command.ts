@@ -179,6 +179,14 @@ export class Command {
             this.params[paramKey] = this.forceType(this.input.overrides[oKey], type);
         }
     }
+    /**
+     * 
+     */
+    protected isValidParam(value: any){
+        if(value == null) return false;
+        if(value == undefined) return false;
+        return true;
+    }
     private forceType(value: any, type: 'string' | 'number') {
         switch (type) {
             case 'string':

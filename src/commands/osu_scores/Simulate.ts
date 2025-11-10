@@ -25,6 +25,7 @@ export class Simulate extends OsuCommand {
         customAR: number;
         customOD: number;
         customHP: number;
+        usePrevious: boolean;
     };
     constructor() {
         super();
@@ -44,6 +45,7 @@ export class Simulate extends OsuCommand {
             customAR: null,
             customOD: null,
             customHP: null,
+            usePrevious: false,
         };
     }
     async setParamsMsg() {
@@ -53,6 +55,7 @@ export class Simulate extends OsuCommand {
         this.params.n100 = this.setParam(this.params.n100, ['n100', '100s', 'ok'], 'number', { number_isInt: true });
         this.params.n50 = this.setParam(this.params.n50, ['n50', '50s', 'meh'], 'number', { number_isInt: true });
         this.params.nMiss = this.setParam(this.params.nMiss, ['miss', 'misses', 'n0', '0s',], 'number', { number_isInt: true });
+        this.params.usePrevious = this.setParam(this.params.usePrevious, ['-previous', '-p', '-prev'], 'bool', {});
 
         this.params.overrideBpm = this.setParam(this.params.overrideBpm, ['-bpm'], 'number', {});
         this.params.overrideSpeed = this.setParam(this.params.overrideSpeed, ['-speed'], 'number', {});
@@ -148,7 +151,7 @@ export class Simulate extends OsuCommand {
         const mapPerf = await performance.calcMap({
             mods: this.params?.mods ?? [],
             mode: 0,
-            mapid: this.params.mapid, 
+            mapid: this.params.mapid,
             clockRate: this.params.overrideSpeed,
             mapLastUpdated: new Date(this.map.last_updated),
             customCS: this.params.customCS,
@@ -180,22 +183,26 @@ export class Simulate extends OsuCommand {
             }
         }
     }
+
     fixParams() {
         const tempscore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
-        if (tempscore?.apiData && tempscore?.apiData.beatmap.id == this.params.mapid) {
-            if (!this.params.n300 && !this.params.n100 && !this.params.n50 && !this.params.acc) {
+        if (this.params.usePrevious && tempscore?.apiData && tempscore?.apiData.beatmap.id == this.params.mapid) {
+            if (!this.isValidParam(this.params.n300) &&
+                !this.isValidParam(this.params.n100) &&
+                !this.isValidParam(this.params.n50) &&
+                !this.isValidParam(this.params.acc)) {
                 this.params.n300 = tempscore.apiData.statistics.great;
                 this.params.n100 = tempscore.apiData.statistics.ok;
                 this.params.n50 = tempscore.apiData.statistics.meh;
                 this.params.acc = tempscore.apiData.accuracy * 100;
             }
-            if (!this.params.nMiss) {
+            if (!this.isValidParam(this.params.nMiss)) {
                 this.params.nMiss = tempscore.apiData.statistics.miss;
             }
-            if (!this.params.combo) {
+            if (!this.isValidParam(this.params.combo)) {
                 this.params.combo = tempscore.apiData.max_combo;
             }
-            if (!this.params.mods) {
+            if (!this.isValidParam(this.params.mods)) {
                 this.params.mods = tempscore.apiData.mods.map(x => x.acronym) as osumodcalc.types.Mod[] ?? [];
             }
         }

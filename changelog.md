@@ -17,6 +17,8 @@
 -   (docs) show arg options
 -   (docs) "default" values are now encased in code blocks
 -   update rosu-pp-js to `3.1.0`
+-   `Simulate` - params equal to 0 are no longer treated as null
+-   `Simulate` - score statistics are no longer automatically taken from the most recent score (can be re-enabled with `-prev`)
 
 ### Refactor
 

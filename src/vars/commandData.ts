@@ -1265,11 +1265,11 @@ export const cmds: helper.bottypes.commandInfo[] = [
     {
         name: 'Simulate',
         description: 'Simulates a score on a beatmap.',
-        usage: 'simulate [id] +[mods]  [acc] [combo] [n300] [n100] [n50] [miss] [bpm] [speed] [cs] [ar] [od] [hp]',
+        usage: 'simulate [id] +[mods]  [acc] [combo] [n300] [n100] [n50] [miss] [bpm] [speed] [cs] [ar] [od] [hp] [use previous]',
         category: 'osu_scores',
         examples: [
             {
-                text: 'simulate +HDHR misses=0 acc=97.86',
+                text: 'simulate +HDHR -miss 0 -acc 97.86',
                 description: 'Simulates a score on the most recent beatmap with HDHR, 0 misses, and 97.86% accuracy'
             }
         ],
@@ -1387,6 +1387,14 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 description: 'The hp/drain to simulate the score with',
                 format: ['-hp {drain rate}',],
                 defaultValue: 'Map HP',
+            },
+            {
+                name: 'use previous',
+                type: 'boolean',
+                required: false,
+                description: 'Whether or not to take hit statistics from the most recent score',
+                format: [],
+                defaultValue: 'false',
             },
         ]
     },
