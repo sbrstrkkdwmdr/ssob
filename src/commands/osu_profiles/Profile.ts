@@ -4,6 +4,7 @@ import * as calculate from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
+import { FloatingSimpleGraphBuilder, SimpleGraphBuilder } from '../../tools/graph';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import * as tooltypes from '../../types/tools';
@@ -396,36 +397,27 @@ ${this.supporterStatus} ${this.onlineStatus}
             const dataplay = ('start,' + this.user.monthly_playcounts.map(x => x.start_date).join(',')).split(',');
             const datarank = ('start,' + this.user.rank_history.data.map(x => x).join(',')).split(',');
 
-            const play = other.graph({
+            const playGraph = new SimpleGraphBuilder({
                 x: dataplay,
                 y: this.user.monthly_playcounts.map(x => x.count),
-                label: 'Playcount',
-                other: {
-                    startzero: true,
-                    fill: true,
-                    displayLegend: true,
-                    pointSize: 0,
-                }
+                type: 'bar',
+                title: 'Monthly Play Counts'
             });
-            const rank = other.graph({
+            const playGraphImage = await playGraph.execute();
+            const rankGraph = new FloatingSimpleGraphBuilder({
                 x: datarank,
                 y: this.user.rank_history.data,
-                label: 'Rank',
-                other: {
-                    startzero: false,
-                    fill: false,
-                    displayLegend: true,
-                    reverse: true,
-                    pointSize: 0,
-                }
+                title: 'Rank',
+                isFlipped: true,
             });
-            const fileplay = new Discord.AttachmentBuilder(`${play.path}`);
-            const filerank = new Discord.AttachmentBuilder(`${rank.path}`);
+            const rankGraphImage = await rankGraph.execute();
+            const fileplay = new Discord.AttachmentBuilder(`${playGraphImage.path}`);
+            const filerank = new Discord.AttachmentBuilder(`${rankGraphImage.path}`);
 
             this.ctn.files.push(fileplay, filerank);
 
-            chartplay = `attachment://${play.filename}.jpg`;
-            chartrank = `attachment://${rank.filename}.jpg`;
+            chartplay = `attachment://${playGraphImage.filename}.jpg`;
+            chartrank = `attachment://${rankGraphImage.filename}.jpg`;
         }
         const ChartsEmbedRank = new Discord.EmbedBuilder()
             .setTitle(`${this.user.username}`)

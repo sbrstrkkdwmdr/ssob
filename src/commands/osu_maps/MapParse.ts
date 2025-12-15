@@ -6,6 +6,7 @@ import * as calculate from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
+import { SimpleGraphBuilder } from '../../tools/graph';
 import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
@@ -771,22 +772,14 @@ export class MapParse extends OsuCommand {
         }
         let mapgraph: string;
         if (strains) {
-            const mapgraphInit = other.graph({
+            const graph = new SimpleGraphBuilder({
                 x: strains.strainTime,
                 y: strains.value,
-                label: 'Strains',
-                other: {
-                    startzero: true,
-                    type: 'bar',
-                    fill: true,
-                    displayLegend: false,
-                    title: 'Strains',
-                    imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-                    blurImg: true,
-                }
+                type: 'line'
             });
-            this.ctn.files.push(mapgraphInit.path);
-            mapgraph = mapgraphInit.filename;
+            const image = await graph.execute();
+            this.ctn.files.push(image.path);
+            mapgraph = image.filename;
         } else {
             mapgraph = null;
         }
@@ -799,27 +792,16 @@ export class MapParse extends OsuCommand {
         for (let i = 0; i < failval.length; i++) {
             numofval.push(`${i}s`);
         }
-        const passInit = other.graph({
+        
+        const graph = new SimpleGraphBuilder({
             x: numofval,
             y: map.failtimes.fail,
-            label: 'Fails',
-            other: {
-                stacked: true,
-                type: 'bar',
-                showAxisX: false,
-                title: 'Fail times',
-                imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-                blurImg: true,
-            },
-            extra: [{
-                data: map.failtimes.exit,
-                label: 'Exits',
-                separateAxis: false,
-            }]
+            type: 'bar'
         });
-        this.ctn.files.push(passInit.path);
+        const image = await graph.execute();
+        this.ctn.files.push(image.path);
+        const passurl = image.filename;
 
-        const passurl = passInit.filename;
         const passEmbed = new Discord.EmbedBuilder()
             .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${map.mode}/${this.map.id}`)
             .setImage(`attachment://${passurl}.jpg`);

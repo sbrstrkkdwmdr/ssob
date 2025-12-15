@@ -5,12 +5,12 @@ import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
+import { SimpleGraphBuilder } from '../../tools/graph';
 import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import * as performance from '../../tools/performance';
 import { OsuCommand } from '../command';
-
 export class SingleScoreCommand extends OsuCommand {
     protected type: 'recent' | 'default';
     constructor() {
@@ -148,22 +148,15 @@ export class SingleScoreCommand extends OsuCommand {
             data.debug({ error: error }, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
             log.stdout(error);
         }
-        let strainsgraph = other.graph({
+        const graph = new SimpleGraphBuilder({
             x: strains.strainTime,
             y: strains.value,
-            label: 'Strains',
-            other: {
-                startzero: true,
-                type: 'bar',
-                fill: true,
-                displayLegend: false,
-                title: 'Strains',
-                imgUrl: osuapi.other.beatmapImages(map.beatmapset_id).full,
-                blurImg: true,
-            }
+            type: 'line',
+            title: 'Strains',
         });
-        this.ctn.files = [strainsgraph.path];
-        return strainsgraph.filename + '.jpg';
+        const image = await graph.execute();
+        this.ctn.files = [image.path];
+        return image.filename + '.jpg';
     }
     getTryCount(scores: osuapi.types_v2.Score[], mapid: number) {
         let trycount = 1;
