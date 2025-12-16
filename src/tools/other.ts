@@ -504,3 +504,12 @@ export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true,
     }
     return false;
 }
+
+/**
+ * similar to PHPs isset() function
+ * 
+ * checks if a value has been set or not
+ */
+export function isSet(value: any) {
+    return (value != null && value != undefined);
+}

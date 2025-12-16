@@ -10,6 +10,7 @@ import * as helper from '../helper';
 import * as colourcalc from './colourcalc';
 import * as log from './log';
 import * as osuapi from './osuapi';
+import { isSet } from './other';
 
 const WIDTH = 1500;
 const HEIGHT = 500;
@@ -62,67 +63,110 @@ const colours_rgb = [
     'rgb(215,117,255)',
 ];
 
-type SimpleGraphBuilderInput = {
-    x: x,
-    y: number[],
-    title?: string,
-    displayGrid?: boolean,
-    type: 'line' | 'bar',
-};
-
 type x = (string | number)[];
 
-type FloatingSimpleGraphBuilderInput = {
-    x: x,
-    y: number[],
-    title?: string,
-    displayGrid?: boolean,
-    isFlipped: boolean;
+type graphs = 'line' | 'bar';
+
+type LineGraphSettings = {
+    isCurved?: boolean;
+    showPoints?: boolean;
+    isFlipped?: boolean;
+    startAtZero?: boolean;
+    lineWidth?: number;
+    fill?: boolean;
 };
 
-export class SimpleGraphBuilder {
-    protected y: number[] = [];
+type BarGraphSettings = {};
+
+type GraphSettings = LineGraphSettings | BarGraphSettings;
+
+type GraphBuilderInput<T = GraphSettings> = {
+    x: x,
+    y: number[][],
+    dataLabels: string[],
+    title?: string,
+    displayGrid?: boolean,
+    colours?: string[],
+    settings: T;
+};
+
+export abstract class GraphBuilder {
+    protected y: number[][] = [];
+    // not actual x values, these just serve as labels for y
     protected x: x = [];
     protected title: string = '';
     protected type: 'line' | 'bar' = 'line';
+    protected dataLabels: string[];
     protected displayGrid: boolean = false;
-    constructor({ x, y, title, displayGrid, type }: SimpleGraphBuilderInput) {
+    protected colours: string[] = colours_rgb;
+    protected settings: GraphSettings;
+    constructor({ x, y, title, dataLabels, displayGrid, type, settings, colours }: GraphBuilderInput & { type: graphs; }) {
         this.x = x;
         this.y = y;
+        this.dataLabels = dataLabels;
         if (title != null) this.title = title;
         if (displayGrid != null) this.displayGrid = displayGrid;
+        if (colours != null) this.colours = colours;
         if (type != null) this.type = type;
+        if (settings != null) this.settings = settings;
     }
+    protected abstract validateSettings();
     protected canvas: canvas.Canvas;
     protected datasets;
     protected chart: chartjs.Chart;
     protected validateData() {
-        if (this.y.length > 200) {
-            this.dataMax();
+        let n = -1;
+        for (const y of this.y) {
+            if (n != -1 && n != y.length) {
+                throw new Error('y different array lengths');
+            }
+            n = y.length;
         }
+        if (this.dataLabels.length < this.y.length) {
+            throw new Error('Not enough data labels for all data');
+        }
+        // if (n > 200) {
+        //     this.dataMax();
+        // }
     }
-    protected dataMax(limit = 200) {
-        let x: x = [];
-        let y: number[] = [];
-        const div = this.y.length / 200;
-        for (let i = 0; i < 200; i++) {
-            const offset = Math.ceil(i * div);
-            x.push(this.x[offset]);
-            y.push(this.y[offset]);
-        }
-        this.x = x;
-        this.y = y;
+    protected dataMaxX(limit: number) {
         const isNumbered = this.x.filter(x => typeof x == 'number');
         if (isNumbered.length > 0) {
             let temp: string[] = [];
-            for (const value of this.x) {
-                temp.push(value + '');
+            for (let i = 0; i < 200; i++) {
+                temp.push(i + 1 + '');
             }
             this.x = temp;
+        } else {
+            let x: x = [];
+            const div = this.x.length / limit;
+            for (let i = 0; i < limit; i++) {
+                const offset = Math.ceil(i * div);
+                x.push(this.x?.[offset] ?? '');
+            }
+            this.x = x;
         }
     }
-    protected formatData() {
+    protected dataMaxY(limit: number) {
+        const y: number[][] = [];
+        for (const ty of this.y) {
+            const div = ty.length / limit;
+            const temp: number[] = [];
+            for (let i = 0; i < limit; i++) {
+                const offset = Math.ceil(i * div);
+                temp.push(ty[offset]);
+            }
+            y.push(temp);
+        }
+        this.y = y;
+    }
+    protected dataMax(limit = 200) {
+        this.dataMaxX(limit);
+        this.dataMaxY(limit);
+    }
+    protected abstract formatData(); /* {
         const dataset = {
+            label: this.dataLabels[i],
             data: this.y,
             fill: true,
             borderColor: '#ffffff',
@@ -131,15 +175,17 @@ export class SimpleGraphBuilder {
             id: '1y',
         };
         this.datasets = [dataset];
-    }
-    protected canvasOptions() {
+    } */
+    protected canvasOptions(): object {
         return {
-            legend: {
-                display: false,
-            },
-            title: {
-                display: Boolean(this.title),
-                title: this.title,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: Boolean(this.title),
+                    title: this.title,
+                },
             },
             scales: {
                 x: {
@@ -153,7 +199,7 @@ export class SimpleGraphBuilder {
                 y: {
                     grid: {
                         drawTicks: false,
-                    }
+                    },
                 },
             }
         };
@@ -208,6 +254,7 @@ export class SimpleGraphBuilder {
      */
     public async executeToBuffer() {
         this.validateData();
+        this.validateSettings();
         this.formatData();
         this.generateCanvas();
         return await this.toBuffer();
@@ -223,31 +270,62 @@ export class SimpleGraphBuilder {
     }
 }
 
-export class FloatingSimpleGraphBuilder extends SimpleGraphBuilder {
-    protected isFlipped: boolean = false;
-    constructor({ x, y, title, displayGrid, isFlipped }: FloatingSimpleGraphBuilderInput) {
-        super({ x, y, title, displayGrid, type: 'line' });
-        this.isFlipped = isFlipped;
+export class LineGraphBuilder extends GraphBuilder {
+    declare protected settings: LineGraphSettings;
+    constructor({ x, y, dataLabels, title, displayGrid, settings, colours }: GraphBuilderInput<LineGraphSettings>) {
+        super({ x, y, dataLabels, title, displayGrid, settings, colours, type: 'line' });
+    }
+    protected validateSettings() {
+        if (!isSet(this.settings.isCurved)) {
+            this.settings.isCurved = false;
+        }
+        if (!isSet(this.settings.showPoints)) {
+            this.settings.showPoints = false;
+        }
+        if (!isSet(this.settings.isFlipped)) {
+            this.settings.isFlipped = false;
+        }
+        if (!isSet(this.settings.startAtZero)) {
+            this.settings.startAtZero = false;
+        }
+        if (!isSet(this.settings.lineWidth)) {
+            this.settings.lineWidth = 1;
+        }
+        if (!isSet(this.settings.fill)) {
+            this.settings.fill = false;
+        }
+        if (this.settings.isFlipped && this.settings.fill) {
+            this.settings.fill = false;
+            log.stdout('Chart Error: Fill cannot be enabled while isFlipped is true');
+        }
     }
     protected formatData() {
-        const dataset = {
-            data: this.y,
-            fill: false,
-            borderColor: '#ffffff',
-            backgroundColor: colours_rgb[4],
-            borderWidth: 1,
-            id: '1y',
-        };
-        this.datasets = [dataset];
+        this.datasets = [];
+        for (let i = 0; i < this.y.length; i++) {
+            const dataset = {
+                label: this.dataLabels[i],
+                data: this.y[i],
+                fill: this?.settings?.fill,
+                borderColor: '#ffffff',
+                backgroundColor: this.colours[i % this.colours.length],
+                borderWidth: this?.settings?.lineWidth ?? 1,
+                radius: this?.settings?.showPoints ? 5 : 0,
+                tension: this?.settings?.isCurved ? 0.25 : 0,
+                id: '1y',
+            };
+            this.datasets.push(dataset);
+        }
     }
-    protected canvasOptions() {
-        const opts = {
-            legend: {
-                display: false,
-            },
-            title: {
-                display: Boolean(this.title),
-                title: this.title,
+    protected canvasOptions(): object {
+        return {
+            plugins: {
+                legend: {
+                    display: this.y.length > 1
+                },
+                title: {
+                    display: Boolean(this.title),
+                    title: this.title,
+                },
             },
             scales: {
                 x: {
@@ -259,9 +337,70 @@ export class FloatingSimpleGraphBuilder extends SimpleGraphBuilder {
                     }
                 },
                 y: {
-                    ticks: {
-                        color: 'rgb(128, 128, 128)'
+                    grid: {
+                        drawTicks: false,
                     },
+                    ticks: {
+                        reverse: this.settings.isFlipped,
+                        beginAtZero: this.settings.startAtZero,
+                    },
+                },
+                // xAxes: [
+                //     {
+                //         display: true,
+                //         ticks: {
+                //             autoSkip: true,
+                //             maxTicksLimit: 10
+                //         },
+                //     }
+                // ],
+                // formerly yAxes[] ... id:1y
+                // '1y': {
+                //     ticks: {
+                //         reverse: this.settings.isFlipped,
+                //         beginAtZero: this.settings.startAtZero,
+                //     },
+                // },
+
+            }
+        };
+    }
+}
+
+export class BarGraphBuilder extends GraphBuilder {
+    declare protected settings: BarGraphSettings;
+    constructor({ x, y, dataLabels, title, displayGrid, settings, colours, }: GraphBuilderInput<BarGraphSettings>) {
+        super({ x, y, dataLabels, title, displayGrid, settings, colours, type: 'bar' });
+    }
+    protected validateSettings() {
+
+    }
+    protected formatData() {
+        this.datasets = [];
+        for (let i = 0; i < this.y.length; i++) {
+            const dataset = {
+                label: this.dataLabels[i],
+                data: this.y[i],
+                borderColor: '#ffffff',
+                backgroundColor: this.colours[i % this.colours.length],
+                id: '1y',
+            };
+            this.datasets.push(dataset);
+        }
+    }
+    protected canvasOptions(): object {
+        return {
+            plugins: {
+                legend: {
+                    display: this.y.length > 1
+                },
+                title: {
+                    display: Boolean(this.title),
+                    title: this.title,
+                },
+            },
+            scales: {
+                x: {
                     grid: {
                         display: this.displayGrid,
                         drawOnChartArea: true,
@@ -269,86 +408,13 @@ export class FloatingSimpleGraphBuilder extends SimpleGraphBuilder {
                         color: 'rgb(64, 64, 64)'
                     }
                 },
-                yAxes: [
-                    {
-                        id: '1y',
-                        type: 'linear',
-                        position: 'left',
-                        display: true,
-                        ticks: {
-                            reverse: this.isFlipped,
-                            beginAtZero: false
-                        },
-                    }
-                ]
+                y: {
+                    grid: {
+                        drawTicks: false,
+                    },
+                },
             }
         };
-        return opts;
-    }
-    protected generateCanvas() {
-        this.canvas = canvas.createCanvas(WIDTH, HEIGHT);
-        const ctx = this.canvas.getContext('2d');
-        this.chart = new chartjs.Chart(ctx, {
-            type: this.type,
-            data: {
-                labels: this.x,
-                datasets: this.datasets,
-            },
-            //@ts-expect-error something something line
-            options: this.canvasOptions()
-        });
-        return this.chart;
-    }
-    protected async toBuffer(mode = 0) {
-        switch (mode) {
-            case 0: default:
-                return this.canvas.toBuffer();
-                break;
-            case 1:
-                const chartbuffer = this.canvas.toBuffer();
-                const asImage = new Jimp({
-                    width: WIDTH,
-                    height: HEIGHT,
-                    color: '#000000'
-                });
-                const graph = await Jimp.read(chartbuffer);
-                asImage.composite(graph, 0, 0);
-                return await asImage.getBuffer('image/png');
-        }
-    }
-    protected async toFile() {
-        let filename = `${(new Date).getTime()}`;
-        let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
-        try {
-            const buffer = await this.toBuffer();
-            fs.writeFileSync(curt, buffer);
-        } catch (err) {
-            log.stdout(err);
-            curt = `${helper.path.precomp}/files/blank_graph.png`;
-            filename = 'blank_graph';
-        }
-        return {
-            path: curt,
-            filename
-        };
-    }
-    /**
-     * returns raw buffer of graph which can be later written to a file
-     */
-    public async executeToBuffer() {
-        this.validateData();
-        this.formatData();
-        this.generateCanvas();
-        return await this.toBuffer();
-    }
-    /**
-     * returns filepath and name of graph
-     */
-    public async execute() {
-        this.validateData();
-        this.formatData();
-        this.generateCanvas();
-        return await this.toFile();
     }
 }
 

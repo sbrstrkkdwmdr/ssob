@@ -4,7 +4,7 @@ import * as calculate from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
-import { FloatingSimpleGraphBuilder, SimpleGraphBuilder } from '../../tools/graph';
+import { BarGraphBuilder, LineGraphBuilder } from '../../tools/graph';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import * as tooltypes from '../../types/tools';
@@ -397,18 +397,25 @@ ${this.supporterStatus} ${this.onlineStatus}
             const dataplay = ('start,' + this.user.monthly_playcounts.map(x => x.start_date).join(',')).split(',');
             const datarank = ('start,' + this.user.rank_history.data.map(x => x).join(',')).split(',');
 
-            const playGraph = new SimpleGraphBuilder({
+            const playGraph = new BarGraphBuilder({
                 x: dataplay,
-                y: this.user.monthly_playcounts.map(x => x.count),
-                type: 'bar',
-                title: 'Monthly Play Counts'
+                y: [this.user.monthly_playcounts.map(x => x.count)],
+                colours: [helper.colours.rainbowPastelRGB.green],
+                dataLabels: ['Monthly Play Counts'],
+                title: 'Monthly Play Counts',
+                settings: {},
             });
             const playGraphImage = await playGraph.execute();
-            const rankGraph = new FloatingSimpleGraphBuilder({
+            const rankGraph = new LineGraphBuilder({
                 x: datarank,
-                y: this.user.rank_history.data,
+                y: [this.user.rank_history.data],
+                dataLabels: ['Rank'],
                 title: 'Rank',
-                isFlipped: true,
+                colours: [helper.colours.rainbowPastelRGB.yellow],
+                settings: {
+                    isFlipped: true,
+                    startAtZero: false,
+                },
             });
             const rankGraphImage = await rankGraph.execute();
             const fileplay = new Discord.AttachmentBuilder(`${playGraphImage.path}`);

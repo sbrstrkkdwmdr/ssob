@@ -6,7 +6,7 @@ import * as calculate from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
-import { SimpleGraphBuilder } from '../../tools/graph';
+import { BarGraphBuilder, LineGraphBuilder } from '../../tools/graph';
 import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
@@ -772,10 +772,15 @@ export class MapParse extends OsuCommand {
         }
         let mapgraph: string;
         if (strains) {
-            const graph = new SimpleGraphBuilder({
+            const graph = new LineGraphBuilder({
                 x: strains.strainTime,
-                y: strains.value,
-                type: 'line'
+                y: [strains.value],
+                dataLabels: ['Strains'],
+                colours: [helper.colours.rainbowPastelRGB.yellow],
+                settings: {
+                    isCurved: true,
+                    fill: true,
+                }
             });
             const image = await graph.execute();
             this.ctn.files.push(image.path);
@@ -792,11 +797,13 @@ export class MapParse extends OsuCommand {
         for (let i = 0; i < failval.length; i++) {
             numofval.push(`${i}s`);
         }
-        
-        const graph = new SimpleGraphBuilder({
+
+        const graph = new BarGraphBuilder({
             x: numofval,
-            y: map.failtimes.fail,
-            type: 'bar'
+            y: [map.failtimes.fail, map.failtimes.exit],
+            dataLabels: ['Fails', 'Exits'],
+            colours: [helper.colours.rainbowPastelRGB.red, helper.colours.rainbowPastelRGB.orange],
+            settings: {},
         });
         const image = await graph.execute();
         this.ctn.files.push(image.path);

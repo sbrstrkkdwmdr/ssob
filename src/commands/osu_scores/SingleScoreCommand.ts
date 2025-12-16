@@ -5,7 +5,7 @@ import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
-import { SimpleGraphBuilder } from '../../tools/graph';
+import { LineGraphBuilder } from '../../tools/graph';
 import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
@@ -148,11 +148,16 @@ export class SingleScoreCommand extends OsuCommand {
             data.debug({ error: error }, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
             log.stdout(error);
         }
-        const graph = new SimpleGraphBuilder({
+        const graph = new LineGraphBuilder({
             x: strains.strainTime,
-            y: strains.value,
-            type: 'line',
+            y: [strains.value],
             title: 'Strains',
+            dataLabels: ['Strains'],
+            colours: [helper.colours.rainbowPastelRGB.yellow],
+            settings: {
+                isCurved: true,
+                fill: true,
+            }
         });
         const image = await graph.execute();
         this.ctn.files = [image.path];

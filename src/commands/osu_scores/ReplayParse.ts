@@ -6,7 +6,7 @@ import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
-import { SimpleGraphBuilder } from '../../tools/graph';
+import { LineGraphBuilder } from '../../tools/graph';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import { OsuCommand } from '../command';
@@ -63,11 +63,15 @@ export class ReplayParse extends SingleScoreCommand {
             return;
         }
 
-        const graph = new SimpleGraphBuilder({
+        const graph = new LineGraphBuilder({
             x: score.replay.lifeBar.map(x => calculate.secondsToTime(x.startTime / 1000)),
-            y: score.replay.lifeBar.map(x => Math.floor(x.health * 100)),
-            type: 'line',
+            y: [score.replay.lifeBar.map(x => Math.floor(x.health * 100))],
+            dataLabels: ['Health'],
+            colours: [helper.colours.rainbowPastelRGB.green],
             title: 'Health',
+            settings: {
+                fill: true,
+            }
         });
         const image = await graph.execute();
         this.ctn.files = [image.path];
