@@ -826,7 +826,7 @@ export class MapParse extends OsuCommand {
         if (states.includes(map.status)) {
             last = `${formatters.toCapital(map.status)} <t:${Math.floor(new Date(mapset.ranked_date).getTime() / 1000)}:R>`;
         }
-        return formatters.listLine(submit, last);
+        return '\n' + formatters.listLine(submit, last);
     }
     protected async embedPerformance(embed: Discord.EmbedBuilder, map: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[]) {
         let extras = '';
