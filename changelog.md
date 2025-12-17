@@ -6,6 +6,10 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.6.0] - 2025-12-18
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+
 ### Fixed
 
 -   (docs) `ScoreListCommand` - missing star rating option for score sorting
