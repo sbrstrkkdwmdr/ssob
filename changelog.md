@@ -11,6 +11,7 @@
 ### Fixed
 
 -   `MapParse` Submitted not being on a new line
+-   `MapParse` Mirror names
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/d155867d7b780b5e5c3f8b41adea4afad62849bf)</br>
 

@@ -996,8 +996,8 @@ function mirrors(setid: number, mapid: number) {
         'osu!': 'https://osu.ppy.sh/b/' + mapid,
         // 'Chimu': 'https://api.chimu.moe/v1/download/' + setid,
         'beatconnect.io': 'https://beatconnect.io/b/' + setid,
-        'kitsu.moe': 'https://kitsu.app/d/' + setid,
-        'nekoha.app': 'https://mirror.nekoha.moe/api4/download/' + setid,
+        'kitsu.app': 'https://kitsu.app/d/' + setid,
+        'nekoha.moe': 'https://mirror.nekoha.moe/api4/download/' + setid,
         'Preview (jmir)': 'https://osu-preview.jmir.xyz/preview#' + mapid,
         'Preview (try-z)': 'https://beatmap.try-z.net/?b=' + mapid,
     };
