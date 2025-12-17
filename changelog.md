@@ -8,7 +8,7 @@
 
 ## [5.6.0] - 2025-12-18
 
-[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/d155867d7b780b5e5c3f8b41adea4afad62849bf)</br>
 
 ### Fixed
 
