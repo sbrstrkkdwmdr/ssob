@@ -239,7 +239,7 @@ export class ScoreFormatter {
             clockRate: performance.getModSpeed(score.mods),
             stats: usestats,
             maxcombo: score.max_combo,
-            passedObjects: other.scoreTotalHits(score.statistics),
+            passedObjects: other.scoreTotalHits(score.statistics, score.ruleset_id),
             mapLastUpdated: new Date(score.ended_at),
             isLazer: !((score?.legacy_total_score ?? 1) > 0)
         });

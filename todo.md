@@ -4,8 +4,9 @@ newest-oldest
 
 ## current
 
-- [ ] graphs: disable ticks on strains graph
-- [ ] option to disable grid and legends
+- [x] `Recent` highlight section passed on map strains if score is fail
+- [x] graphs: disable ticks on strains graph
+- [x] option to disable grid and legends
 - [x] script to delete non-cache files in /dist/ before running `tsc`
 - [x] fix pong replying to itself instead of editing original message
 - [x] save emotes to config server id on start up

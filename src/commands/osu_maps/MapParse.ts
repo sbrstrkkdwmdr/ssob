@@ -398,7 +398,7 @@ export class MapParse extends OsuCommand {
                                     helper.emojis.gamemodes.standard
                         }` as Discord.APIMessageComponentEmoji)
                     .setLabel(`${this.map.version}`)
-                    .setDescription(`${this.map.difficulty_rating}⭐`)
+                    .setDescription(`${this.map.difficulty_rating.toFixed(2)}⭐`)
                     .setValue(`${this.map.id}`)
             );
         } else {
@@ -414,7 +414,7 @@ export class MapParse extends OsuCommand {
                                         helper.emojis.gamemodes.standard
                             }` as Discord.APIMessageComponentEmoji)
                         .setLabel(`${curmap.version}`)
-                        .setDescription(`${curmap.difficulty_rating}⭐`)
+                        .setDescription(`${curmap.difficulty_rating.toFixed(2)}⭐`)
                         .setValue(`${curmap.id}`)
                 );
             }
@@ -712,8 +712,7 @@ export class MapParse extends OsuCommand {
                 },
                 {
                     name: 'DOWNLOAD',
-                    value: `[osu!](https://osu.ppy.sh/b/${this.map.id}) | [Chimu](https://api.chimu.moe/v1/download${this.map.beatmapset_id}) | [Beatconnect](https://beatconnect.io/b/${this.map.beatmapset_id}) | [Kitsu](https://kitsu.io/d/${this.map.beatmapset_id})\n` +
-                        `[MAP PREVIEW](https://jmir.xyz/osu/preview.html#${this.map.id})`,
+                    value: Object.entries(mirrors(this.mapset.id, this.map.id)).map(([key, value]) => `[${key}](${value})`).join(' / '),
                     inline: false
                 }, // [osu!direct](osu://b/${this.map.id}) - discord doesn't support schemes other than http, https and discord
                 {
@@ -802,7 +801,7 @@ export class MapParse extends OsuCommand {
             x: numofval,
             y: [map.failtimes.fail, map.failtimes.exit],
             dataLabels: ['Fails', 'Exits'],
-            colours: [helper.colours.rainbowPastelRGB.red, helper.colours.rainbowPastelRGB.orange],
+            colours: [helper.colours.rainbowPastelRGB.red, helper.colours.rainbowPastelRGB.blue],
             settings: {},
         });
         const image = await graph.execute();
@@ -990,4 +989,16 @@ HP${allvals.hp != map.drain ? `${map.drain}=>${allvals.hp}` : allvals.hp}
         }
         return statusimg;
     }
+}
+
+function mirrors(setid: number, mapid: number) {
+    return {
+        'osu!': 'https://osu.ppy.sh/b/' + mapid,
+        // 'Chimu': 'https://api.chimu.moe/v1/download/' + setid,
+        'beatconnect.io': 'https://beatconnect.io/b/' + setid,
+        'kitsu.moe': 'https://kitsu.app/d/' + setid,
+        'nekoha.app': 'https://mirror.nekoha.moe/api4/download/' + setid,
+        'Preview (jmir)': 'https://osu-preview.jmir.xyz/preview#' + mapid,
+        'Preview (try-z)': 'https://beatmap.try-z.net/?b=' + mapid,
+    };
 }

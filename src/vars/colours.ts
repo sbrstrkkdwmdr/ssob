@@ -143,6 +143,7 @@ export const rainbowPastel = {
     green: '#BCFF75',
     blue: '#758CFF',
     purple: '#D775FF',
+    grey: '#9E9E9E',
 };
 export const rainbowPastelRGB = {
     red: 'rgb(255,117,117)',
@@ -151,6 +152,7 @@ export const rainbowPastelRGB = {
     green: 'rgb(118,255,117)',
     blue: 'rgb(117,140,255)',
     purple: 'rgb(215,117,255)',
+    grey: 'rgb('
 }
 
 

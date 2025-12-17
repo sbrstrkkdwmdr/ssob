@@ -115,7 +115,7 @@ export async function getEmbed(
 ) {
     const curscore = data.scoredata;
     const scorestats = data.scoredata.statistics;
-    let totalhits = other.scoreTotalHits(scorestats);
+    let totalhits = other.scoreTotalHits(scorestats, data.scoredata.ruleset_id);
 
     const overrides = calculate.modOverrides(curscore.mods);
     const perf = await performance.calcScore({

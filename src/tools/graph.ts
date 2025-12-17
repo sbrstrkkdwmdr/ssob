@@ -87,6 +87,7 @@ type GraphBuilderInput<T = GraphSettings> = {
     title?: string,
     displayGrid?: boolean,
     colours?: string[],
+    showDataLabels?: boolean,
     settings: T;
 };
 
@@ -100,7 +101,8 @@ export abstract class GraphBuilder {
     protected displayGrid: boolean = false;
     protected colours: string[] = colours_rgb;
     protected settings: GraphSettings;
-    constructor({ x, y, title, dataLabels, displayGrid, type, settings, colours }: GraphBuilderInput & { type: graphs; }) {
+    protected showDataLabels = true;
+    constructor({ x, y, title, dataLabels, displayGrid, type, settings, colours, showDataLabels }: GraphBuilderInput & { type: graphs; }) {
         this.x = x;
         this.y = y;
         this.dataLabels = dataLabels;
@@ -108,6 +110,8 @@ export abstract class GraphBuilder {
         if (displayGrid != null) this.displayGrid = displayGrid;
         if (colours != null) this.colours = colours;
         if (type != null) this.type = type;
+        if (showDataLabels != null) this.showDataLabels = showDataLabels;
+        else this.showDataLabels = y.length > 1;
         if (settings != null) this.settings = settings;
     }
     protected abstract validateSettings();
@@ -272,8 +276,8 @@ export abstract class GraphBuilder {
 
 export class LineGraphBuilder extends GraphBuilder {
     declare protected settings: LineGraphSettings;
-    constructor({ x, y, dataLabels, title, displayGrid, settings, colours }: GraphBuilderInput<LineGraphSettings>) {
-        super({ x, y, dataLabels, title, displayGrid, settings, colours, type: 'line' });
+    constructor({ x, y, dataLabels, title, displayGrid, settings, colours, showDataLabels }: GraphBuilderInput<LineGraphSettings>) {
+        super({ x, y, dataLabels, title, displayGrid, settings, colours, type: 'line', showDataLabels });
     }
     protected validateSettings() {
         if (!isSet(this.settings.isCurved)) {
@@ -320,11 +324,11 @@ export class LineGraphBuilder extends GraphBuilder {
         return {
             plugins: {
                 legend: {
-                    display: this.y.length > 1
+                    display: this.showDataLabels
                 },
                 title: {
-                    display: Boolean(this.title),
-                    title: this.title,
+                    display: true,
+                    title: this.title ?? 'test title',
                 },
             },
             scales: {
@@ -369,8 +373,8 @@ export class LineGraphBuilder extends GraphBuilder {
 
 export class BarGraphBuilder extends GraphBuilder {
     declare protected settings: BarGraphSettings;
-    constructor({ x, y, dataLabels, title, displayGrid, settings, colours, }: GraphBuilderInput<BarGraphSettings>) {
-        super({ x, y, dataLabels, title, displayGrid, settings, colours, type: 'bar' });
+    constructor({ x, y, dataLabels, title, displayGrid, settings, colours, showDataLabels }: GraphBuilderInput<BarGraphSettings>) {
+        super({ x, y, dataLabels, title, displayGrid, settings, colours, type: 'bar', showDataLabels });
     }
     protected validateSettings() {
 
@@ -392,7 +396,7 @@ export class BarGraphBuilder extends GraphBuilder {
         return {
             plugins: {
                 legend: {
-                    display: this.y.length > 1
+                    display: this.showDataLabels
                 },
                 title: {
                     display: Boolean(this.title),

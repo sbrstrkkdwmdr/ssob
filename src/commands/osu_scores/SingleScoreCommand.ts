@@ -38,6 +38,7 @@ export class SingleScoreCommand extends OsuCommand {
             this.map.count_circles,
             this.map.count_sliders,
             this.map.count_spinners,
+            this.score.ruleset_id
         );
 
         const [perfs, ppissue, fcflag] = await this.perf(failed);
@@ -148,17 +149,56 @@ export class SingleScoreCommand extends OsuCommand {
             data.debug({ error: error }, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
             log.stdout(error);
         }
-        const graph = new LineGraphBuilder({
-            x: strains.strainTime,
-            y: [strains.value],
-            title: 'Strains',
-            dataLabels: ['Strains'],
-            colours: [helper.colours.rainbowPastelRGB.yellow],
-            settings: {
-                isCurved: true,
-                fill: true,
+        const failed = other.scoreIsComplete(
+            this.score.statistics,
+            this.map.count_circles,
+            this.map.count_sliders,
+            this.map.count_spinners,
+            score.ruleset_id
+        );
+        return await this.graph(strains.strainTime, strains.value, failed.percentage / 100);
+    }
+    async graph(x: any[], y: number[], point: number = -1) {
+        let graph: LineGraphBuilder;
+        if (point == -1 || point >= 1) {
+            graph = new LineGraphBuilder({
+                x: x,
+                y: [y],
+                title: 'Strains',
+                dataLabels: ['Strains'],
+                colours: [helper.colours.rainbowPastelRGB.yellow],
+                settings: {
+                    isCurved: true,
+                    fill: true,
+                }
+            });
+        } else {
+            const y1: number[] = [];
+            const y2: number[] = [];
+            const exactPoint = Math.ceil(y.length * point);
+            for (let i = 0; i < y.length; i++) {
+                const elem = y[i];
+                if (i < exactPoint) {
+                    y1.push(elem);
+                    y2.push(0);
+                } else {
+                    y2.push(elem);
+                    y1.push(0);
+                }
             }
-        });
+            graph = new LineGraphBuilder({
+                x: x,
+                y: [y1, y2],
+                title: 'Strains',
+                dataLabels: ['Passed', 'Failed'],
+                showDataLabels: false,
+                colours: [helper.colours.rainbowPastelRGB.green, helper.colours.rainbowPastel.grey],
+                settings: {
+                    isCurved: true,
+                    fill: true,
+                }
+            });
+        }
         const image = await graph.execute();
         this.ctn.files = [image.path];
         return image.filename + '.jpg';
