@@ -6,6 +6,36 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.6.0] - 2025-12-18
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/d155867d7b780b5e5c3f8b41adea4afad62849bf)</br>
+
+### Fixed
+
+-   (docs) `ScoreListCommand` - missing star rating option for score sorting
+-   (docs) "Formatted as" being on the same line as arg description
+-   (docs) `ScoreListCommand` - sort by default is now recent on some lists
+-   method `scoreIsComplete` returning incorrect percentage
+-   `Recent` page buttons now disable based
+
+### Changed
+
+-   (docs) show arg options
+-   (docs) "default" values are now encased in code blocks
+-   update rosu-pp-js to `3.1.0`
+-   `Simulate` - params equal to 0 are no longer treated as null
+-   `Simulate` - score statistics are no longer automatically taken from the most recent score (can be re-enabled with `-prev`)
+-   strain graphs are now filled line charts
+-   `MapParse` now show both fail and exit times in detailed mode
+-   `MapParse` update shown mirrors
+-   `MapParse` difficulty rating in select menus rounds to 2 decimal places
+-   `Recent`, `ScoreParse` strains graph highlights passed section for failed scores
+
+### Refactor
+
+-   move map folder creation from calcScore to map download method
+-   rework graphs
+
 ## [5.5.0] - 2025-11-01
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/bfa78bbf0f23ef903fcceb9cc9fd12810c296154)</br>

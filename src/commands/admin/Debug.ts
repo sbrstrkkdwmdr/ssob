@@ -285,9 +285,9 @@ Joined(EPOCH):  ${member.joinedTimestamp}
             if (file.includes('mapdata')) {
                 const data = (JSON.parse(fs.readFileSync(directory + '/' + file, 'utf-8'))) as osuapi.types_v2.Beatmap;
                 if (type.includes('name')) {
-                    acceptFiles.push(`[\`${(data.beatmapset.title)} [${data.version}]\`](https://osu.ppy.sh/b/${data.id}) (${data.status})`);
+                    acceptFiles.push(`(${data.status[0].toUpperCase()}) [\`${(data.beatmapset.title)} [${data.version}]\`](https://osu.ppy.sh/b/${data.id})`);
                 } else {
-                    acceptFiles.push(`[${data.id}](https://osu.ppy.sh/b/${data.id}) (${data.status})`);
+                    acceptFiles.push(`(${data.status[0].toUpperCase()}) [${data.id}](https://osu.ppy.sh/b/${data.id})`);
                 }
             }
         }

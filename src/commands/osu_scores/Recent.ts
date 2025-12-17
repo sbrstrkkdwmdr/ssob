@@ -137,6 +137,11 @@ export class Recent extends SingleScoreCommand {
         if (this.input.buttonType == 'BigRightArrow') {
             this.params.page = this.scores.length - 1;
         }
+        this.disablePageButtons_check(pgbuttons,
+            this.scores.length <= 1,
+            this.params.page <= 0,
+            this.params.page >= this.scores.length - 1,
+        );
 
         this.score = this.scores[this.params.page];
         if (!this.score || this.score == undefined || this.score == null) {

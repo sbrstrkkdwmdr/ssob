@@ -289,7 +289,8 @@ export class ScoreStats extends OsuCommand {
                     stats: score.statistics,
                     accuracy: score.accuracy,
                     maxcombo: score.max_combo,
-                    mapLastUpdated: new Date(score.beatmap.last_updated)
+                    mapLastUpdated: new Date(score.beatmap.last_updated),
+                    isLazer: !((score?.legacy_total_score ?? 1) > 0)
                 }));
         }
         return calculations;

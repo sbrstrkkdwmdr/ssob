@@ -2,6 +2,7 @@ import * as canvas from 'canvas';
 import * as chartjs from 'chart.js/auto';
 import Discord from 'discord.js';
 import fs from 'fs';
+import { Jimp } from 'jimp';
 import * as osuclasses from 'osu-classes';
 import * as osuparsers from 'osu-parsers';
 import * as rosu from 'rosu-pp-js';
@@ -255,399 +256,6 @@ export function censorConfig() {
     };
 }
 
-/**
- * times formatted as yyyy-mm-ddThh:mm
- */
-export function timeForGraph(times: string[]) {
-    const reformattedTimes: string[] = [];
-    for (const time of times) {
-        if (time.includes('T')) {
-            if (time.includes('00:00')) {
-                reformattedTimes.push(time.split('T')[0]);
-
-            } else {
-                reformattedTimes.push(time.split('T')[1]);
-            }
-        } else {
-            reformattedTimes.push(time);
-        }
-    }
-    return reformattedTimes;
-}
-
-type graphInput = {
-    x: number[] | string[];
-    y: number[];
-    label: string;
-    other: {
-        startzero?: boolean,
-        fill?: boolean,
-        displayLegend?: boolean,
-        lineColour?: string,
-        pointSize?: number;
-        gradient?: boolean;
-        type?: 'line' | 'bar';
-        stacked?: boolean;
-        title?: string;
-        showAxisX?: boolean;
-        showAxisY?: boolean;
-        stacksSeparate?: boolean;
-        reverse?: boolean;
-        imgUrl?: string;
-        blurImg?: boolean;
-        barOutline?: true;
-    };
-    extra?: {
-        data: number[];
-        label: string;
-        separateAxis: boolean;
-        customStack?: number;
-        reverse?: boolean;
-    }[];
-};
-
-/**
- * 
- * @param x 
- * @param y 
- * @param label name of graph
- * @param lineColour colour of graph line written as rgb(x, y, z)
- * @returns path to the graph
- */
-export function graph({ x, y, label, other, extra = [] }: graphInput) {
-    const builder = new GraphBuilder({ x, y, label, other, extra });
-    return builder.execute();
-}
-
-export class GraphBuilder {
-    x: string[];
-    y: number[];
-    label: string;
-    other: {
-        startzero?: boolean,
-        fill?: boolean,
-        displayLegend?: boolean,
-        lineColour?: string,
-        pointSize?: number;
-        gradient?: boolean;
-        type?: 'line' | 'bar';
-        stacked?: boolean;
-        title?: string;
-        showAxisX?: boolean;
-        showAxisY?: boolean;
-        stacksSeparate?: boolean;
-        reverse?: boolean;
-        imgUrl?: string;
-        blurImg?: boolean;
-        barOutline?: true;
-    };
-    extra?: {
-        data: number[];
-        label: string;
-        separateAxis: boolean;
-        customStack?: number;
-        reverse?: boolean;
-    }[];
-    highlightPoints?: number[];
-    constructor({ x, y, label, other, extra = [] }: graphInput) {
-        this.x = x.map((foo: string | number) => typeof foo == 'string' ? foo : foo + '');
-        this.y = y;
-        this.label = label;
-        this.other = other;
-        this.extra = extra;
-    };
-    checkSettings() {
-        if (this.other.startzero == null || typeof this.other.startzero == 'undefined') {
-            this.other.startzero = true;
-        }
-        if (this.other.fill == null || typeof this.other.fill == 'undefined') {
-            this.other.fill = false;
-        }
-        if (this.other.displayLegend == null || this.other.displayLegend == undefined || typeof this.other.displayLegend == 'undefined') {
-            this.other.displayLegend = false;
-        }
-        if (this.other.type == null || this.other.type == undefined || typeof this.other.displayLegend == 'undefined') {
-            this.other.type = 'line';
-        }
-    }
-    checkData() {
-        if (this.y.length > 200) {
-            let curx: string[] = [];
-            let cury: number[] = [];
-            const div = this.y.length / 200;
-            for (let i = 0; i < 200; i++) {
-                const offset = Math.ceil(i * div);
-                const curval = this.y[offset];
-                const xval = this.x[offset];
-                cury.push(curval);
-                curx.push(xval);
-            }
-            this.x = curx;
-            this.y = cury;
-        }
-        const isNumbered = this.x.filter(x => typeof x == 'number');
-        if (isNumbered.length > 0) {
-            let temp: string[] = [];
-            for (const value of this.x) {
-                temp.push(value + '');
-            }
-            this.x = temp;
-        }
-    }
-    protected datasets: helper.tooltypes.dataset[];
-    protected secondary = {
-        axis: false,
-        reverse: false,
-    };
-    primaryData() {
-        this.datasets = [{
-            label: this.label,
-            data: this.y,
-            fill: this.other.fill,
-            borderColor: this.other.lineColour ?? 'rgb(101, 101, 135)',
-            borderWidth: 1,
-            pointRadius: this.other.pointSize ?? 2,
-            yAxisID: '1y'
-        }];
-        if (this.other?.stacked == true) {
-            this.datasets[0]['stack'] = 'Stack 0';
-        }
-    }
-    extraData() {
-        if (!(this.extra == null || this.extra == undefined)) {
-            const diff = 360 / Math.floor(this.extra.length);
-            let i = 1;
-            for (const newData of this.extra) {
-                i = this.extraDataItem(newData, i, diff);
-            }
-        }
-    }
-    extraDataItem(data: {
-        data: number[];
-        label: string;
-        separateAxis: boolean;
-        customStack?: number;
-        reverse?: boolean;
-    }, index: number, diff: number) {
-        if (data?.data?.length > 0) {
-            const nHSV = colourcalc.rgbToHsv(101, 101, 135);
-            const newclr = colourcalc.hsvToRgb(nHSV.h + (diff * index), nHSV.s, nHSV.v);
-            const xData = {
-                label: data.label,
-                data: data.data,
-                fill: this.other.fill,
-                borderColor: this.other.lineColour ?? `rgb(${newclr})`,
-                borderWidth: 1,
-                pointRadius: this.other.pointSize ?? 2,
-                yAxisID: data.separateAxis ? '2y' : '1y'
-            };
-            if (data.reverse) this.secondary.reverse = true;
-            if (this.other?.type == 'bar' && this.other?.stacked == true && this.other?.stacksSeparate == true) {
-                data.customStack ?
-                    xData['stack'] = `Stack ${data.customStack}` :
-                    xData['stack'] = 'Stack 0';
-            }
-            this.datasets.push(xData);
-            if (data.separateAxis) this.secondary.axis = true;
-            return index++;
-        }
-        return index;
-    }
-    protected get defaultConfig_old() {
-        return {
-            legend: {
-                display: this.other.displayLegend
-            },
-            title: {
-                display: this.other?.title ? true : false,
-                title: this.other?.title ?? 'No title'
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        color: 'rgb(128, 128, 128)'
-                    },
-                    grid: {
-                        display: true,
-                        drawOnChartArea: true,
-                        drawTicks: true,
-                        color: 'rgb(64, 64, 64)'
-                    }
-                },
-                y: {
-                    ticks: {
-                        color: 'rgb(128, 128, 128)'
-                    },
-                    grid: {
-                        display: true,
-                        drawOnChartArea: true,
-                        drawTicks: true,
-                        color: 'rgb(64, 64, 64)'
-                    }
-                },
-                xAxes: [
-                    {
-                        display: true,
-                        ticks: {
-                            autoSkip: true,
-                            maxTicksLimit: 10
-                        },
-                    }
-                ],
-                yAxes: [
-                    {
-                        id: '1y',
-                        type: 'linear',
-                        position: 'left',
-                        display: true,
-                        ticks: {
-                            reverse: this.other.reverse,
-                            beginAtZero: this.other.startzero
-                        },
-                    }, {
-                        id: '2y',
-                        type: 'linear',
-                        position: 'right',
-                        display: this.secondary.axis,
-                        ticks: {
-                            reverse: this.secondary.reverse,
-                            beginAtZero: this.other.startzero
-                        },
-                    }
-                ]
-            },
-        };
-    }
-    protected get config_old() {
-        const cfgopts = this.defaultConfig_old;
-        if (this.other?.type == 'bar') {
-            cfgopts['elements'] = {
-                backgroundColor: this.other.lineColour ?? 'rgb(101, 101, 135)',
-                borderColor: this.other?.barOutline ? 'rgb(255, 255, 255)' : this.other.lineColour ?? 'rgb(101, 101, 135)',
-                borderWidth: 2
-            };
-        }
-        if (this.other?.type == 'bar' && this.other?.stacked == true) {
-            for (const elem of cfgopts['scales']['xAxes']) {
-                elem['stacked'] = this.other.stacked ?? false;
-            }
-            for (const elem of cfgopts['scales']['yAxes']) {
-                elem['stacked'] = this.other.stacked ?? false;
-            }
-        }
-        return cfgopts;
-    }
-    protected get xTicks() {
-        return {
-            color: 'rgb(128, 128, 128)',
-            backdropColor: 'rgb(128, 128, 128)',
-            callback: function (value, index, values) {
-                // if (highlightPoints && highlightPoints.includes(index)) {
-                //     this.backgroundColor = 'rgb(128, 128, 128)';
-                // }
-                // this.backgroundColor = 'rgb(255, 0, 0)';
-                return '';
-            }
-        };
-    }
-    protected get xGrid() {
-        return {
-            display: true,
-            drawOnChartArea: true,
-            drawTicks: true,
-            color: 'rgb(64, 64, 64)'
-        };
-    }
-    protected get yTicksPrimary() {
-        return {
-            color: 'rgb(128, 128, 128)',
-            // beginAtZero: other.startzero
-        };
-    }
-    protected get yGrid() {
-        return {
-            display: true,
-            drawOnChartArea: true,
-            drawTicks: true,
-            color: 'rgb(64, 64, 64)'
-        };
-    }
-    protected get yPrimary() {
-        return {
-            position: 'left' as helper.tooltypes.graphPosition,
-            reverse: this.other.reverse,
-            beginAtZero: this.other.startzero,
-            ticks: this.yTicksPrimary,
-            grid: this.yGrid,
-        };
-    }
-    protected get ySecondary() {
-        return {
-            position: 'right' as helper.tooltypes.graphPosition,
-            display: this.secondary.axis,
-            reverse: this.secondary.reverse,
-            ticks: {
-                // beginAtZero: other.startzero,
-            },
-        };
-    }
-    protected get scales() {
-        return {
-            x: {
-                ticks: this.xTicks,
-                grid: this.xGrid,
-            },
-            y: this.yPrimary,
-            y1: this.ySecondary,
-        };
-    }
-    canvas: canvas.Canvas;
-    protected createChart() {
-        this.canvas = canvas.createCanvas(1500, 500);
-        const ctx = this.canvas.getContext("2d");
-        const chart = new chartjs.Chart(ctx, {
-            type: this.other?.type ?? 'line',
-            data: {
-                labels: this.x,
-                datasets: this.datasets
-            },
-            options: {
-                scales: this.scales
-            },
-            plugins: [{
-                id: 'customImage',
-                beforeDraw: (chart) => {
-                    // console.log(chart.chartArea);
-                }
-            }]
-        });
-        return chart;
-    }
-    writeToFile() {
-        const filename = `${(new Date).getTime()}`;
-        let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
-        try {
-            const buffer = this.canvas.toBuffer();
-            fs.writeFileSync(curt, buffer);
-        } catch (err) {
-            log.stdout(err);
-            curt = `${helper.path.precomp}/files/blank_graph.png`;
-        }
-        return {
-            path: curt,
-            filename
-        };
-    }
-    execute() {
-        this.checkSettings();
-        this.checkData();
-        this.primaryData();
-        this.extraData();
-        this.createChart();
-        return this.writeToFile();
-    }
-}
-
 export function formatHours(arr: string[]) {
     if (!Array.isArray(arr) || arr.length === 0) {
         return "";
@@ -701,12 +309,17 @@ export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     return newArr;
 }
 
-export function scoreTotalHits(stats: osuapi.types_v2.ScoreStatistics) {
-    let total = 0;
-    for (const value in stats) {
-        total += stats[value];
+export function scoreTotalHits(stats: osuapi.types_v2.ScoreStatistics, ruleset: osuapi.Ruleset) {
+    switch (ruleset) {
+        case osuapi.Ruleset.osu: default:
+            return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+        case osuapi.Ruleset.taiko:
+            return stats.great + (stats.good ?? 0) + (stats.miss ?? 0);
+        case osuapi.Ruleset.fruits:
+            return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + stats.small_tick_hit + (stats.miss ?? 0);
+        case osuapi.Ruleset.mania:
+            return (stats.perfect ?? 0) + stats.great + stats.good + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
     }
-    return total;
 }
 
 export function scoreIsComplete(
@@ -714,8 +327,9 @@ export function scoreIsComplete(
     circles: number,
     sliders: number,
     spinners: number,
+    ruleset: osuapi.Ruleset
 ) {
-    let total = scoreTotalHits(stats);
+    let total = scoreTotalHits(stats, ruleset);
     return {
         passed: total == circles + sliders + spinners,
         objectsHit: total,
@@ -870,4 +484,38 @@ export function listItems(list: string[]) {
         return list[0];
     }
     return string;
+}
+
+export function objectIsEmpty(data: object, disallowNull = true, disallowNaN = true, disallowEmptyString = true): boolean {
+    if (Object.keys(data).length == 0) return true;
+    let temp = 0;
+    for (const value of Object.values(data)) {
+        if (dataIsEmpty(value)) {
+            temp++;
+        }
+    }
+    return temp == Object.keys(data).length;
+}
+
+export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true, disallowEmptyString = true): boolean {
+    const expressions = [
+        () => (value == undefined),
+        () => (value == null && disallowNull),
+        () => (typeof value == "number" && isNaN(value) && disallowNaN),
+        () => (typeof value == "string" && value.length == 0 && disallowEmptyString),
+        () => (typeof value == "object" && objectIsEmpty(value, disallowNull, disallowNaN, disallowEmptyString)),
+    ];
+    for (const ex of expressions) {
+        if (ex()) return true;
+    }
+    return false;
+}
+
+/**
+ * similar to PHPs isset() function
+ * 
+ * checks if a value has been set or not
+ */
+export function isSet(value: any) {
+    return (value != null && value != undefined);
 }

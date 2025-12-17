@@ -6,6 +6,7 @@ import * as calculate from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
+import { BarGraphBuilder, LineGraphBuilder } from '../../tools/graph';
 import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
@@ -397,7 +398,7 @@ export class MapParse extends OsuCommand {
                                     helper.emojis.gamemodes.standard
                         }` as Discord.APIMessageComponentEmoji)
                     .setLabel(`${this.map.version}`)
-                    .setDescription(`${this.map.difficulty_rating}⭐`)
+                    .setDescription(`${this.map.difficulty_rating.toFixed(2)}⭐`)
                     .setValue(`${this.map.id}`)
             );
         } else {
@@ -413,7 +414,7 @@ export class MapParse extends OsuCommand {
                                         helper.emojis.gamemodes.standard
                             }` as Discord.APIMessageComponentEmoji)
                         .setLabel(`${curmap.version}`)
-                        .setDescription(`${curmap.difficulty_rating}⭐`)
+                        .setDescription(`${curmap.difficulty_rating.toFixed(2)}⭐`)
                         .setValue(`${curmap.id}`)
                 );
             }
@@ -502,7 +503,8 @@ export class MapParse extends OsuCommand {
                 customAR: this.params.customAR,
                 customOD: this.params.customOD,
                 customHP: this.params.customHP,
-                mapLastUpdated: new Date(map.last_updated)
+                mapLastUpdated: new Date(map.last_updated),
+                isLazer: true,
             });
             ppissue = '';
             try {
@@ -642,7 +644,8 @@ export class MapParse extends OsuCommand {
             customAR: +this.params.customAR,
             customOD: +this.params.customOD,
             customHP: +this.params.customHP,
-            mapLastUpdated: new Date(map.last_updated)
+            mapLastUpdated: new Date(map.last_updated),
+            isLazer: true,
         });
     }
     protected async embedStart(map: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[], buttons: Discord.ActionRowBuilder) {
@@ -709,8 +712,7 @@ export class MapParse extends OsuCommand {
                 },
                 {
                     name: 'DOWNLOAD',
-                    value: `[osu!](https://osu.ppy.sh/b/${this.map.id}) | [Chimu](https://api.chimu.moe/v1/download${this.map.beatmapset_id}) | [Beatconnect](https://beatconnect.io/b/${this.map.beatmapset_id}) | [Kitsu](https://kitsu.io/d/${this.map.beatmapset_id})\n` +
-                        `[MAP PREVIEW](https://jmir.xyz/osu/preview.html#${this.map.id})`,
+                    value: Object.entries(mirrors(this.mapset.id, this.map.id)).map(([key, value]) => `[${key}](${value})`).join(' / '),
                     inline: false
                 }, // [osu!direct](osu://b/${this.map.id}) - discord doesn't support schemes other than http, https and discord
                 {
@@ -769,22 +771,19 @@ export class MapParse extends OsuCommand {
         }
         let mapgraph: string;
         if (strains) {
-            const mapgraphInit = other.graph({
+            const graph = new LineGraphBuilder({
                 x: strains.strainTime,
-                y: strains.value,
-                label: 'Strains',
-                other: {
-                    startzero: true,
-                    type: 'bar',
+                y: [strains.value],
+                dataLabels: ['Strains'],
+                colours: [helper.colours.rainbowPastelRGB.yellow],
+                settings: {
+                    isCurved: true,
                     fill: true,
-                    displayLegend: false,
-                    title: 'Strains',
-                    imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-                    blurImg: true,
                 }
             });
-            this.ctn.files.push(mapgraphInit.path);
-            mapgraph = mapgraphInit.filename;
+            const image = await graph.execute();
+            this.ctn.files.push(image.path);
+            mapgraph = image.filename;
         } else {
             mapgraph = null;
         }
@@ -797,27 +796,18 @@ export class MapParse extends OsuCommand {
         for (let i = 0; i < failval.length; i++) {
             numofval.push(`${i}s`);
         }
-        const passInit = other.graph({
-            x: numofval,
-            y: map.failtimes.fail,
-            label: 'Fails',
-            other: {
-                stacked: true,
-                type: 'bar',
-                showAxisX: false,
-                title: 'Fail times',
-                imgUrl: osuapi.other.beatmapImages(this.map.beatmapset_id).full,
-                blurImg: true,
-            },
-            extra: [{
-                data: map.failtimes.exit,
-                label: 'Exits',
-                separateAxis: false,
-            }]
-        });
-        this.ctn.files.push(passInit.path);
 
-        const passurl = passInit.filename;
+        const graph = new BarGraphBuilder({
+            x: numofval,
+            y: [map.failtimes.fail, map.failtimes.exit],
+            dataLabels: ['Fails', 'Exits'],
+            colours: [helper.colours.rainbowPastelRGB.red, helper.colours.rainbowPastelRGB.blue],
+            settings: {},
+        });
+        const image = await graph.execute();
+        this.ctn.files.push(image.path);
+        const passurl = image.filename;
+
         const passEmbed = new Discord.EmbedBuilder()
             .setURL(`https://osu.ppy.sh/beatmapsets/${this.map.beatmapset_id}#${map.mode}/${this.map.id}`)
             .setImage(`attachment://${passurl}.jpg`);
@@ -999,4 +989,16 @@ HP${allvals.hp != map.drain ? `${map.drain}=>${allvals.hp}` : allvals.hp}
         }
         return statusimg;
     }
+}
+
+function mirrors(setid: number, mapid: number) {
+    return {
+        'osu!': 'https://osu.ppy.sh/b/' + mapid,
+        // 'Chimu': 'https://api.chimu.moe/v1/download/' + setid,
+        'beatconnect.io': 'https://beatconnect.io/b/' + setid,
+        'kitsu.moe': 'https://kitsu.app/d/' + setid,
+        'nekoha.app': 'https://mirror.nekoha.moe/api4/download/' + setid,
+        'Preview (jmir)': 'https://osu-preview.jmir.xyz/preview#' + mapid,
+        'Preview (try-z)': 'https://beatmap.try-z.net/?b=' + mapid,
+    };
 }

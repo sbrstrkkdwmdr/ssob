@@ -62,8 +62,7 @@ export function heapLoop() {
 
 function checkHeap() {
     const sl = v8.getHeapStatistics();
-    log.stdout(toMiB(sl.heap_size_limit) + ' MiB Heap Limit');
-    log.stdout(toMiB(sl.used_heap_size).toFixed(2) + ' MiB Heap Used');
+    log.stdout(toMiB(sl.used_heap_size).toFixed(2) + 'MiB / ' + toMiB(sl.heap_size_limit) + 'MiB Heap Used');
 }
 
 function toMiB(number: number) {

@@ -53,6 +53,7 @@ export type dataset = {
     label: string,
     data: number[];
     fill: boolean,
+    backgroundColor: string | ((colour) => string),
     borderColor: string | ((colour) => string),
     borderWidth: number,
     pointRadius: number,

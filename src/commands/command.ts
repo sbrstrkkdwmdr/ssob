@@ -179,6 +179,14 @@ export class Command {
             this.params[paramKey] = this.forceType(this.input.overrides[oKey], type);
         }
     }
+    /**
+     * 
+     */
+    protected isValidParam(value: any){
+        if(value == null) return false;
+        if(value == undefined) return false;
+        return true;
+    }
     private forceType(value: any, type: 'string' | 'number') {
         switch (type) {
             case 'string':
@@ -230,6 +238,12 @@ export class Command {
             component.setDisabled(true);
         }
     }
+    /**
+     * @param builder action row component containing page buttons
+     * @param allCondition if true, disable all buttons
+     * @param startCondition if true, disable first and previous
+     * @param endCondition if true, disable next and end
+     */
     protected disablePageButtons_check(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>, allCondition: boolean, startCondition: boolean, endCondition: boolean) {
         if (allCondition || (startCondition && endCondition)) {
             this.disableButtons(builder);

@@ -6,6 +6,7 @@ import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
+import { LineGraphBuilder } from '../../tools/graph';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import { OsuCommand } from '../command';
@@ -62,22 +63,23 @@ export class ReplayParse extends SingleScoreCommand {
             return;
         }
 
-        const chartInit = other.graph({
+        const graph = new LineGraphBuilder({
             x: score.replay.lifeBar.map(x => calculate.secondsToTime(x.startTime / 1000)),
-            y: score.replay.lifeBar.map(x => Math.floor(x.health * 100)),
-            label: 'Health',
-            other: {
-                fill: false,
-                startzero: true,
-                pointSize: 0,
-                gradient: true
+            y: [score.replay.lifeBar.map(x => Math.floor(x.health * 100))],
+            dataLabels: ['Health'],
+            colours: [helper.colours.rainbowPastelRGB.green],
+            title: 'Health',
+            settings: {
+                fill: true,
             }
         });
+        const image = await graph.execute();
+        this.ctn.files = [image.path];
 
-        const chartFile = new Discord.AttachmentBuilder(chartInit.path);
+        const chartFile = new Discord.AttachmentBuilder(image.path);
 
         const e = await this.renderEmbed();
-        e.setImage(`attachment://${chartInit.filename}.jpg`);
+        e.setImage(`attachment://${image.filename}.jpg`);
         this.ctn.embeds = [e];
         this.ctn.files = [chartFile];
         await this.send();

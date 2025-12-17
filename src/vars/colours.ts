@@ -1,6 +1,6 @@
 import * as colourcalc from '../tools/colourcalc';
 
-const diffcolour = [
+export const diffcolour = [
     {
         dec: 5554943,
         hex: '#54C2FF',
@@ -60,7 +60,7 @@ const diffcolour = [
 
 ];
 
-const embedColour = {
+export const embedColour = {
     score: {
         hex: '#DF7FFF',
         dec: colourcalc.hexToDec('#DF7FFF'),
@@ -136,5 +136,23 @@ export const rainbow = {
     violet: '#9400D3',
 };
 
-export { diffcolour, embedColour };
+export const rainbowPastel = {
+    red: '#FF7575',
+    orange: '#FFA775',
+    yellow: '#FFF375',
+    green: '#BCFF75',
+    blue: '#758CFF',
+    purple: '#D775FF',
+    grey: '#9E9E9E',
+};
+export const rainbowPastelRGB = {
+    red: 'rgb(255,117,117)',
+    orange: 'rgb(255,167,117)',
+    yellow: 'rgb(255,243,117)',
+    green: 'rgb(118,255,117)',
+    blue: 'rgb(117,140,255)',
+    purple: 'rgb(215,117,255)',
+    grey: 'rgb('
+}
+
 

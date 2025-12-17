@@ -5,12 +5,12 @@ import * as helper from '../../helper';
 import * as calculate from '../../tools/calculate';
 import * as data from '../../tools/data';
 import * as formatters from '../../tools/formatters';
+import { LineGraphBuilder } from '../../tools/graph';
 import * as log from '../../tools/log';
 import * as osuapi from '../../tools/osuapi';
 import * as other from '../../tools/other';
 import * as performance from '../../tools/performance';
 import { OsuCommand } from '../command';
-
 export class SingleScoreCommand extends OsuCommand {
     protected type: 'recent' | 'default';
     constructor() {
@@ -38,6 +38,7 @@ export class SingleScoreCommand extends OsuCommand {
             this.map.count_circles,
             this.map.count_sliders,
             this.map.count_spinners,
+            this.score.ruleset_id
         );
 
         const [perfs, ppissue, fcflag] = await this.perf(failed);
@@ -103,6 +104,7 @@ export class SingleScoreCommand extends OsuCommand {
                 this.score?.ruleset_id ?? this.map?.mode_int ?? 0,
                 this.score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
                 this.score.accuracy,
+                !((this.score?.legacy_total_score ?? 1) > 0),
                 overrides.speed,
                 this.score.statistics,
                 this.score.max_combo,
@@ -147,22 +149,59 @@ export class SingleScoreCommand extends OsuCommand {
             data.debug({ error: error }, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'strains');
             log.stdout(error);
         }
-        let strainsgraph = other.graph({
-            x: strains.strainTime,
-            y: strains.value,
-            label: 'Strains',
-            other: {
-                startzero: true,
-                type: 'bar',
-                fill: true,
-                displayLegend: false,
+        const failed = other.scoreIsComplete(
+            this.score.statistics,
+            this.map.count_circles,
+            this.map.count_sliders,
+            this.map.count_spinners,
+            score.ruleset_id
+        );
+        return await this.graph(strains.strainTime, strains.value, failed.percentage / 100);
+    }
+    async graph(x: any[], y: number[], point: number = -1) {
+        let graph: LineGraphBuilder;
+        if (point == -1 || point >= 1) {
+            graph = new LineGraphBuilder({
+                x: x,
+                y: [y],
                 title: 'Strains',
-                imgUrl: osuapi.other.beatmapImages(map.beatmapset_id).full,
-                blurImg: true,
+                dataLabels: ['Strains'],
+                colours: [helper.colours.rainbowPastelRGB.yellow],
+                settings: {
+                    isCurved: true,
+                    fill: true,
+                }
+            });
+        } else {
+            const y1: number[] = [];
+            const y2: number[] = [];
+            const exactPoint = Math.ceil(y.length * point);
+            for (let i = 0; i < y.length; i++) {
+                const elem = y[i];
+                if (i < exactPoint) {
+                    y1.push(elem);
+                    y2.push(0);
+                } else {
+                    y2.push(elem);
+                    y1.push(0);
+                }
             }
-        });
-        this.ctn.files = [strainsgraph.path];
-        return strainsgraph.filename + '.jpg';
+            graph = new LineGraphBuilder({
+                x: x,
+                y: [y1, y2],
+                title: 'Strains',
+                dataLabels: ['Passed', 'Failed'],
+                showDataLabels: false,
+                colours: [helper.colours.rainbowPastelRGB.green, helper.colours.rainbowPastel.grey],
+                settings: {
+                    isCurved: true,
+                    fill: true,
+                }
+            });
+        }
+        const image = await graph.execute();
+        this.ctn.files = [image.path];
+        return image.filename + '.jpg';
     }
     getTryCount(scores: osuapi.types_v2.Score[], mapid: number) {
         let trycount = 1;

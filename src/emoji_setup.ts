@@ -76,7 +76,6 @@ export async function setup() {
         }
         setEmoji(emoji, tempemo.id);
     }
-    console.log(helper.emojis);
 }
 
 async function delay(amt: number) {

@@ -117,7 +117,7 @@ async function generate() {
                     argdesc.className = 'argDesc';
                     argdesc.innerHTML = markdown(arg.description);
                     if (arg.defaultValue && arg.defaultValue != 'null' && arg.defaultValue != 'N/A') {
-                        argdesc.innerHTML += '<br>Defaults to ' + arg.defaultValue + '<br>';
+                        argdesc.innerHTML += '<br>Defaults to <code>' + arg.defaultValue + '</code>';
                     }
 
                     const argctn = document.createElement('div');
@@ -129,8 +129,12 @@ async function generate() {
                             arg.format[0] != 'foo'
                         )
                     ) {
-                        argdesc.innerHTML += 'Formatted as: ' +
+                        argdesc.innerHTML += '<br>Formatted as: ' +
                             arg.format.map(x => '<code>' + x + '</code>').join(' ');
+                    }
+                    if (arg.options) {
+                        argdesc.innerHTML += '<br>Options: ' +
+                            arg.options.map(x => '<code>' + x + '</code>').join(' ');
                     }
                     args.appendChild(argctn);
                 }

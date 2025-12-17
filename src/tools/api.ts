@@ -3,6 +3,10 @@ import * as fs from 'fs';
 import * as helper from '../helper';
 import * as log from './log';
 export async function dlMap(mapid: number | string, curCall: number, lastUpdated: Date) {
+    if (!fs.existsSync(helper.path.main + '/files/maps/')) {
+        log.stdout('creating files/maps/');
+        fs.mkdirSync(helper.path.main + '/files/maps/');
+    }
     const mapFiles = fs.readdirSync(`${helper.path.main}/files/maps`);
     let isFound = false;
     let mapDir = '';
