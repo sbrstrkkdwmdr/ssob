@@ -210,6 +210,7 @@ function clearMapFiles() {
 
 // other
 async function getOnlineChangelog() {
+    log.stdout('Fetching changelog from github...')
     await axios.get(`https://raw.githubusercontent.com/sbrstrkkdwmdr/ssob/dev/changelog.md`)
         .then(data => {
             fs.writeFileSync(`${helper.path.cache}/changelog.md`, data.data);

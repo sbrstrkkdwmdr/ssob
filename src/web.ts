@@ -39,7 +39,7 @@ export function begin() {
         });
     });
     app.get('/changelog', (req, res, next) => {
-        const doc = readFileSync(`${helper.path.main}/cache/changelog.md`, 'utf-8');
+        const doc = readFileSync(`${helper.path.cache}/changelog.md`, 'utf-8');
         res.render('changelog', {
             layout: 'layout',
             title: 'Changelog',

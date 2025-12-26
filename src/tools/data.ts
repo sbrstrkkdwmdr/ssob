@@ -160,7 +160,7 @@ const cacheById = [
 export function storeFile(data: any, id: string | number, name: string, mode?: osuapi.types_v2.GameMode, type?: string) {
     mode = other.modeValidator(mode);
     try {
-        let path = `${helper.path.main}/cache/commandData/`;
+        let path = `${helper.path.cache}/commandData/`;
         if (cacheById.some(x => name.includes(x))) {
             switch (true) {
                 case (name.includes('mapdata')): {

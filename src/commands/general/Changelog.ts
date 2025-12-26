@@ -171,7 +171,7 @@ export class Changelog extends Command {
     }
     createEmbed() {
         const embed = new Discord.EmbedBuilder();
-        const doc = fs.readFileSync(`${helper.path.main}/cache/changelog.md`, 'utf-8');
+        const doc = fs.readFileSync(`${helper.path.cache}/changelog.md`, 'utf-8');
         const list = doc.split('## [');
         list.shift();
         if (typeof this.found == 'string') {
