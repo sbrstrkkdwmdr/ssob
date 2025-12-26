@@ -19,9 +19,9 @@
 
 -   (docs) `ScoreListCommand` - missing star rating option for score sorting
 -   (docs) "Formatted as" being on the same line as arg description
--   (docs) `ScoreListCommand` - sort by default is now recent on some lists
+-   (docs) `ScoreListCommand` - fix default "sort by" value
 -   method `scoreIsComplete` returning incorrect percentage
--   `Recent` page buttons now disable based
+-   `Recent` page buttons now disable based on score position
 
 ### Changed
 
