@@ -6,12 +6,16 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
-## [5.6.0] - 2025-12-18
-
 ### Fixed
 
 -   `MapParse` Submitted not being on a new line
 -   `MapParse` Mirror names
+
+### Changed
+
+-   (docs) small tweaks
+
+## [5.6.0] - 2025-12-18
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/d155867d7b780b5e5c3f8b41adea4afad62849bf)</br>
 
