@@ -72,7 +72,7 @@ to run the bot use `npm run run`
 
 to run the docs use `npm run run-web` 
 
-to run both the bot and docs simultaneously use `npm run run-all`
+to run both the bot and docs simultaneously use `npm run run-full`
 
 
 ## required permissions
