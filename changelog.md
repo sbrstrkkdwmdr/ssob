@@ -15,6 +15,7 @@
 ### Changed
 
 -   (docs) small tweaks
+-   sendError() no longer throws an error (mostly just cluttered the console)
 
 ## [5.6.0] - 2025-12-18
 
