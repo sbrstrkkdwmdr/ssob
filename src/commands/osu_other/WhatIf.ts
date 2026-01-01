@@ -61,7 +61,8 @@ export class WhatIf extends OsuCommand {
         // do stuff
 
         if (!this.params.pp || isNaN(this.params.pp) || this.params.pp > 10000) {
-            this.input.message.reply("Please define a valid PP value to calculate");
+            await this.sendError(`Please define a valid PP value to calculate`);
+            return;
         }
 
         await this.fixUser();
@@ -88,8 +89,7 @@ export class WhatIf extends OsuCommand {
         try {
             osutopdata = await this.getTopData(osudata.id, this.params.mode);
         } catch (e) {
-            this.ctn.content = 'There was an error trying to fetch top scores';
-            await this.send();
+            await this.sendError(`Could not fetch user\'s top scores`);
             return;
         }
 

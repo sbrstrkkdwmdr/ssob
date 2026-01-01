@@ -10,6 +10,7 @@
 
 -   `MapParse` Submitted not being on a new line
 -   `MapParse` Mirror names
+-   `WhatIf` command not properly quitting if a null value is given
 
 ### Changed
 
