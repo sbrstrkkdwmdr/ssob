@@ -216,7 +216,7 @@ export class Simulate extends OsuCommand {
     }
     fixSpeedParams() {
         if (this.params.overrideBpm && !this.params.overrideSpeed) {
-            console.log(this.params.overrideBpm / this.map.bpm);
+            this.params.overrideSpeed = this.params.overrideBpm / this.map.bpm;
         }
         if (this.params.overrideSpeed && !this.params.overrideBpm) {
             this.params.overrideBpm = this.params.overrideSpeed * this.map.bpm;
@@ -260,7 +260,7 @@ export class Simulate extends OsuCommand {
     ${this.params.combo ?? this.map.max_combo}x/**${this.map.max_combo}**x
     ${this.params.mods && this.params.mods.length > 0 ? this.params.mods.join('') : 'NM'}
     \`${this.params.n300}/${this.params.n100}/${this.params.n50}/${this.params.nMiss}\`
-    Speed: ${this.params.overrideSpeed ?? 1}x @ ${this.params.overrideBpm ?? this.map.bpm}BPM
+    Speed: ${calculate.fixLongDecimal(this.params.overrideSpeed ?? 1)}x @ ${calculate.fixLongDecimal(this.params.overrideBpm ?? this.map.bpm)}BPM
     `,
                     inline: false
                 },

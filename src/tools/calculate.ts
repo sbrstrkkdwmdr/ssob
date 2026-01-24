@@ -476,3 +476,9 @@ export function modOverrides(mods: osuapi.types_v2.Mod[]) {
     };
 
 }
+
+export function fixLongDecimal(n: number, maxDecimal: number = 2) {
+    if (n == Math.floor(n)) return n;
+    if (n * 10 == Math.floor(n * 10)) return n;
+    return +n.toFixed(maxDecimal);
+}
