@@ -11,6 +11,7 @@
 -   `MapParse` Submitted not being on a new line
 -   `MapParse` Mirror names
 -   `WhatIf` command not properly quitting if a null value is given
+-   `Simulate` DT/NC/HT/DC no longer multiplies `overrideSpeed`
 
 ### Changed
 

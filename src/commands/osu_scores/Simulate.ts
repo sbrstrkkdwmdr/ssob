@@ -210,20 +210,19 @@ export class Simulate extends OsuCommand {
     }
     fixSpeedParams() {
         if (this.params.overrideBpm && !this.params.overrideSpeed) {
-            this.params.overrideSpeed = this.params.overrideBpm / this.map.bpm;
+            console.log(this.params.overrideBpm / this.map.bpm)
         }
         if (this.params.overrideSpeed && !this.params.overrideBpm) {
             this.params.overrideBpm = this.params.overrideSpeed * this.map.bpm;
         }
-
-        if (this.params?.mods?.includes('DT') || this.params?.mods?.includes('NC')) {
-            this.params.overrideSpeed *= 1.5;
-            this.params.overrideBpm *= 1.5;
-        }
-        if (this.params?.mods?.includes('HT') || this.params?.mods?.includes('DC')) {
-            this.params.overrideSpeed *= 0.75;
-            this.params.overrideBpm *= 1.5;
-        }
+        // if (this.params?.mods?.includes('DT') || this.params?.mods?.includes('NC')) {
+        //     this.params.overrideSpeed *= 1.5;
+        //     this.params.overrideBpm *= 1.5;
+        // }
+        // if (this.params?.mods?.includes('HT') || this.params?.mods?.includes('DC')) {
+        //     this.params.overrideSpeed *= 0.75;
+        //     this.params.overrideBpm *= 1.5;
+        // }
     }
 
     fixAcc() {
