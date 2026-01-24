@@ -951,6 +951,9 @@ ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[10].ppFlashlight?.
                     inline: true
                 }
             ]);
+        this.ctn.embeds = [embed];
+        embed.setColor(formatters.difficultyColour(+totaldiff).dec);
+
     }
     protected mapstats(map: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string) {
         return `CS${allvals.cs != map.cs ? `${map.cs}=>${allvals.cs}` : allvals.cs}

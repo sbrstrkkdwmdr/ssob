@@ -13,11 +13,13 @@
 -   `WhatIf` - command not properly quitting if a null value is given
 -   `Simulate` - DT/NC/HT/DC no longer multiplies `overrideSpeed`
 -   `Simulate` - custom speed from previous scores is ignored
+-   `MapParse` - ppcalc embed not being sent
 
 ### Changed
 
 -   (docs) small tweaks
 -   sendError() no longer throws an error (mostly just cluttered the console)
+-   only use `.toFixed()` on numbers that exceed 2 d.p.
 
 ## [5.6.0] - 2025-12-18
 
