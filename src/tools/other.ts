@@ -519,3 +519,11 @@ export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true,
 export function isSet(value: any) {
     return (value != null && value != undefined);
 }
+
+export function repeatArray<T extends any>(data: T, count: number): T[] {
+    const temp: T[] = [];
+    for (let i = 0; i < count; i++) {
+        temp.push(data);
+    }
+    return temp;
+}

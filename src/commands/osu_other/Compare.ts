@@ -225,7 +225,7 @@ export class Compare extends OsuCommand {
                         value:
                             `**Rank:** ${calculate.separateNum(firstuser?.statistics.global_rank)}
 **pp:** ${calculate.separateNum(firstuser?.statistics.pp)}
-**Accuracy:** ${(firstuser?.statistics.hit_accuracy != null ? firstuser.statistics.hit_accuracy : 0).toFixed(2)}%
+**Accuracy:** ${calculate.fixLongDecimal(firstuser?.statistics.hit_accuracy != null ? firstuser.statistics.hit_accuracy : 0)}%
 **Playcount:** ${calculate.separateNum(firstuser?.statistics.play_count)}
 **Level:** ${calculate.separateNum(firstuser.statistics.level.current)}
 `,
@@ -236,7 +236,7 @@ export class Compare extends OsuCommand {
                         value:
                             `**Rank:** ${calculate.separateNum(seconduser?.statistics.global_rank)}
 **pp:** ${calculate.separateNum(seconduser?.statistics.pp)}
-**Accuracy:** ${(seconduser?.statistics.hit_accuracy != null ? seconduser.statistics.hit_accuracy : 0).toFixed(2)}%
+**Accuracy:** ${calculate.fixLongDecimal(seconduser?.statistics.hit_accuracy != null ? seconduser.statistics.hit_accuracy : 0)}%
 **Playcount:** ${calculate.separateNum(seconduser?.statistics.play_count)}
 **Level:** ${calculate.separateNum(seconduser.statistics.level.current)}
 `,
@@ -246,8 +246,8 @@ export class Compare extends OsuCommand {
                         name: `**Difference**`,
                         value:
                             `**Rank:** ${calculate.separateNum(Math.abs(firstuser.statistics.global_rank - seconduser.statistics.global_rank))}
-**pp:** ${calculate.separateNum(Math.abs(firstuser?.statistics.pp - seconduser?.statistics.pp).toFixed(2))}
-**Accuracy:** ${Math.abs((firstuser.statistics.hit_accuracy != null ? firstuser.statistics.hit_accuracy : 0) - (seconduser.statistics.hit_accuracy != null ? seconduser.statistics.hit_accuracy : 0)).toFixed(2)}%
+**pp:** ${calculate.separateNum(calculate.fixLongDecimal(Math.abs(firstuser?.statistics.pp - seconduser?.statistics.pp)))}
+**Accuracy:** ${calculate.fixLongDecimal(Math.abs((firstuser.statistics.hit_accuracy != null ? firstuser.statistics.hit_accuracy : 0) - (seconduser.statistics.hit_accuracy != null ? seconduser.statistics.hit_accuracy : 0)))}%
 **Playcount:** ${calculate.separateNum(Math.abs(firstuser.statistics.play_count - seconduser.statistics.play_count))}
 **Level:** ${calculate.separateNum(Math.abs(firstuser.statistics.level.current - seconduser.statistics.level.current))}
 `,
@@ -284,7 +284,7 @@ export class Compare extends OsuCommand {
             const secondscore: osuapi.types_v2.Score = secondtopdata.find(score => score.beatmap.id == firstscore.beatmap.id);
             if (secondscore == null) break;
             const format = (score: osuapi.types_v2.Score) =>
-                `${score.pp.toFixed(2)}pp | ${(score.accuracy * 100).toFixed(2)}% ${score.mods.length > 0 ? '| +' + score.mods.map(x => x.acronym).join('') : ''}`;
+                `${calculate.fixLongDecimal(score.pp)}pp | ${calculate.fixLongDecimal(score.accuracy * 100)}% ${score.mods.length > 0 ? '| +' + score.mods.map(x => x.acronym).join('') : ''}`;
             const firstscorestr = format(firstscore);
             const secondscorestr = format(secondscore);
             arrscore.push(

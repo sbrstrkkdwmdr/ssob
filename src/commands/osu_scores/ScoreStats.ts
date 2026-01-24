@@ -263,17 +263,17 @@ export class ScoreStats extends OsuCommand {
             diff: calculate.weightPerformance(calculations.map(x => x.ppDifficulty)).reduce((a, b) => a + b, 0),
             speed: calculate.weightPerformance(calculations.map(x => x.ppSpeed)).reduce((a, b) => a + b, 0),
         };
-        let totpp = `Total: ${ppcalc.total.toFixed(2)}`;
-        ppcalc.acc ? totpp += `\nAccuracy: ${ppcalc.acc.toFixed(2)}` : '';
-        ppcalc.aim ? totpp += `\nAim: ${ppcalc.aim.toFixed(2)}` : '';
-        ppcalc.diff ? totpp += `\nDifficulty: ${ppcalc.diff.toFixed(2)}` : '';
-        ppcalc.speed ? totpp += `\nSpeed: ${ppcalc.speed.toFixed(2)}` : '';
+        let totpp = `Total: ${calculate.fixLongDecimal(ppcalc.total)}`;
+        ppcalc.acc ? totpp += `\nAccuracy: ${calculate.fixLongDecimal(ppcalc.acc)}` : '';
+        ppcalc.aim ? totpp += `\nAim: ${calculate.fixLongDecimal(ppcalc.aim)}` : '';
+        ppcalc.diff ? totpp += `\nDifficulty: ${calculate.fixLongDecimal(ppcalc.diff)}` : '';
+        ppcalc.speed ? totpp += `\nSpeed: ${calculate.fixLongDecimal(ppcalc.speed)}` : '';
 
-        let weighttotpp = `Total: ${weightppcalc.total.toFixed(2)}`;
-        ppcalc.acc ? weighttotpp += `\nAccuracy: ${weightppcalc.acc.toFixed(2)}` : '';
-        ppcalc.aim ? weighttotpp += `\nAim: ${weightppcalc.aim.toFixed(2)}` : '';
-        ppcalc.diff ? weighttotpp += `\nDifficulty: ${weightppcalc.diff.toFixed(2)}` : '';
-        ppcalc.speed ? weighttotpp += `\nSpeed: ${weightppcalc.speed.toFixed(2)}` : '';
+        let weighttotpp = `Total: ${calculate.fixLongDecimal(weightppcalc.total)}`;
+        ppcalc.acc ? weighttotpp += `\nAccuracy: ${calculate.fixLongDecimal(weightppcalc.acc)}` : '';
+        ppcalc.aim ? weighttotpp += `\nAim: ${calculate.fixLongDecimal(weightppcalc.aim)}` : '';
+        ppcalc.diff ? weighttotpp += `\nDifficulty: ${calculate.fixLongDecimal(weightppcalc.diff)}` : '';
+        ppcalc.speed ? weighttotpp += `\nSpeed: ${calculate.fixLongDecimal(weightppcalc.speed)}` : '';
         return {
             pp, totpp, weighttotpp
         };
@@ -330,10 +330,10 @@ export class ScoreStats extends OsuCommand {
         return {
             name,
             value: `
-Highest: ${stat?.highest?.toFixed(2)}${suffix}
-Lowest: ${stat?.lowest?.toFixed(2)}${suffix}
-Average: ${stat?.mean?.toFixed(2)}${suffix}
-Median: ${stat?.median?.toFixed(2)}${suffix}
+Highest: ${calculate.fixLongDecimal(stat?.highest)}${suffix}
+Lowest: ${calculate.fixLongDecimal(stat?.lowest)}${suffix}
+Average: ${calculate.fixLongDecimal(stat?.mean)}${suffix}
+Median: ${calculate.fixLongDecimal(stat?.median)}${suffix}
 ${stat?.ignored > 0 ? `Skipped: ${stat?.ignored}` : ''}
 `,
             inline: true

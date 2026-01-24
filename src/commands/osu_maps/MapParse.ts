@@ -398,7 +398,7 @@ export class MapParse extends OsuCommand {
                                     helper.emojis.gamemodes.standard
                         }` as Discord.APIMessageComponentEmoji)
                     .setLabel(`${this.map.version}`)
-                    .setDescription(`${this.map.difficulty_rating.toFixed(2)}⭐`)
+                    .setDescription(`${calculate.fixLongDecimal(this.map.difficulty_rating)}⭐`)
                     .setValue(`${this.map.id}`)
             );
         } else {
@@ -414,7 +414,7 @@ export class MapParse extends OsuCommand {
                                         helper.emojis.gamemodes.standard
                             }` as Discord.APIMessageComponentEmoji)
                         .setLabel(`${curmap.version}`)
-                        .setDescription(`${curmap.difficulty_rating.toFixed(2)}⭐`)
+                        .setDescription(`${calculate.fixLongDecimal(curmap.difficulty_rating)}⭐`)
                         .setValue(`${curmap.id}`)
                 );
             }
@@ -492,7 +492,7 @@ export class MapParse extends OsuCommand {
 
         let ppComputed: rosu.PerformanceAttributes[];
         let ppissue: string;
-        let totaldiff: string = map.difficulty_rating?.toFixed(2);
+        let totaldiff: string = calculate.fixLongDecimal(map.difficulty_rating) + '';
         try {
             ppComputed = await performance.calcMap({
                 mods: this.params.mapmods,
@@ -507,13 +507,11 @@ export class MapParse extends OsuCommand {
                 isLazer: true,
             });
             ppissue = '';
-            try {
-                totaldiff = map.difficulty_rating.toFixed(2) != ppComputed[0].difficulty.stars?.toFixed(2) ?
-                    `${map.difficulty_rating.toFixed(2)}=>${ppComputed[0].difficulty.stars?.toFixed(2)}` :
-                    `${map.difficulty_rating.toFixed(2)}`;
-            } catch (error) {
-                totaldiff = map.difficulty_rating?.toFixed(2);
-            }
+
+            totaldiff = map.difficulty_rating.toFixed(2) != ppComputed[0].difficulty.stars?.toFixed(2) ?
+                `${calculate.fixLongDecimal(map.difficulty_rating)}=>${calculate.fixLongDecimal(ppComputed[0].difficulty.stars)}` :
+                `${calculate.fixLongDecimal(map.difficulty_rating)}`;
+
             data.debug(ppComputed, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
 
         } catch (error) {
@@ -528,21 +526,7 @@ export class MapParse extends OsuCommand {
                 ppissue += '\nInvalid mod combinations: DT/NC + HT';
             }
             const ppComputedTemp = performance.template(map);
-            ppComputed = [
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-                ppComputedTemp,
-            ];
+            ppComputed = other.repeatArray(ppComputedTemp, 13);
         }
         const mapname = formatters.parseUnicodeStrings({
             title: this.map.beatmapset.title,
@@ -670,7 +654,8 @@ export class MapParse extends OsuCommand {
             .setThumbnail(osuapi.other.beatmapImages(this.map.beatmapset_id).list2x)
             .setTitle(maptitle);
         embed.setColor(formatters.difficultyColour(+map.difficulty_rating).dec);
-        if (this.params.isppCalc) await this.embedPerformance(embed, map, allvals, totaldiff, ppComputed); else await this.embedMap(embed, map, allvals, totaldiff, ppComputed, buttons);
+        if (this.params.isppCalc) await this.embedPerformance(embed, map, allvals, totaldiff, ppComputed);
+        else await this.embedMap(embed, map, allvals, totaldiff, ppComputed, buttons);
     }
     protected async embedMap(embed: Discord.EmbedBuilder, map: osuapi.types_v2.BeatmapExtended, allvals, totaldiff: string, ppComputed: rosu.PerformanceAttributes[], buttons: Discord.ActionRowBuilder) {
         let mapgraph = await this.strainsGraph(map);
@@ -701,12 +686,12 @@ export class MapParse extends OsuCommand {
                 {
                     name: 'PP',
                     value:
-                        `SS: ${ppComputed[0].pp?.toFixed(2)} \n ` +
-                        `99: ${ppComputed[1].pp?.toFixed(2)} \n ` +
-                        `98: ${ppComputed[2].pp?.toFixed(2)} \n ` +
-                        `97: ${ppComputed[3].pp?.toFixed(2)} \n ` +
-                        `96: ${ppComputed[4].pp?.toFixed(2)} \n ` +
-                        `95: ${ppComputed[5].pp?.toFixed(2)} \n `
+                        `SS: ${calculate.fixLongDecimal(ppComputed[0].pp)} \n ` +
+                        `99: ${calculate.fixLongDecimal(ppComputed[1].pp)} \n ` +
+                        `98: ${calculate.fixLongDecimal(ppComputed[2].pp)} \n ` +
+                        `97: ${calculate.fixLongDecimal(ppComputed[3].pp)} \n ` +
+                        `96: ${calculate.fixLongDecimal(ppComputed[4].pp)} \n ` +
+                        `95: ${calculate.fixLongDecimal(ppComputed[5].pp)} \n `
                     ,
                     inline: this.params.detailed != 2
                 },
@@ -939,24 +924,24 @@ ${ppComputed[0].ppFlashlight > 0 ? `\`Flashlight ${ppComputed[10].ppFlashlight?.
                 {
                     name: 'PP',
                     value:
-                        `\`SS:    \` ${ppComputed[0].pp?.toFixed(2)} \n ` +
-                        `\`99%:   \` ${ppComputed[1].pp?.toFixed(2)} \n ` +
-                        `\`98%:   \` ${ppComputed[2].pp?.toFixed(2)} \n ` +
-                        `\`97%:   \` ${ppComputed[3].pp?.toFixed(2)} \n ` +
-                        `\`96%:   \` ${ppComputed[4].pp?.toFixed(2)} \n ` +
-                        `\`95%:   \` ${ppComputed[5].pp?.toFixed(2)} \n ` +
-                        `\`94%:   \` ${ppComputed[6].pp?.toFixed(2)} \n ` +
-                        `\`93%:   \` ${ppComputed[7].pp?.toFixed(2)} \n ` +
-                        `\`92%:   \` ${ppComputed[8].pp?.toFixed(2)} \n ` +
-                        `\`91%:   \` ${ppComputed[9].pp?.toFixed(2)} \n ` +
-                        `\`90%:   \` ${ppComputed[10].pp?.toFixed(2)} \n ` +
+                        `\`SS:    \` ${calculate.fixLongDecimal(ppComputed[0].pp)} \n ` +
+                        `\`99%:   \` ${calculate.fixLongDecimal(ppComputed[1].pp)} \n ` +
+                        `\`98%:   \` ${calculate.fixLongDecimal(ppComputed[2].pp)} \n ` +
+                        `\`97%:   \` ${calculate.fixLongDecimal(ppComputed[3].pp)} \n ` +
+                        `\`96%:   \` ${calculate.fixLongDecimal(ppComputed[4].pp)} \n ` +
+                        `\`95%:   \` ${calculate.fixLongDecimal(ppComputed[5].pp)} \n ` +
+                        `\`94%:   \` ${calculate.fixLongDecimal(ppComputed[6].pp)} \n ` +
+                        `\`93%:   \` ${calculate.fixLongDecimal(ppComputed[7].pp)} \n ` +
+                        `\`92%:   \` ${calculate.fixLongDecimal(ppComputed[8].pp)} \n ` +
+                        `\`91%:   \` ${calculate.fixLongDecimal(ppComputed[9].pp)} \n ` +
+                        `\`90%:   \` ${calculate.fixLongDecimal(ppComputed[10].pp)} \n ` +
                         `---===MODDED===---\n` +
-                        `\`HD:    \` ${(await this.perf(['HD'], map)).pp?.toFixed(2)} \n ` +
-                        `\`HR:    \` ${(await this.perf(['HR'], map)).pp?.toFixed(2)} \n ` +
-                        `\`DT:    \` ${(await this.perf(['DT'], map)).pp?.toFixed(2)} \n ` +
-                        `\`HDHR:  \` ${(await this.perf(['HD', 'HR'], map)).pp?.toFixed(2)} \n ` +
-                        `\`HDDT:  \` ${(await this.perf(['HD', 'DT'], map)).pp?.toFixed(2)} \n ` +
-                        `\`HDDTHR:\` ${(await this.perf(['HD', 'DT', 'HR'], map)).pp?.toFixed(2)} \n `
+                        `\`HD:    \` ${calculate.fixLongDecimal((await this.perf(['HD'], map)).pp)} \n ` +
+                        `\`HR:    \` ${calculate.fixLongDecimal((await this.perf(['HR'], map)).pp)} \n ` +
+                        `\`DT:    \` ${calculate.fixLongDecimal((await this.perf(['DT'], map)).pp)} \n ` +
+                        `\`HDHR:  \` ${calculate.fixLongDecimal((await this.perf(['HD', 'HR'], map)).pp)} \n ` +
+                        `\`HDDT:  \` ${calculate.fixLongDecimal((await this.perf(['HD', 'DT'], map)).pp)} \n ` +
+                        `\`HDDTHR:\` ${calculate.fixLongDecimal((await this.perf(['HD', 'DT', 'HR'], map)).pp)} \n `
                     ,
                     inline: true
                 },

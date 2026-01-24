@@ -151,7 +151,7 @@ export async function getEmbed(
     const mxCombo = perf.difficulty.maxCombo;
     const usepp = data.scoredata.pp ?? perf.pp;
     if (data.scoredata.accuracy != 1) {
-        pp = `${usepp}pp ${data.scoredata.max_combo == mxCombo ? '(FC)' : `(${fcperf.pp.toFixed(2)} if FC)`}`;
+        pp = `${usepp}pp ${data.scoredata.max_combo == mxCombo ? '(FC)' : `(${calculate.fixLongDecimal(fcperf.pp)} if FC)`}`;
     } else {
         pp = `${usepp}pp (SS)`;
     }
@@ -168,7 +168,7 @@ export async function getEmbed(
         .setImage(`${data.scoredata.beatmapset.covers['cover@2x']}`)
         .setDescription(
             `${data.scoredata.mods.length > 0 ? '+' + data.scoredata.mods.map(x => x.acronym).join('') + ' | ' : ''} **Score set** <t:${new Date(data.scoredata.ended_at).getTime() / 1000}:R>\n` +
-            `${(data.scoredata.accuracy * 100).toFixed(2)}% | ${formatters.gradeToEmoji(data.scoredata.rank)} | ${(perf.difficulty.stars ?? data.scoredata.beatmap.difficulty_rating).toFixed(2)}⭐\n` +
+            `${calculate.fixLongDecimal(data.scoredata.accuracy * 100)}% | ${formatters.gradeToEmoji(data.scoredata.rank)} | ${calculate.fixLongDecimal(perf.difficulty.stars ?? data.scoredata.beatmap.difficulty_rating)}⭐\n` +
             `${formatters.returnHits(data.scoredata.statistics, data.scoredata.ruleset_id).short} | ${data.scoredata.max_combo}x\n` +
             `${pp}`
         );

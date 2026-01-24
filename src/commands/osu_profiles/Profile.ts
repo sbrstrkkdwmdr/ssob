@@ -219,8 +219,8 @@ ${this.gradeCounts}
 ${this.previousNames}
 ${this.supporterStatus} ${this.onlineStatus}
 **Avg time per play:** ${this.timePerPlay}
-**Avg daily playcount:** ${this.dailyPlaycount.toFixed(2)}
-**Avg monthly playcount:** ${this.monthlyPlaycount.toFixed(2)}
+**Avg daily playcount:** ${calculate.fixLongDecimal(this.dailyPlaycount)}
+**Avg monthly playcount:** ${calculate.fixLongDecimal(this.monthlyPlaycount)}
 `,
                 inline: true
             }
@@ -254,7 +254,7 @@ ${this.supporterStatus} ${this.onlineStatus}
     }
     protected get statAccuracy() {
         if (this.user.statistics.hit_accuracy) {
-            return this.user.statistics.hit_accuracy.toFixed(2);
+            return calculate.fixLongDecimal(this.user.statistics.hit_accuracy);
         }
         return '00.00';
     }

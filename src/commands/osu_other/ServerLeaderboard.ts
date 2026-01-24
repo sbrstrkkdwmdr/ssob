@@ -1,5 +1,6 @@
 import Discord from 'discord.js';
 import * as helper from '../../helper';
+import { fixLongDecimal } from '../../tools/calculate';
 import * as commandTools from '../../tools/commands';
 import * as osuapi from '../../tools/osuapi';
 import { OsuCommand } from '../command';
@@ -123,7 +124,7 @@ export class ServerLeaderboard extends OsuCommand {
                     : 4
                 : 5;
             const user = helper.vars.client.users.cache.get(cur.discord);
-            rtxt += `\n#${i + 1 + pageOffset + ')'.padEnd(pad, ' ')} ${this.overlengthString(user.username, 14)} ${this.overlengthString(cur.name, 14)} ${(cur.rank + '').padEnd(10)} ${(cur.acc.toFixed(2) + '%').padEnd(8)} ${cur.pp}pp`;
+            rtxt += `\n#${i + 1 + pageOffset + ')'.padEnd(pad, ' ')} ${this.overlengthString(user.username, 14)} ${this.overlengthString(cur.name, 14)} ${(cur.rank + '').padEnd(10)} ${(fixLongDecimal(cur.acc) + '%').padEnd(8)} ${cur.pp}pp`;
         }
 
         rtxt += `\n\``;

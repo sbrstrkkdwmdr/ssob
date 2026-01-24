@@ -267,7 +267,7 @@ Total PP: ${calculate.numberShorthand(country.performance)}
                         value:
                             `:flag_${user.user.country_code.toLowerCase()}: [${user.user.username}](https://osu.ppy.sh/users/${user.user.id}/${this.params.mode})
 Score: ${user.total_score == null ? '---' : calculate.numberShorthand(user.total_score)} (${user.ranked_score == null ? '---' : calculate.numberShorthand(user.ranked_score)} ranked)
-${user.hit_accuracy == null ? '---' : user.hit_accuracy.toFixed(2)}% | ${user.pp == null ? '---' : calculate.separateNum(user.pp)}pp | ${user.play_count == null ? '---' : calculate.separateNum(user.play_count)} plays
+${user.hit_accuracy == null ? '---' : calculate.fixLongDecimal(user.hit_accuracy)}% | ${user.pp == null ? '---' : calculate.separateNum(user.pp)}pp | ${user.play_count == null ? '---' : calculate.separateNum(user.play_count)} plays
 `
                         ,
                         inline: false

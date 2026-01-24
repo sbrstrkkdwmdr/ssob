@@ -46,9 +46,6 @@ export class Badges extends OsuCommand {
             const t = await this.getProfile(this.params.user, 'osu');
             osudata = t;
         } catch (e) {
-            console.log(this.params.user);
-            console.log(this.params.searchid);
-            console.log(e);
             return;
         }
         console.log('continue');

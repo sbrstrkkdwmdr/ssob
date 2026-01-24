@@ -123,8 +123,8 @@ export class WhatIf extends OsuCommand {
     `);
         } else {
             embed.setDescription(
-                `A ${this.params.pp}pp score would be their **${calculate.toOrdinal(ppindex + 1)}** top play and would be weighted at **${(weight * 100).toFixed(2)}%**.
-    Their pp would change by **${Math.abs((total + bonus) - osudata.statistics.pp).toFixed(2)}pp** and their new total pp would be **${(total + bonus).toFixed(2)}pp**.
+                `A ${this.params.pp}pp score would be their **${calculate.toOrdinal(ppindex + 1)}** top play and would be weighted at **${calculate.fixLongDecimal(weight * 100)}%**.
+    Their pp would change by **${calculate.fixLongDecimal(Math.abs((total + bonus) - osudata.statistics.pp))}pp** and their new total pp would be **${calculate.fixLongDecimal(total + bonus)}pp**.
     Their new rank would be **${Math.round(guessrank.value)}** (+${Math.round(osudata?.statistics?.global_rank - guessrank.value)}).
     `
             );

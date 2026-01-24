@@ -1,6 +1,7 @@
 import Discord from 'discord.js';
 import * as osumodcalc from 'osumodcalculator';
 import * as helper from '../../helper';
+import { fixLongDecimal } from '../../tools/calculate';
 import * as data from '../../tools/data';
 import * as osuapi from '../../tools/osuapi';
 import { OsuCommand } from '../command';
@@ -68,10 +69,10 @@ export class RecommendMap extends OsuCommand {
             }
         }
 
-        const randomMap = data.recommendMap(+(osumodcalc.extra.recdiff(osudata.statistics.pp)).toFixed(2), this.params.useType, this.params.mode, this.params.maxRange ?? 1);
+        const randomMap = data.recommendMap(fixLongDecimal(osumodcalc.extra.recdiff(osudata.statistics.pp)), this.params.useType, this.params.mode, this.params.maxRange ?? 1);
         const exTxt =
             this.params.useType == 'closest' ? '' :
-                `Random map within ${this.params.maxRange}⭐ of ${(osumodcalc.extra.recdiff(osudata.statistics.pp))?.toFixed(2)}
+                `Random map within ${this.params.maxRange}⭐ of ${fixLongDecimal(osumodcalc.extra.recdiff(osudata.statistics.pp))}
     Pool of ${randomMap.poolSize}
     `;
 

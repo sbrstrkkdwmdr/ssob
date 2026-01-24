@@ -8,11 +8,11 @@
 
 ### Fixed
 
--   `MapParse` Submitted not being on a new line
--   `MapParse` Mirror names
--   `WhatIf` command not properly quitting if a null value is given
--   `Simulate` DT/NC/HT/DC no longer multiplies `overrideSpeed`
--   `Simulate` custom speed from previous scores is ignored
+-   `MapParse` - Submitted not being on a new line
+-   `MapParse` - Mirror names
+-   `WhatIf` - command not properly quitting if a null value is given
+-   `Simulate` - DT/NC/HT/DC no longer multiplies `overrideSpeed`
+-   `Simulate` - custom speed from previous scores is ignored
 
 ### Changed
 
@@ -39,10 +39,10 @@
 -   `Simulate` - params equal to 0 are no longer treated as null
 -   `Simulate` - score statistics are no longer automatically taken from the most recent score (can be re-enabled with `-prev`)
 -   strain graphs are now filled line charts
--   `MapParse` now show both fail and exit times in detailed mode
--   `MapParse` update shown mirrors
--   `MapParse` difficulty rating in select menus rounds to 2 decimal places
--   `Recent`, `ScoreParse` strains graph highlights passed section for failed scores
+-   `MapParse` - now show both fail and exit times in detailed mode
+-   `MapParse` - update shown mirrors
+-   `MapParse` - difficulty rating in select menus rounds to 2 decimal places
+-   `Recent`, `ScoreParse` - strains graph highlights passed section for failed scores
 
 ### Refactor
 
