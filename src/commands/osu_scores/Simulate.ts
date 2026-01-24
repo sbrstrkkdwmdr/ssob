@@ -205,12 +205,18 @@ export class Simulate extends OsuCommand {
             if (!this.isValidParam(this.params.mods)) {
                 this.params.mods = tempscore.apiData.mods.map(x => x.acronym) as osumodcalc.types.Mod[] ?? [];
             }
+            if (!this.isValidParam(this.params.overrideSpeed) && !this.isValidParam(this.params.overrideBpm)) {
+                const overs = calculate.modOverrides(tempscore.apiData.mods);
+                if (overs.speed) {
+                    this.params.overrideSpeed = overs.speed;
+                }
+            }
         }
         return tempscore;
     }
     fixSpeedParams() {
         if (this.params.overrideBpm && !this.params.overrideSpeed) {
-            console.log(this.params.overrideBpm / this.map.bpm)
+            console.log(this.params.overrideBpm / this.map.bpm);
         }
         if (this.params.overrideSpeed && !this.params.overrideBpm) {
             this.params.overrideBpm = this.params.overrideSpeed * this.map.bpm;
