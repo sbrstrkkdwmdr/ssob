@@ -240,7 +240,7 @@ export abstract class GraphBuilder {
     }
     protected async toFile() {
         const filename = `${(new Date).getTime()}`;
-        let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
+        let curt = `${helper.path.cache}/graphs/${filename}.jpg`;
         try {
             const buffer = await this.toBuffer();
             fs.writeFileSync(curt, buffer);
@@ -795,7 +795,7 @@ export class OldGraphBuilder {
     }
     async writeToFile() {
         const filename = `${(new Date).getTime()}`;
-        let curt = `${helper.path.main}/cache/graphs/${filename}.jpg`;
+        let curt = `${helper.path.cache}/graphs/${filename}.jpg`;
         try {
             const buffer = await this.graphBuffer();
             fs.writeFileSync(curt, buffer);

@@ -53,7 +53,7 @@ export class SingleScoreCommand extends OsuCommand {
 
         let rsgrade = helper.emojis.grades[this.score.rank.toUpperCase()];
         if (!this.score.passed) {
-            rspassinfo = `${guesspasspercentage.toFixed(2)}% completed (${calculate.secondsToTime(curbmpasstime)}/${calculate.secondsToTime(this.map.total_length)})`;
+            rspassinfo = `${calculate.fixLongDecimal(guesspasspercentage)}% completed (${calculate.secondsToTime(curbmpasstime)}/${calculate.secondsToTime(this.map.total_length)})`;
             rsgrade = helper.emojis.grades.F + `(${helper.emojis.grades[this.grade().rank.toUpperCase()]} if pass)`;
         }
 
@@ -120,12 +120,12 @@ export class SingleScoreCommand extends OsuCommand {
             const mxCombo = perfs[0]?.difficulty?.maxCombo ?? this.map?.max_combo;
 
             if (this.score.accuracy < 1 && this.score.max_combo == mxCombo) {
-                fcflag = `FC\n**${perfs[2].pp.toFixed(2)}**pp IF SS`;
+                fcflag = `FC\n**${calculate.fixLongDecimal(perfs[2].pp)}**pp IF SS`;
             }
             if (this.score.max_combo != mxCombo) {
                 fcflag =
-                    `\n**${perfs[1].pp.toFixed(2)}**pp IF FC
-                **${perfs[2].pp.toFixed(2)}**pp IF SS`;
+                    `\n**${calculate.fixLongDecimal(perfs[1].pp)}**pp IF FC
+                **${calculate.fixLongDecimal(perfs[2].pp)}**pp IF SS`;
             }
             if (this.score.max_combo == mxCombo && this.score.accuracy == 1) {
                 fcflag = 'FC';
@@ -250,7 +250,7 @@ export class SingleScoreCommand extends OsuCommand {
                 {
                     name: 'SCORE DETAILS',
                     value: `${calculate.separateNum(other.getTotalScore(this.score))} ${scorerank}
-${(this.score.accuracy * 100).toFixed(2)}% | ${rsgrade}
+${calculate.fixLongDecimal(this.score.accuracy * 100)}% | ${rsgrade}
 ${this.score.has_replay ? `[REPLAY](https://osu.ppy.sh/scores/${this.score.id}/download)\n` : ''}` +
                         `${rspassinfo.length > 1 ? rspassinfo + '\n' : ''}${hitlist}
 ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.score.max_combo}x`}/**${mxcombo}x** combo`,
@@ -258,7 +258,7 @@ ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.sco
                 },
                 {
                     name: 'PP',
-                    value: `**${(this.score?.pp ?? perfs[0]?.pp ?? 0)?.toFixed(2)}**pp ${fcflag}\n${ppissue}`,
+                    value: `**${calculate.fixLongDecimal(this.score?.pp ?? perfs[0]?.pp ?? 0)}**pp ${fcflag}\n${ppissue}`,
                     inline: true
                 }
             ]);
@@ -266,16 +266,16 @@ ${this.score.max_combo == mxcombo ? `**${this.score.max_combo}x**` : `${this.sco
             case 'default':
                 embed.setTitle(fulltitle)
                     .setDescription(`${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments + ' |' : ''} ${formatters.relativeTime(this.score.ended_at)}
-    ${(perfs[0]?.difficulty?.stars ?? this.map?.difficulty_rating ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
-    `);
+${calculate.fixLongDecimal(perfs[0]?.difficulty?.stars ?? this.map?.difficulty_rating ?? 0)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
+`);
                 formatters.userAuthor(this.osudata, embed, this.params.overrideAuthor);
                 break;
             case 'recent':
                 embed.setTitle(`#${this.params.page + 1} most recent ${this.params.showFails == 1 ? 'play' : 'pass'} for ${this.score.user.username} | ${formatters.relativeTime(this.score.ended_at)}`)
                     .setDescription(`[\`${fulltitle}\`](https://osu.ppy.sh/b/${this.map.id}) ${this.score.mods.length > 0 ? '+' + osumodcalc.mod.order(this.score.mods.map(x => x.acronym.toUpperCase()) as osumodcalc.types.Mod[]).join('') + modadjustments : ''} 
-    ${(perfs[0]?.difficulty?.stars ?? this.map?.difficulty_rating ?? 0).toFixed(2)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
-    ${formatters.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
-    `);
+${calculate.fixLongDecimal(perfs[0]?.difficulty?.stars ?? this.map?.difficulty_rating ?? 0)}⭐ | ${helper.emojis.gamemodes[this.score.ruleset_id]}
+${formatters.dateToDiscordFormat(new Date(this.score.ended_at), 'F')}
+`);
 
                 break;
         }

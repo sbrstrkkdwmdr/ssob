@@ -580,7 +580,7 @@ export class ScoreListCommand extends OsuCommand {
         const json = embed.toJSON();
         const temp = json.author!.name.split('|');
         temp.pop();
-        temp.push(` est. ${pp.toFixed(2)}pp (excl. bonus)`);
+        temp.push(` est. ${calculate.fixLongDecimal(pp)}pp (excl. bonus)`);
         embed.setAuthor({
             url: json.author.url,
             iconURL: json.author.icon_url,

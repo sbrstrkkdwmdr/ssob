@@ -205,6 +205,12 @@ export class Simulate extends OsuCommand {
             if (!this.isValidParam(this.params.mods)) {
                 this.params.mods = tempscore.apiData.mods.map(x => x.acronym) as osumodcalc.types.Mod[] ?? [];
             }
+            if (!this.isValidParam(this.params.overrideSpeed) && !this.isValidParam(this.params.overrideBpm)) {
+                const overs = calculate.modOverrides(tempscore.apiData.mods);
+                if (overs.speed) {
+                    this.params.overrideSpeed = overs.speed;
+                }
+            }
         }
         return tempscore;
     }
@@ -215,15 +221,14 @@ export class Simulate extends OsuCommand {
         if (this.params.overrideSpeed && !this.params.overrideBpm) {
             this.params.overrideBpm = this.params.overrideSpeed * this.map.bpm;
         }
-
-        if (this.params?.mods?.includes('DT') || this.params?.mods?.includes('NC')) {
-            this.params.overrideSpeed *= 1.5;
-            this.params.overrideBpm *= 1.5;
-        }
-        if (this.params?.mods?.includes('HT') || this.params?.mods?.includes('DC')) {
-            this.params.overrideSpeed *= 0.75;
-            this.params.overrideBpm *= 1.5;
-        }
+        // if (this.params?.mods?.includes('DT') || this.params?.mods?.includes('NC')) {
+        //     this.params.overrideSpeed *= 1.5;
+        //     this.params.overrideBpm *= 1.5;
+        // }
+        // if (this.params?.mods?.includes('HT') || this.params?.mods?.includes('DC')) {
+        //     this.params.overrideSpeed *= 0.75;
+        //     this.params.overrideBpm *= 1.5;
+        // }
     }
 
     fixAcc() {
@@ -251,11 +256,11 @@ export class Simulate extends OsuCommand {
                 {
                     name: 'Score Details',
                     value:
-                        `${(useAcc)?.toFixed(2)}% | ${this.params.nMiss ?? 0}x misses
+                        `${calculate.fixLongDecimal(useAcc)}% | ${this.params.nMiss ?? 0}x misses
     ${this.params.combo ?? this.map.max_combo}x/**${this.map.max_combo}**x
     ${this.params.mods && this.params.mods.length > 0 ? this.params.mods.join('') : 'NM'}
     \`${this.params.n300}/${this.params.n100}/${this.params.n50}/${this.params.nMiss}\`
-    Speed: ${this.params.overrideSpeed ?? 1}x @ ${this.params.overrideBpm ?? this.map.bpm}BPM
+    Speed: ${calculate.fixLongDecimal(this.params.overrideSpeed ?? 1)}x @ ${calculate.fixLongDecimal(this.params.overrideBpm ?? this.map.bpm)}BPM
     `,
                     inline: false
                 },
@@ -263,13 +268,13 @@ export class Simulate extends OsuCommand {
                     name: 'Performance',
                     value:
                         `
-${perfs[0].pp?.toFixed(2)}pp | ${perfs[1].pp?.toFixed(2)}pp if ${(useAcc)?.toFixed(2)}% FC
-SS: ${mapPerf[0].pp?.toFixed(2)}
-99: ${mapPerf[1].pp?.toFixed(2)}
-98: ${mapPerf[2].pp?.toFixed(2)}
-97: ${mapPerf[3].pp?.toFixed(2)}
-96: ${mapPerf[4].pp?.toFixed(2)}
-95: ${mapPerf[5].pp?.toFixed(2)} 
+${calculate.fixLongDecimal(perfs[0].pp)}pp | ${(calculate.fixLongDecimal) }pp if ${calculate.fixLongDecimal(useAcc) }% FC
+SS: ${calculate.fixLongDecimal(mapPerf[0].pp)}
+99: ${calculate.fixLongDecimal(mapPerf[1].pp)}
+98: ${calculate.fixLongDecimal(mapPerf[2].pp)}
+97: ${calculate.fixLongDecimal(mapPerf[3].pp)}
+96: ${calculate.fixLongDecimal(mapPerf[4].pp)}
+95: ${calculate.fixLongDecimal(mapPerf[5].pp)} 
 `
                 },
                 {
@@ -292,7 +297,7 @@ ${helper.emojis.mapobjs.circle}${this.map.count_circles}
 ${helper.emojis.mapobjs.slider}${this.map.count_sliders}
 ${helper.emojis.mapobjs.spinner}${this.map.count_spinners}
 ${helper.emojis.mapobjs.bpm}${this.map.bpm}
-${helper.emojis.mapobjs.star}${(perfs[0]?.difficulty?.stars ?? this.map.difficulty_rating)?.toFixed(2)}
+${helper.emojis.mapobjs.star}${calculate.fixLongDecimal(perfs[0]?.difficulty?.stars ?? this.map.difficulty_rating)}
 `,
                     inline: true
                 },

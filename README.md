@@ -68,9 +68,11 @@ add the bot to an empty server and give it `create+manage expressions` permissio
 
 to compile the bot the bot use `tsc` or `npm run build`
 
-to run the compiled code use `npm run run` 
+to run the bot use `npm run run` 
 
-to run without docs use `npm run noweb` 
+to run the docs use `npm run run-web` 
+
+to run both the bot and docs simultaneously use `npm run run-full`
 
 
 ## required permissions

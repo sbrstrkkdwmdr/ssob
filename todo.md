@@ -4,6 +4,8 @@ newest-oldest
 
 ## current
 
+- [x] `Simulate` `-prev` doesn't handle custom speed properly
+- [x] `Simulate` `-speed` arg should override DT instead of multiplying them together
 - [x] `Recent` highlight section passed on map strains if score is fail
 - [x] graphs: disable ticks on strains graph
 - [x] option to disable grid and legends

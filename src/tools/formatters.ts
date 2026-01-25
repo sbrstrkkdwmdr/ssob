@@ -369,7 +369,7 @@ export class ScoreFormatter {
         const scoreStat = `\`${calculate.numberShorthand(other.getTotalScore(score))}\``;
         const str: string[] = [rank, scoreStat];
         if (score?.beatmap?.difficulty_rating) {
-            const stars = `${score?.beatmap?.difficulty_rating?.toFixed(2)}⭐`;
+            const stars = `${calculate.fixLongDecimal(score?.beatmap?.difficulty_rating)}⭐`;
             str.push(stars);
         }
         if (score.mods.length > 0 && this.preset != 'single_map') {
@@ -406,7 +406,7 @@ export class ScoreFormatter {
             const removedMsg = `**Removed ${rm}❌**\n`;
             const hits = returnHits(score.statistics, score.ruleset_id).short;
             const combo = `**${perfs[1].difficulty.maxCombo}x**`;
-            const accuracy = `${(score.accuracy * 100).toFixed(2)}% ->  **${acc.toFixed(2)}%**`;
+            const accuracy = `${calculate.fixLongDecimal(score.accuracy * 100)}% ->  **${calculate.fixLongDecimal(acc)}%**`;
             str = [
                 removedMsg, hits, combo, accuracy
             ];
@@ -414,7 +414,7 @@ export class ScoreFormatter {
             const hits = returnHits(score.statistics, score.ruleset_id).short;
             let combo = `${score?.max_combo}/**${perfs[1].difficulty.maxCombo}x**`;
             if (score.max_combo == perfs[1].difficulty.maxCombo || !score.max_combo) combo = `**${score.max_combo}x**`;
-            const accuracy = `${(score.accuracy * 100).toFixed(2)}%`;
+            const accuracy = `${calculate.fixLongDecimal(score.accuracy * 100)}%`;
             str = [
                 hits, combo, accuracy
             ];
@@ -422,11 +422,11 @@ export class ScoreFormatter {
         return listLine(str);
     }
     scoreStatsPerformance(score: osuapi.types_v2.Score, perfs: PerformanceAttributes[]) {
-        let str = `${(score?.pp ?? perfs[0].pp).toFixed(2)}pp`;
+        let str = `${calculate.fixLongDecimal(score?.pp ?? perfs[0].pp)}pp`;
         if (!score?.is_perfect_combo) {
-            str += ' (' + perfs[1].pp.toFixed(2) + 'pp if FC)';
+            str += ' (' + calculate.fixLongDecimal(perfs[1].pp) + 'pp if FC)';
         } else if (score?.accuracy < 1) {
-            str += ' (' + perfs[2].pp.toFixed(2) + 'pp if SS)';
+            str += ' (' + calculate.fixLongDecimal(perfs[2].pp) + 'pp if SS)';
         }
         return str;
     }

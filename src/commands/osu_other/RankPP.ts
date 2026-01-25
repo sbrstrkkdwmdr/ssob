@@ -61,7 +61,7 @@ export class RankPP extends OsuCommand {
                 break;
             case 'rank': {
                 returnval = await data.getRankPerformance('rank->pp', this.params.value, this.params.mode);
-                output = 'approx. ' + calculate.separateNum(returnval.value.toFixed(2)) + 'pp';
+                output = 'approx. ' + calculate.separateNum(calculate.fixLongDecimal(returnval.value)) + 'pp';
 
                 Embed
                     .setTitle(`Approximate performance for rank #${this.params.value}`);

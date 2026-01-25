@@ -61,7 +61,8 @@ export class WhatIf extends OsuCommand {
         // do stuff
 
         if (!this.params.pp || isNaN(this.params.pp) || this.params.pp > 10000) {
-            this.input.message.reply("Please define a valid PP value to calculate");
+            await this.sendError(`Please define a valid PP value to calculate`);
+            return;
         }
 
         await this.fixUser();
@@ -88,8 +89,7 @@ export class WhatIf extends OsuCommand {
         try {
             osutopdata = await this.getTopData(osudata.id, this.params.mode);
         } catch (e) {
-            this.ctn.content = 'There was an error trying to fetch top scores';
-            await this.send();
+            await this.sendError(`Could not fetch user\'s top scores`);
             return;
         }
 
@@ -123,8 +123,8 @@ export class WhatIf extends OsuCommand {
     `);
         } else {
             embed.setDescription(
-                `A ${this.params.pp}pp score would be their **${calculate.toOrdinal(ppindex + 1)}** top play and would be weighted at **${(weight * 100).toFixed(2)}%**.
-    Their pp would change by **${Math.abs((total + bonus) - osudata.statistics.pp).toFixed(2)}pp** and their new total pp would be **${(total + bonus).toFixed(2)}pp**.
+                `A ${this.params.pp}pp score would be their **${calculate.toOrdinal(ppindex + 1)}** top play and would be weighted at **${calculate.fixLongDecimal(weight * 100)}%**.
+    Their pp would change by **${calculate.fixLongDecimal(Math.abs((total + bonus) - osudata.statistics.pp))}pp** and their new total pp would be **${calculate.fixLongDecimal(total + bonus)}pp**.
     Their new rank would be **${Math.round(guessrank.value)}** (+${Math.round(osudata?.statistics?.global_rank - guessrank.value)}).
     `
             );

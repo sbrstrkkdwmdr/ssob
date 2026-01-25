@@ -4,6 +4,7 @@ import Discord from 'discord.js';
 import fs from 'fs';
 import v8 from 'v8';
 import * as helper from './helper';
+import { fixLongDecimal } from './tools/calculate';
 import * as log from './tools/log';
 import * as osuapi from './tools/osuapi';
 import * as track from './tools/track';
@@ -62,7 +63,7 @@ export function heapLoop() {
 
 function checkHeap() {
     const sl = v8.getHeapStatistics();
-    log.stdout(toMiB(sl.used_heap_size).toFixed(2) + 'MiB / ' + toMiB(sl.heap_size_limit) + 'MiB Heap Used');
+    log.stdout(fixLongDecimal(toMiB(sl.used_heap_size)) + 'MiB / ' + toMiB(sl.heap_size_limit) + 'MiB Heap Used');
 }
 
 function toMiB(number: number) {
@@ -210,6 +211,7 @@ function clearMapFiles() {
 
 // other
 async function getOnlineChangelog() {
+    log.stdout('Fetching changelog from github...')
     await axios.get(`https://raw.githubusercontent.com/sbrstrkkdwmdr/ssob/dev/changelog.md`)
         .then(data => {
             fs.writeFileSync(`${helper.path.cache}/changelog.md`, data.data);

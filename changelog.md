@@ -6,6 +6,26 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+
+## [5.6.1] - 2026-01-25
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/dad7ae402d15b3db88dd719646aebc6c4dd83bef)</br>
+
+### Fixed
+
+-   `MapParse` - Submitted not being on a new line
+-   `MapParse` - Mirror names
+-   `WhatIf` - command not properly quitting if a null value is given
+-   `Simulate` - DT/NC/HT/DC no longer multiplies `overrideSpeed`
+-   `Simulate` - custom speed from previous scores is ignored
+-   `MapParse` - ppcalc embed not being sent
+
+### Changed
+
+-   (docs) small tweaks
+-   sendError() no longer throws an error (mostly just cluttered the console)
+-   only use `.toFixed()` on numbers that exceed 2 d.p.
+
 ## [5.6.0] - 2025-12-18
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/d155867d7b780b5e5c3f8b41adea4afad62849bf)</br>
@@ -14,9 +34,9 @@
 
 -   (docs) `ScoreListCommand` - missing star rating option for score sorting
 -   (docs) "Formatted as" being on the same line as arg description
--   (docs) `ScoreListCommand` - sort by default is now recent on some lists
+-   (docs) `ScoreListCommand` - fix default "sort by" value
 -   method `scoreIsComplete` returning incorrect percentage
--   `Recent` page buttons now disable based
+-   `Recent` page buttons now disable based on score position
 
 ### Changed
 
@@ -26,10 +46,10 @@
 -   `Simulate` - params equal to 0 are no longer treated as null
 -   `Simulate` - score statistics are no longer automatically taken from the most recent score (can be re-enabled with `-prev`)
 -   strain graphs are now filled line charts
--   `MapParse` now show both fail and exit times in detailed mode
--   `MapParse` update shown mirrors
--   `MapParse` difficulty rating in select menus rounds to 2 decimal places
--   `Recent`, `ScoreParse` strains graph highlights passed section for failed scores
+-   `MapParse` - now show both fail and exit times in detailed mode
+-   `MapParse` - update shown mirrors
+-   `MapParse` - difficulty rating in select menus rounds to 2 decimal places
+-   `Recent`, `ScoreParse` - strains graph highlights passed section for failed scores
 
 ### Refactor
 

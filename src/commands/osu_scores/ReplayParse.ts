@@ -35,7 +35,6 @@ export class ReplayParse extends SingleScoreCommand {
         try {
             this.map = await this.getMap(score?.info?.beatmapHashMD5);
         } catch (e) {
-            console.log(e);
             return;
         }
 

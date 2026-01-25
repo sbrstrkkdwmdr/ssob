@@ -25,17 +25,17 @@ export function appendUrlParamsString(url: string, params: string[]) {
 
 export function debug(data: any, type: string, name: string, serverId: string | number, params: string) {
     const pars = params.replaceAll(',', '=');
-    if (!fs.existsSync(`${helper.path.main}/cache/debug/${type}`)) {
-        fs.mkdirSync(`${helper.path.main}/cache/debug/${type}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug/${type}`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug/${type}`);
     }
-    if (!fs.existsSync(`${helper.path.main}/cache/debug/${type}/${name}/`)) {
-        fs.mkdirSync(`${helper.path.main}/cache/debug/${type}/${name}`);
+    if (!fs.existsSync(`${helper.path.cache}/debug/${type}/${name}/`)) {
+        fs.mkdirSync(`${helper.path.cache}/debug/${type}/${name}`);
     }
     try {
         if (data?.input?.config) {
             data.helper.vars.config = censorConfig();
         }
-        fs.writeFileSync(`${helper.path.main}/cache/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
+        fs.writeFileSync(`${helper.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
     } catch (error) {
     }
     return;
@@ -518,4 +518,12 @@ export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true,
  */
 export function isSet(value: any) {
     return (value != null && value != undefined);
+}
+
+export function repeatArray<T extends any>(data: T, count: number): T[] {
+    const temp: T[] = [];
+    for (let i = 0; i < count; i++) {
+        temp.push(data);
+    }
+    return temp;
 }

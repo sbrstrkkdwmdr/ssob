@@ -215,7 +215,7 @@ export class Command {
         this.voidcontent();
         this.ctn.content = err;
         await this.send();
-        throw new Error(err);
+        // throw new Error(err);
     }
     protected async sendLoading() {
         const temp = this.ctn;

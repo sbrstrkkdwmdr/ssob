@@ -261,8 +261,8 @@ export type params = {
 };
 
 export function getButtonArgs(commandId: string | number) {
-    if (fs.existsSync(`${helper.path.main}/cache/params/${commandId}.json`)) {
-        const x = fs.readFileSync(`${helper.path.main}/cache/params/${commandId}.json`, 'utf-8');
+    if (fs.existsSync(`${helper.path.cache}/params/${commandId}.json`)) {
+        const x = fs.readFileSync(`${helper.path.cache}/params/${commandId}.json`, 'utf-8');
         return JSON.parse(x) as params;
     }
     return {
@@ -274,7 +274,7 @@ export function storeButtonArgs(commandId: string | number, params: params) {
     if (params?.page < 1) {
         params.page = 1;
     }
-    fs.writeFileSync(`${helper.path.main}/cache/params/${commandId}.json`, JSON.stringify(params, null, 2));
+    fs.writeFileSync(`${helper.path.cache}/params/${commandId}.json`, JSON.stringify(params, null, 2));
 }
 
 export function buttonPage(page: number, max: number, button: helper.bottypes.buttonType) {
