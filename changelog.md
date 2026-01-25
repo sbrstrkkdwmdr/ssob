@@ -9,7 +9,7 @@
 
 ## [5.6.1] - 2026-01-25
 
-[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/dad7ae402d15b3db88dd719646aebc6c4dd83bef)</br>
 
 ### Fixed
 
