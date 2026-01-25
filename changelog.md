@@ -6,6 +6,11 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+
+## [5.6.1] - 2026-01-25
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+
 ### Fixed
 
 -   `MapParse` - Submitted not being on a new line
