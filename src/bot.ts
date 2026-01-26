@@ -40,7 +40,7 @@ export function begin() {
 
     helper.vars.client = client;
 
-    client.once('ready', () => {
+    client.once('clientReady', () => {
         console.log('Initialising emojis...');
         emojisetup();
         helper.vars.userdata.sync();
