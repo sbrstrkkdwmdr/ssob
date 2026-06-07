@@ -1,28 +1,52 @@
-import ejs from 'ejs';
-import express from 'express';
-import expressLayouts from 'express-ejs-layouts';
-import { readFileSync } from 'fs';
-import path from 'path';
-import * as helper from './helper';
-import { Dict } from './types/tools';
-import { cmds } from './vars/commandData';
+import ejs from "ejs";
+import express from "express";
+import expressLayouts from "express-ejs-layouts";
+import { readFileSync } from "fs";
+import path from "path";
+import * as helper from "./helper";
+import { Dict } from "./types/tools";
+import { cmds } from "./vars/commandData";
 
 type routeEntry = {
-    file: string,
-    title: string,
-    addon: object,
+    file: string;
+    title: string;
+    addon: object;
 };
 
 export function begin() {
-    console.log('Initialising Express...');
+    console.log("Initialising Express...");
     const app = express();
-    app.use(express.static('./static', { extensions: ['.html'] }));
-    app.engine('.html', ejs.renderFile);
+    app.use(express.static("./static", { extensions: [".html"] }));
+    app.engine(".html", ejs.renderFile);
     app.use(expressLayouts);
-    app.set('views', path.join(__dirname, 'views'),);
-    app.set('view engine', 'ejs');
+    app.set("views", path.join(__dirname, "views"));
+    app.set("view engine", "ejs");
 
-    app.get('/', (req, res, next) => {
+    app.use(malformedURI);
+
+    function malformedURI(
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+    ) {
+        let err;
+        try {
+            decodeURIComponent(req.path);
+            decodeURI(req.originalUrl);
+        } catch (e) {
+            err = e;
+        }
+        if (err) {
+            res.status(400).send({
+                error: "Bad Request",
+                message: "Malformed URI",
+            });
+            return;
+        }
+        next();
+    }
+
+    app.get("/", (req, res, next) => {
         // console.log(req.params.page);
         // const dict: Dict<routeEntry> = {
         //     'commands': {
@@ -33,36 +57,34 @@ export function begin() {
         //     'changelog': { file: 'changelog', title: 'SSoB Changelog', addon: {} },
         //     'types': { file: 'types', title: 'Argument types', addon: {} },
         // };
-        res.render('index', {
-            layout: 'layout',
-            title: 'Home',
+        res.render("index", {
+            layout: "layout",
+            title: "Home",
         });
     });
-    app.get('/changelog', (req, res, next) => {
-        const doc = readFileSync(`${helper.path.cache}/changelog.md`, 'utf-8');
-        res.render('changelog', {
-            layout: 'layout',
-            title: 'Changelog',
+    app.get("/changelog", (req, res, next) => {
+        const doc = readFileSync(`${helper.path.cache}/changelog.md`, "utf-8");
+        res.render("changelog", {
+            layout: "layout",
+            title: "Changelog",
             content: doc
-                .replaceAll('\n', '\\n')
-                .replaceAll('\'', '\\\'')
+                .replaceAll("\n", "\\n")
+                .replaceAll("'", "\\'")
                 .replaceAll('\"', '\\\"')
-                .replaceAll('\`', '\\\`')
-
-            ,
+                .replaceAll("\`", "\\\`"),
         });
     });
-    app.get('/commands', (req, res, next) => {
-        res.render('commands', {
-            layout: 'layout',
-            title: 'Commands',
-            cmds: JSON.stringify(cmds)
+    app.get("/commands", (req, res, next) => {
+        res.render("commands", {
+            layout: "layout",
+            title: "Commands",
+            cmds: JSON.stringify(cmds),
         });
     });
-    app.get('/types', (req, res, next) => {
-        res.render('types', {
-            layout: 'layout',
-            title: 'Types',
+    app.get("/types", (req, res, next) => {
+        res.render("types", {
+            layout: "layout",
+            title: "Types",
         });
     });
 
@@ -71,10 +93,10 @@ export function begin() {
     // });
 
     app.use(function (req, res) {
-        res.status(404).send('Could not find resource');
+        res.status(404).send("Could not find resource");
     });
 
     app.listen(helper.vars.config.port, () => {
-        console.log('Express started on port ' + helper.vars.config.port);
+        console.log("Express started on port " + helper.vars.config.port);
     });
 }
