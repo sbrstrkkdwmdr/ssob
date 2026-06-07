@@ -6,6 +6,20 @@
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
 
+## [5.6.2] - xxxx-xx-xx
+
+[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+
+### Fixed
+
+- Fix some deprecated fields
+- (docs) stop malformed URIs dumping the stack trace to the client
+- Fix copy script
+
+### Changed
+
+- Update `Simulate` command info
+
 ## [5.6.1] - 2026-01-25
 
 [commit](https://github.com/sbrstrkkdwmdr/ssob/commit/3a2a4b6f4a7b1b5018e5669bd9f76e0e4145f2dc)</br>
