@@ -1392,8 +1392,8 @@ export const cmds: helper.bottypes.commandInfo[] = [
                 name: 'use previous',
                 type: 'boolean',
                 required: false,
-                description: 'Whether or not to take hit statistics from the most recent score',
-                format: [],
+                description: 'Use values from the most recent score in the channel (acc, combo, mods)',
+                format: ['-previous', '-p', '-prev'],
                 defaultValue: 'false',
             },
         ]

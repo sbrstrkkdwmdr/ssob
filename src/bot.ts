@@ -1,23 +1,23 @@
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
-import fs from 'fs';
+import { Client, GatewayIntentBits, Partials } from "discord.js";
+import fs from "fs";
 
-import { ButtonHandler } from './buttonHandler';
-import { CommandHandler } from './commandHandler';
-import { setup as emojisetup } from './emoji_setup';
-import * as helper from './helper';
-import { LinkHandler } from './linkHandler';
-import { heapLoop, loops } from './loops';
-import * as slashcmds from './slashCommands';
-import * as log from './tools/log';
+import { ButtonHandler } from "./buttonHandler";
+import { CommandHandler } from "./commandHandler";
+import { setup as emojisetup } from "./emoji_setup";
+import * as helper from "./helper";
+import { LinkHandler } from "./linkHandler";
+import { heapLoop, loops } from "./loops";
+import * as slashcmds from "./slashCommands";
+import * as log from "./tools/log";
 
 export function begin() {
     const initdate = new Date();
-    console.log('Initialising client...');
+    console.log("Initialising client...");
     const client = new Client({
         intents: [
             GatewayIntentBits.DirectMessages,
             GatewayIntentBits.GuildModeration,
-            GatewayIntentBits.GuildEmojisAndStickers,
+            GatewayIntentBits.GuildExpressions,
             GatewayIntentBits.GuildIntegrations,
             GatewayIntentBits.GuildInvites,
             GatewayIntentBits.GuildMembers,
@@ -31,17 +31,13 @@ export function begin() {
             GatewayIntentBits.GuildWebhooks,
             GatewayIntentBits.MessageContent,
         ],
-        partials: [
-            Partials.Message,
-            Partials.Channel,
-            Partials.User
-        ]
+        partials: [Partials.Message, Partials.Channel, Partials.User],
     });
 
     helper.vars.client = client;
 
-    client.once('ready', () => {
-        console.log('Initialising emojis...');
+    client.once("clientReady", () => {
+        console.log("Initialising emojis...");
         emojisetup();
         helper.vars.userdata.sync();
         helper.vars.guildSettings.sync();
@@ -57,59 +53,62 @@ Boot time:        ${currentDate.getTime() - initdate.getTime()}ms
 Time:             ${currentDate.toLocaleString()}
 Time (ISO):       ${currentDate.toISOString()}
 Time (epoch, ms): ${currentDate.getTime()}
-Client:           ${client.user?.tag} 
+Client:           ${client.user?.tag}
 Client ID:        ${client.user?.id}
 ====================================================
 `);
         if (!fs.existsSync(`${helper.path.precomp}/config/osuauth.json`)) {
             log.stdout(`Creating ${helper.path.precomp}/config/osuauth.json`);
-            fs.writeFileSync(`${helper.path.precomp}/config/osuauth.json`,
-                '{"token_type": "Bearer", "expires_in": 1, "access_token": "blahblahblah"}', 'utf-8');
+            fs.writeFileSync(
+                `${helper.path.precomp}/config/osuauth.json`,
+                '{"token_type": "Bearer", "expires_in": 1, "access_token": "blahblahblah"}',
+                "utf-8",
+            );
         }
 
         const makeDir = [
-            'trackingFiles',
-            'logs',
+            "trackingFiles",
+            "logs",
             // 'logs/gen',
-            'logs/cmd',
+            "logs/cmd",
             // 'logs/moderator',
-            'cache',
-            'cache/commandData',
-            'cache/params',
-            'cache/debug',
-            'cache/debug',
-            'cache/debug',
-            'cache/previous',
-            'cache/graphs',
-            'cache/errors',
-            'files',
-            'files/maps',
-            'files/replays',
-            'files/localmaps',
-            'files/',
+            "cache",
+            "cache/commandData",
+            "cache/params",
+            "cache/debug",
+            "cache/debug",
+            "cache/debug",
+            "cache/previous",
+            "cache/graphs",
+            "cache/errors",
+            "files",
+            "files/maps",
+            "files/replays",
+            "files/localmaps",
+            "files/",
         ];
         const makeFiles = [
-            'id.txt',
-            'logs/totalcommands.txt',
-            'logs/debug.log',
-            'logs/updates.log',
-            'logs/err.log',
-            'logs/warn.log',
-            'logs/general.log',
+            "id.txt",
+            "logs/totalcommands.txt",
+            "logs/debug.log",
+            "logs/updates.log",
+            "logs/err.log",
+            "logs/warn.log",
+            "logs/general.log",
         ];
-        makeDir.forEach(dir => {
+        makeDir.forEach((dir) => {
             if (!fs.existsSync(`${helper.path.main}/` + dir)) {
                 console.log(`Creating ${helper.path.main}/${dir}`);
                 fs.mkdirSync(`${helper.path.main}/` + dir);
             }
         });
-        makeFiles.forEach(file => {
+        makeFiles.forEach((file) => {
             if (!fs.existsSync(`${helper.path.main}/` + file)) {
                 console.log(`Creating ${helper.path.main}/${file}`);
-                fs.writeFileSync(`${helper.path.main}/` + file, '');
+                fs.writeFileSync(`${helper.path.main}/` + file, "");
             }
         });
-        client.on('messageCreate', async (message) => {
+        client.on("messageCreate", async (message) => {
             const ch = new CommandHandler();
             const lh = new LinkHandler();
             ch.onMessage(message);
@@ -118,30 +117,42 @@ Client ID:        ${client.user?.id}
             //if message mentions bot and no other args given, return prefix
             let settings: helper.tooltypes.guildSettings;
             if (message.mentions.users.size > 0) {
-                if (message.mentions.users.first().id == helper.vars.client.user.id && message.content.replaceAll(' ', '').length == (`<@${helper.vars.client.user.id}>`).length) {
-                    let serverPrefix = 'null';
+                if (
+                    message.mentions.users.first().id ==
+                        helper.vars.client.user.id &&
+                    message.content.replaceAll(" ", "").length ==
+                        `<@${helper.vars.client.user.id}>`.length
+                ) {
+                    let serverPrefix = "null";
                     try {
-                        const curGuildSettings = await helper.vars.guildSettings.findOne({ where: { guildid: message.guildId } });
+                        const curGuildSettings =
+                            await helper.vars.guildSettings.findOne({
+                                where: { guildid: message.guildId },
+                            });
                         settings = curGuildSettings.dataValues;
                         serverPrefix = settings.prefix;
                     } catch (error) {
                         serverPrefix = helper.vars.config.prefix;
                     }
-                    message.reply({ content: `Global prefix is \`${helper.vars.config.prefix}\`\nServer prefix is \`${serverPrefix}\``, allowedMentions: { repliedUser: false } });
+                    message.reply({
+                        content: `Global prefix is \`${helper.vars.config.prefix}\`\nServer prefix is \`${serverPrefix}\``,
+                        allowedMentions: { repliedUser: false },
+                    });
                     return;
                 }
             }
 
             //if message is a cooldown message, delete it after 3 seconds
-            if (message.content.startsWith('You\'re on cooldown') && message.author.id == helper.vars.client.user.id) {
+            if (
+                message.content.startsWith("You're on cooldown") &&
+                message.author.id == helper.vars.client.user.id
+            ) {
                 setTimeout(() => {
-                    message.delete()
-                        .catch(err => {
-                        });
+                    message.delete().catch((err) => {});
                 }, 5000);
             }
         });
-        client.on('interactionCreate', async (interaction) => {
+        client.on("interactionCreate", async (interaction) => {
             const ch = new CommandHandler();
             const bh = new ButtonHandler();
             ch.onInteraction(interaction);
@@ -154,7 +165,7 @@ Client ID:        ${client.user?.id}
 
     client.login(helper.vars.config.token);
 
-    process.on('warning', e => {
+    process.on("warning", (e) => {
         log.stdout(e.stack);
         console.warn(e.stack);
     });
