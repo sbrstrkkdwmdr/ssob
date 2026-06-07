@@ -6,7 +6,7 @@
         "test": "echo \"Error: no test specified\" && exit 1",
         "tsc": "tsc",
         "clean": "ts-node tools/clean.ts",
-        "copy": "ts-node tools/copyAssets",
+        "copy": "ts-node tools/copyAssets.ts",
         "build": "npm-run-all clean tsc copy",
         "run": "node dist/src/app_botonly.js",
         "run-web": "node dist/src/app_webonly.js",
