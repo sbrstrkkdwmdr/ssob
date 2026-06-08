@@ -8,7 +8,7 @@
 
 ## [5.6.2] - xxxx-xx-xx
 
-[commit](https://github.com/sbrstrkkdwmdr/ssob)</br>
+[commit](https://github.com/sbrstrkkdwmdr/ssob/commit/11d06d9fdae64b99728e6aba0dc3be0c029fffc6)</br>
 
 ### Fixed
 
