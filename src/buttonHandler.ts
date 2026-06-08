@@ -1,216 +1,329 @@
-import * as Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import { gen, osu_maps, osu_other, osu_profiles, osu_scores } from './commandHelper';
-import { Command, InputHandler } from './commands/command';
-import * as helper from './helper';
-import * as checks from './tools/checks';
-import * as commandTools from './tools/commands';
-import * as osuapi from './tools/osuapi';
+import * as Discord from "discord.js";
+import * as osumodcalc from "osumodcalculator";
+import {
+    gen,
+    osu_maps,
+    osu_other,
+    osu_profiles,
+    osu_scores,
+} from "./commandHelper";
+import { Command, InputHandler } from "./commands/command";
+import * as helper from "./helper";
+import * as checks from "./tools/checks";
+import * as commandTools from "./tools/commands";
+import * as osuapi from "./tools/osuapi";
 
 export class ButtonHandler extends InputHandler {
     buttonWarnedUsers = new Set();
-    async onMessage(message: Discord.Message) {
-
-    }
+    async onMessage(message: Discord.Message) {}
     async onInteraction(interaction: Discord.Interaction) {
-        if (!(interaction.type == Discord.InteractionType.MessageComponent || interaction.type == Discord.InteractionType.ModalSubmit)) return;
-        if (interaction.applicationId != helper.vars.client?.application?.id) return;
+        if (
+            !(
+                interaction.type == Discord.InteractionType.MessageComponent ||
+                interaction.type == Discord.InteractionType.ModalSubmit
+            )
+        )
+            return;
+        if (interaction.applicationId != helper.vars.client?.application?.id)
+            return;
         this.overrides = {
-            commandAs: 'button',
+            commandAs: "button",
         };
 
         let canReply = true;
-        if (!checks.botHasPerms(interaction, ['ReadMessageHistory'])) {
+        if (!checks.botHasPerms(interaction, ["ReadMessageHistory"])) {
             canReply = false;
         }
         interaction = interaction as Discord.ButtonInteraction; //| Discord.SelectMenuInteraction
 
         //version-buttonType-baseCommand-userId-commandId-extraValue
         //buttonVer-button-command-specid-id-???
-        const buttonsplit = interaction.customId.split('-');
+        const buttonsplit = interaction.customId.split("-");
         const buttonVer = buttonsplit[0];
         const buttonType = buttonsplit[1] as helper.bottypes.buttonType;
         const cmd = buttonsplit[2];
         const specid = buttonsplit[3];
 
         if (buttonVer != helper.versions.releaseDate) {
-            const findcommand = helper.versions.versions.find(x =>
-                x.name == buttonVer ||
-                x.releaseDate.replaceAll('-', '') == buttonVer
-            ) ?? false;
+            const findcommand =
+                helper.versions.versions.find(
+                    (x) =>
+                        x.name == buttonVer ||
+                        x.releaseDate.replaceAll("-", "") == buttonVer,
+                ) ?? false;
             await interaction.reply({
                 content: `You cannot use this command as it is outdated
     Bot version: ${helper.versions.releaseDate} (${helper.versions.current})
-    Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name})` : 'INVALID'}
+    Command version: ${findcommand ? `${findcommand.releaseDate} (${findcommand.name})` : "INVALID"}
     `,
                 flags: Discord.MessageFlags.Ephemeral,
-                allowedMentions: { repliedUser: false }
+                allowedMentions: { repliedUser: false },
             });
             return;
         }
-        if (specid && specid != 'any' && specid != interaction.user.id) {
+        if (specid && specid != "any" && specid != interaction.user.id) {
             if (!this.buttonWarnedUsers.has(interaction.member.user.id)) {
                 await interaction.reply({
-                    content: 'You cannot use this button',
+                    content: "You cannot use this button",
                     flags: Discord.MessageFlags.Ephemeral,
-                    allowedMentions: { repliedUser: false }
+                    allowedMentions: { repliedUser: false },
                 });
                 this.buttonWarnedUsers.add(interaction.member.user.id);
-                setTimeout(() => {
-                    this.buttonWarnedUsers.delete(interaction.member.user.id);
-                }, 1000 * 60 * 60 * 24);
+                setTimeout(
+                    () => {
+                        this.buttonWarnedUsers.delete(
+                            interaction.member.user.id,
+                        );
+                    },
+                    1000 * 60 * 60 * 24,
+                );
             } else {
-                interaction.deferUpdate()
-                    .catch(error => { });
+                interaction.deferUpdate().catch((error) => {});
             }
             return;
         }
 
-        if (await this.handleButtons(buttonType, interaction, cmd.toLowerCase(), buttonsplit[4])) {
+        if (
+            await this.handleButtons(
+                buttonType,
+                interaction,
+                cmd.toLowerCase(),
+                buttonsplit[4],
+            )
+        ) {
             return;
         }
-        if (await this.specialCommands(buttonsplit, buttonType, interaction, cmd.toLowerCase())) {
+        if (
+            await this.specialCommands(
+                buttonsplit,
+                buttonType,
+                interaction,
+                cmd.toLowerCase(),
+            )
+        ) {
             return;
         }
 
         try {
             this.commandSelect(cmd.toLowerCase(), interaction);
-            this.runCommand(interaction, buttonType, buttonsplit[4], null, true);
-        } catch (err) { }
+            this.runCommand(
+                interaction,
+                buttonType,
+                buttonsplit[4],
+                null,
+                true,
+            );
+        } catch (err) {}
     }
 
-    async handleButtons(buttonType: helper.bottypes.buttonType, interaction: Discord.ButtonInteraction, cmd: string, id: string) {
-        if (buttonType == 'Search') {
+    async handleButtons(
+        buttonType: helper.bottypes.buttonType,
+        interaction: Discord.ButtonInteraction,
+        cmd: string,
+        id: string,
+    ) {
+        if (buttonType == "Search") {
             const menu = new Discord.ModalBuilder()
-                .setTitle('Page')
-                .setCustomId(`${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${id}`)
+                .setTitle("Page")
+                .setCustomId(
+                    `${helper.versions.releaseDate}-SearchMenu-${cmd}-${interaction.user.id}-${id}`,
+                )
                 .addComponents(
                     //@ts-expect-error - TextInputBuilder not assignable to AnyInputBuilder
-                    new Discord.ActionRowBuilder()
-                        .addComponents(new Discord.TextInputBuilder()
-                            .setCustomId('SearchInput')
+                    new Discord.ActionRowBuilder().addComponents(
+                        new Discord.TextInputBuilder()
+                            .setCustomId("SearchInput")
                             .setLabel("What page do you want to go to?")
-                            .setStyle(Discord.TextInputStyle.Short)
-                        )
+                            .setStyle(Discord.TextInputStyle.Short),
+                    ),
                 );
 
-
-            interaction.showModal(menu)
-                .catch(error => { });
+            interaction.showModal(menu).catch((error) => {});
             return true;
         }
-        if (buttonType.includes('Select')) {
+        if (buttonType.includes("Select")) {
             switch (cmd) {
-                case 'map': case 'ppcalc':
+                case "map":
+                case "ppcalc":
                     {
+                        console.log("hello");
                         //interaction is converted to a base interaction first because button interaction and select menu interaction don't overlap
-                        this.overrides.id = ((interaction as Discord.BaseInteraction) as Discord.SelectMenuInteraction).values[0];
-                        // @ts-expect-error TS2339: Property 'components' does not exist on type 'TopLevelComponent'.
-                        if (interaction?.message?.components[2]?.components[0]) {
-                            // @ts-expect-error TS2339: Property 'components' does not exist on type 'TopLevelComponent'.
-                            this.overrides.overwriteModal = interaction.message.components[2].components[0] as any;
+                        this.overrides.id = (
+                            interaction as Discord.BaseInteraction as Discord.SelectMenuInteraction
+                        ).values[0];
+                        console.log("a");
+                        console.log(this.overrides.id);
+                        const tmp = (
+                            interaction?.message
+                                ?.components[1] as Discord.ActionRow<Discord.MessageActionRowComponent>
+                        )?.components[0];
+                        if (tmp) {
+                            this.overrides.overwriteModal =
+                                tmp as Discord.StringSelectMenuComponent;
                         }
                     }
                     break;
-                case 'help':
+                case "help":
                     {
-                        this.overrides.ex = ((interaction as Discord.BaseInteraction) as Discord.SelectMenuInteraction).values[0];
+                        this.overrides.ex = (
+                            interaction as Discord.BaseInteraction as Discord.SelectMenuInteraction
+                        ).values[0];
                     }
                     break;
             }
             return true;
         }
 
-        if (buttonType == 'Sort') {
+        if (buttonType == "Sort") {
             interaction.deferUpdate();
             return true;
         }
 
         // page selector
-        if (buttonType == 'SearchMenu') {
+        if (buttonType == "SearchMenu") {
             //interaction is converted to a base interaction first because button interaction and modal submit interaction don't overlap
-            const tst = parseInt(((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(0).value);
+            const tst = parseInt(
+                getModalInteractionValue(interaction, 0, "string"),
+            );
             if (tst.toString().length < 1) {
                 return;
             } else {
-                this.overrides.page = parseInt(((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(0).value);
+                this.overrides.page = tst;
             }
             return false;
         }
-        if (buttonType == 'SortMenu') {
-            this.overrides.sort = ((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(0).value;
-            this.overrides.reverse = ((interaction as Discord.BaseInteraction) as Discord.ModalSubmitInteraction).fields.fields.at(1).value as unknown as boolean;
+        if (buttonType == "SortMenu") {
+            this.overrides.sort = getModalInteractionValue(
+                interaction,
+                0,
+                "string",
+            );
+            this.overrides.reverse = getModalInteractionValue(
+                interaction,
+                1,
+                "bool",
+            );
+            (
+                interaction as Discord.BaseInteraction as Discord.ModalSubmitInteraction
+            ).fields.fields;
             return false;
         }
         return false;
     }
 
-    async specialCommands(buttonsplit: string[], buttonType: helper.bottypes.buttonType, interaction: Discord.ButtonInteraction, cmd: string) {
-        if (buttonType == 'Map') {
+    async specialCommands(
+        buttonsplit: string[],
+        buttonType: helper.bottypes.buttonType,
+        interaction: Discord.ButtonInteraction,
+        cmd: string,
+    ) {
+        if (buttonType == "Map") {
             this.overrides.id = buttonsplit[5];
-            if (buttonsplit[5].includes('+')) {
-                const temp = buttonsplit[5].split('+');
+            if (buttonsplit[5].includes("+")) {
+                const temp = buttonsplit[5].split("+");
                 this.overrides.id = temp[0];
                 const fm = temp[1];
-                if (temp[1].includes(',')) {
-                    this.overrides.filterMods = fm.split(',') as osumodcalc.types.Mod[];
+                if (temp[1].includes(",")) {
+                    this.overrides.filterMods = fm.split(
+                        ",",
+                    ) as osumodcalc.types.Mod[];
                 } else {
                     this.overrides.filterMods = [fm as osumodcalc.types.Mod];
                 }
             }
-            this.overrides.commandAs = 'interaction';
-            this.overrides.commanduser = interaction.member.user as Discord.User;
+            this.overrides.commandAs = "interaction";
+            this.overrides.commanduser = interaction.member
+                .user as Discord.User;
             this.selected = new osu_maps.MapParse();
 
-            await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
+            await this.runCommand(
+                interaction,
+                buttonType,
+                commandTools.getCmdId(),
+                "other",
+                false,
+            );
             return true;
         }
 
-        if (buttonType == 'User') {
-            this.overrides.id = buttonsplit[5].split('+')[0];
-            this.overrides.mode = buttonsplit[5].split('+')[1] as osuapi.types_v2.GameMode;
-            this.overrides.commandAs = 'interaction';
-            this.overrides.commanduser = interaction.member.user as Discord.User;
+        if (buttonType == "User") {
+            this.overrides.id = buttonsplit[5].split("+")[0];
+            this.overrides.mode = buttonsplit[5].split(
+                "+",
+            )[1] as osuapi.types_v2.GameMode;
+            this.overrides.commandAs = "interaction";
+            this.overrides.commanduser = interaction.member
+                .user as Discord.User;
 
             this.selected = new osu_profiles.Profile();
-            await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
+            await this.runCommand(
+                interaction,
+                buttonType,
+                commandTools.getCmdId(),
+                "other",
+                false,
+            );
             return true;
         }
-        if (buttonType == 'Leaderboard') {
+        if (buttonType == "Leaderboard") {
             switch (cmd) {
-                case 'map': {
+                case "map": {
                     const curEmbed = interaction.message.embeds[0];
                     // #<mode>/id
-                    this.overrides.id = curEmbed.url.split('#')[1].split('/')[1];
-                    this.overrides.mode = curEmbed.url.split('#')[1].split('/')[0] as osuapi.types_v2.GameMode;
-                    const fm = curEmbed.title?.split('+')?.[1] && curEmbed.title?.split('+')?.[1] != 'NM'
-                        ? curEmbed.title?.split('+')?.[1]
-                        : null;
-                    if (fm.includes(',')) {
-                        this.overrides.filterMods = fm.split(',') as osumodcalc.types.Mod[];
+                    this.overrides.id = curEmbed.url
+                        .split("#")[1]
+                        .split("/")[1];
+                    this.overrides.mode = curEmbed.url
+                        .split("#")[1]
+                        .split("/")[0] as osuapi.types_v2.GameMode;
+                    const fm =
+                        curEmbed.title?.split("+")?.[1] &&
+                        curEmbed.title?.split("+")?.[1] != "NM"
+                            ? curEmbed.title?.split("+")?.[1]
+                            : null;
+                    if (fm.includes(",")) {
+                        this.overrides.filterMods = fm.split(
+                            ",",
+                        ) as osumodcalc.types.Mod[];
                     } else if (fm != null) {
-                        this.overrides.filterMods = [fm as osumodcalc.types.Mod];
+                        this.overrides.filterMods = [
+                            fm as osumodcalc.types.Mod,
+                        ];
                     }
 
-                    this.overrides.commandAs = 'interaction';
+                    this.overrides.commandAs = "interaction";
 
-                    this.overrides.commanduser = interaction.member.user as Discord.User;
+                    this.overrides.commanduser = interaction.member
+                        .user as Discord.User;
                     this.selected = new osu_scores.MapLeaderboard();
 
-                    await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
+                    await this.runCommand(
+                        interaction,
+                        buttonType,
+                        commandTools.getCmdId(),
+                        "other",
+                        false,
+                    );
                     return true;
                 }
             }
         }
 
-        if (buttonType == 'Scores') {
-            this.overrides.id = buttonsplit[5].split('+')[0];
-            this.overrides.user = buttonsplit[5].split('+')[1];
-            this.overrides.commandAs = 'interaction';
-            this.overrides.commanduser = interaction.member.user as Discord.User;
+        if (buttonType == "Scores") {
+            this.overrides.id = buttonsplit[5].split("+")[0];
+            this.overrides.user = buttonsplit[5].split("+")[1];
+            this.overrides.commandAs = "interaction";
+            this.overrides.commanduser = interaction.member
+                .user as Discord.User;
             this.selected = new osu_scores.MapScores();
 
-            await this.runCommand(interaction, buttonType, commandTools.getCmdId(), 'other', false);
+            await this.runCommand(
+                interaction,
+                buttonType,
+                commandTools.getCmdId(),
+                "other",
+                false,
+            );
             return true;
         }
         return false;
@@ -218,74 +331,79 @@ export class ButtonHandler extends InputHandler {
 
     commandSelect(cmd: string, interaction: Discord.ButtonInteraction) {
         switch (cmd.toLowerCase()) {
-            case 'changelog':
+            case "changelog":
                 this.selected = new gen.Changelog();
                 break;
-            case 'compare':
+            case "compare":
                 this.selected = new osu_other.Compare();
                 break;
-            case 'firsts':
+            case "firsts":
                 this.selected = new osu_scores.Firsts();
                 break;
-            case 'leaderboard':
+            case "leaderboard":
                 this.selected = new osu_other.ServerLeaderboard();
                 break;
-            case 'map':
+            case "map":
                 this.selected = new osu_maps.MapParse();
                 break;
-            case 'mapleaderboard':
+            case "mapleaderboard":
                 this.selected = new osu_scores.MapLeaderboard();
                 break;
-            case 'nochokes':
+            case "nochokes":
                 this.overrides.miss = true;
                 this.selected = new osu_scores.NoChokes();
                 break;
-            case 'profile':
+            case "profile":
                 this.selected = new osu_profiles.Profile();
                 break;
-            case 'osutop':
+            case "osutop":
                 this.selected = new osu_scores.OsuTop();
                 break;
-            case 'pinned':
+            case "pinned":
                 this.selected = new osu_scores.Pinned();
                 break;
-            case 'ranking':
+            case "ranking":
                 this.selected = new osu_profiles.Ranking();
                 break;
-            case 'recent':
+            case "recent":
                 this.selected = new osu_scores.Recent();
                 break;
-            case 'recentlist':
+            case "recentlist":
                 this.selected = new osu_scores.RecentList();
                 break;
-            case 'recentactivity':
+            case "recentactivity":
                 this.selected = new osu_profiles.RecentActivity();
                 break;
-            case 'scoreparse':
+            case "scoreparse":
                 this.selected = new osu_scores.ScoreParse();
                 break;
-            case 'mapscores':
+            case "mapscores":
                 this.selected = new osu_scores.MapScores();
                 break;
-            case 'scorestats':
+            case "scorestats":
                 this.selected = new osu_scores.ScoreStats();
                 break;
-            case 'userbeatmaps':
+            case "userbeatmaps":
                 this.selected = new osu_maps.UserBeatmaps();
                 break;
-            case 'help':
+            case "help":
                 this.selected = new gen.Help();
                 break;
             default:
                 this.runFail(interaction);
-                throw new Error('No command found');
+                throw new Error("No command found");
         }
     }
 
-    async runCommand(interaction: Discord.ButtonInteraction, buttonType: helper.bottypes.buttonType, id: string, overrideType?: "message" | "button" | "interaction" | "link" | "other", defer?: boolean) {
+    async runCommand(
+        interaction: Discord.ButtonInteraction,
+        buttonType: helper.bottypes.buttonType,
+        id: string,
+        overrideType?: "message" | "button" | "interaction" | "link" | "other",
+        defer?: boolean,
+    ) {
         if (defer) {
-            await interaction.deferUpdate()
-                .catch(error => { });
+            await interaction.deferUpdate().catch((error) => {});
         }
         if (this.selected) {
             this.selected.setInput({
@@ -297,9 +415,11 @@ export class ButtonHandler extends InputHandler {
                 overrides: this.overrides,
                 canReply: true,
                 type: overrideType ?? "button",
-                buttonType
+                buttonType,
             });
-            await this.selected.execute().catch((e) => { console.log(e); });
+            await this.selected.execute().catch((e) => {
+                console.log(e);
+            });
         } else {
             this.runFail(interaction);
         }
@@ -310,11 +430,37 @@ export class ButtonHandler extends InputHandler {
     runFail(interaction: Discord.ButtonInteraction) {
         try {
             interaction.reply({
-                content: 'There was an error trying to run this command',
-                flags: Discord.MessageFlags.Ephemeral
+                content: "There was an error trying to run this command",
+                flags: Discord.MessageFlags.Ephemeral,
             });
-        } catch (e) {
-
-        }
+        } catch (e) {}
     }
 }
+
+function getModalInteractionValue<T extends ParamTypes>(
+    interaction: Discord.Interaction,
+    at: number,
+    type: T,
+): ParamReturnType<T> {
+    const temp =
+        interaction as Discord.BaseInteraction as Discord.ModalSubmitInteraction;
+    const field = temp.fields.fields.at(at);
+    if (field.hasOwnProperty("value")) {
+        return (field as Discord.TextInputModalData)
+            .value as unknown as ParamReturnType<T>;
+    }
+    return (field as Discord.CheckboxGroupModalData)
+        .values[0] as unknown as ParamReturnType<T>;
+}
+
+type ParamTypes = "string" | "number" | "bool";
+
+// bool_setValue param overrides return type
+// otherwise, return type is T
+type ParamReturnType<T> = T extends "string"
+    ? string
+    : T extends "bool"
+      ? boolean
+      : T extends "number"
+        ? number
+        : never;

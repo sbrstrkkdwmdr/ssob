@@ -1,44 +1,43 @@
-import * as fs from 'fs';
-import * as osumodcalc from 'osumodcalculator';
-import * as rosu from 'rosu-pp-js';
-import * as helper from '../helper';
-import { Dict } from '../types/tools';
-import * as api from './api';
-import * as formatters from './formatters';
-import * as log from './log';
-import * as osuapi from './osuapi';
-import * as other from './other';
+import * as fs from "fs";
+import * as osumodcalc from "osumodcalculator";
+import * as rosu from "rosu-pp-js";
+import * as helper from "../helper";
+import { Dict } from "../types/tools";
+import * as api from "./api";
+import * as formatters from "./formatters";
+import * as log from "./log";
+import * as osuapi from "./osuapi";
+import * as other from "./other";
 
 /** */
 export async function calcScore(input: {
-    mapid: number,
-    mode: rosu.GameMode,
-    mods: osumodcalc.types.Mod[],
-    accuracy: number,
-    clockRate?: number,
-    stats?: osuapi.types_v2.ScoreStatistics,
-    maxcombo?: number,
-    passedObjects?: number,
-    mapLastUpdated: Date,
-    customCS?: number,
-    customAR?: number,
-    customOD?: number,
-    customHP?: number,
-    isLazer: boolean,
+    mapid: number;
+    mode: rosu.GameMode;
+    mods: osumodcalc.types.Mod[];
+    accuracy: number;
+    clockRate?: number;
+    stats?: osuapi.types_v2.ScoreStatistics;
+    maxcombo?: number;
+    passedObjects?: number;
+    mapLastUpdated: Date;
+    customCS?: number;
+    customAR?: number;
+    customOD?: number;
+    customHP?: number;
+    isLazer: boolean;
 }) {
     let data = { ...input };
 
     // get beatmap
     const mapPath = await api.dlMap(data.mapid, 0, data.mapLastUpdated);
-    const map = new rosu.Beatmap(fs.readFileSync(mapPath, 'utf-8'));
+    const map = new rosu.Beatmap(fs.readFileSync(mapPath, "utf-8"));
 
     // handle conversions
     if (data.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(data.mode);
     } else if (data.mode != map.mode && map.mode != rosu.GameMode.Osu) {
-        throw new Error('Cannot convert non-standard maps');
+        throw new Error("Cannot convert non-standard maps");
     }
-
 
     data.accuracy = fixAcc(data.accuracy);
 
@@ -52,23 +51,23 @@ export async function calcScore(input: {
     // key is key of input
     // value is key of baseScore
     scoreIterateKeys(data, baseScore, {
-        maxcombo: 'combo',
-        passedObjects: 'passedObjects',
-        isLazer: 'lazer'
+        maxcombo: "combo",
+        passedObjects: "passedObjects",
+        isLazer: "lazer",
     });
     scoreIterateKeys(oldStats, baseScore, {
-        count_300: 'n300',
-        count_100: 'n100',
-        count_50: 'n50',
-        count_miss: 'misses',
-        count_katu: 'nKatu',
+        count_300: "n300",
+        count_100: "n100",
+        count_50: "n50",
+        count_miss: "misses",
+        count_katu: "nKatu",
     });
     scoreIterateKeys(input, baseScore, {
-        'customCS': 'cs',
-        'customAR': 'ar',
-        'customOD': 'od',
-        'customHP': 'hp',
-        'clockRate': 'clockRate',
+        customCS: "cs",
+        customAR: "ar",
+        customOD: "od",
+        customHP: "hp",
+        clockRate: "clockRate",
     });
 
     // if (input.mods.includes('CL')) {
@@ -77,8 +76,8 @@ export async function calcScore(input: {
     const perf: rosu.Performance = new rosu.Performance(baseScore);
 
     if (other.objectIsEmpty(oldStats)) {
-        console.log('empty object - ' + input.mapid);
-        perf.hitresultPriority = rosu.HitResultPriority.Fastest;
+        console.log("empty object - " + input.mapid);
+        perf.hitresultPriority = rosu.HitResultPriority.WorstCase;
     }
 
     const final = perf.calculate(map);
@@ -87,20 +86,22 @@ export async function calcScore(input: {
     return final;
 }
 export async function calcFullCombo(input: {
-    mapid: number,
-    mode: rosu.GameMode,
-    mods: osumodcalc.types.Mod[],
-    accuracy: number,
-    clockRate?: number,
-    stats?: osuapi.types_v2.ScoreStatistics,
-    mapLastUpdated: Date,
-    customCS?: number,
-    customAR?: number,
-    customOD?: number,
-    customHP?: number,
-    isLazer: boolean,
+    mapid: number;
+    mode: rosu.GameMode;
+    mods: osumodcalc.types.Mod[];
+    accuracy: number;
+    clockRate?: number;
+    stats?: osuapi.types_v2.ScoreStatistics;
+    mapLastUpdated: Date;
+    customCS?: number;
+    customAR?: number;
+    customOD?: number;
+    customHP?: number;
+    isLazer: boolean;
 }) {
-    let stats = input.stats ? { ...input.stats } : formatters.nonNullStats(input.stats);
+    let stats = input.stats
+        ? { ...input.stats }
+        : formatters.nonNullStats(input.stats);
     if (stats.great == 0 && stats.perfect == 0) {
         stats.great = NaN;
     }
@@ -127,16 +128,16 @@ export async function calcFullCombo(input: {
     });
 }
 export async function calcMap(input: {
-    mapid: number,
-    mode: rosu.GameMode,
-    mods: osumodcalc.types.Mod[],
-    mapLastUpdated: Date,
-    clockRate: number,
-    customCS?: number,
-    customAR?: number,
-    customOD?: number,
-    customHP?: number,
-    isLazer: boolean,
+    mapid: number;
+    mode: rosu.GameMode;
+    mods: osumodcalc.types.Mod[];
+    mapLastUpdated: Date;
+    clockRate: number;
+    customCS?: number;
+    customAR?: number;
+    customOD?: number;
+    customHP?: number;
+    isLazer: boolean;
 }) {
     const values: rosu.PerformanceAttributes[] = [];
     for (let i = 0; i < 11; i++) {
@@ -163,49 +164,77 @@ export async function calcMap(input: {
     return values;
 }
 export async function calcStrains(input: {
-    mapid: number,
-    mode: rosu.GameMode,
-    mods: osumodcalc.types.Mod[],
-    mapLastUpdated: Date,
+    mapid: number;
+    mode: rosu.GameMode;
+    mods: osumodcalc.types.Mod[];
+    mapLastUpdated: Date;
 }) {
-    if (!fs.existsSync(helper.path.main + '/files/maps/')) {
-        log.stdout('creating files/maps/');
-        fs.mkdirSync(helper.path.main + '/files/maps/');
+    if (!fs.existsSync(helper.path.main + "/files/maps/")) {
+        log.stdout("creating files/maps/");
+        fs.mkdirSync(helper.path.main + "/files/maps/");
     }
     const mapPath = await api.dlMap(input.mapid, 0, input.mapLastUpdated);
-    const map = new rosu.Beatmap(fs.readFileSync(mapPath, 'utf-8'));
+    const map = new rosu.Beatmap(fs.readFileSync(mapPath, "utf-8"));
     if (input.mode != map.mode && map.mode == rosu.GameMode.Osu) {
         map.convert(input.mode);
     }
-    const strainValues =
-        new rosu.Difficulty({
-            mods: input.mods
-        })
-            .strains(map);
+    const strainValues = new rosu.Difficulty({
+        mods: input.mods,
+    }).strains(map);
     const straintimes = [];
     const totalval = [];
 
-    for (let i = 0; i < (strainValues?.aim ?? strainValues?.color ?? strainValues?.movement ?? strainValues?.strains ?? []).length; i++) {
+    for (
+        let i = 0;
+        i <
+        (
+            strainValues?.aim ??
+            strainValues?.color ??
+            strainValues?.movement ??
+            strainValues?.strains ??
+            []
+        ).length;
+        i++
+    ) {
         const offset = i;
         let curval: number;
         switch (input.mode) {
-            case rosu.GameMode.Osu: default: {
-                curval = strainValues.aim[offset] + strainValues.aimNoSliders[offset] + strainValues.speed[offset] + strainValues.flashlight[offset];
-            } break;
-            case rosu.GameMode.Taiko: {
-                curval = strainValues.color[offset] + strainValues.rhythm[offset] + strainValues.stamina[offset];
-            } break;
-            case rosu.GameMode.Catch: {
-                curval = strainValues.movement[offset];
-            } break;
-            case rosu.GameMode.Mania: {
-                curval = strainValues.strains[offset];
-            } break;
+            case rosu.GameMode.Osu:
+            default:
+                {
+                    curval =
+                        strainValues.aim[offset] +
+                        strainValues.aimNoSliders[offset] +
+                        strainValues.speed[offset] +
+                        strainValues.flashlight[offset];
+                }
+                break;
+            case rosu.GameMode.Taiko:
+                {
+                    curval =
+                        strainValues.color[offset] +
+                        strainValues.rhythm[offset] +
+                        strainValues.stamina[offset];
+                }
+                break;
+            case rosu.GameMode.Catch:
+                {
+                    curval = strainValues.movement[offset];
+                }
+                break;
+            case rosu.GameMode.Mania:
+                {
+                    curval = strainValues.strains[offset];
+                }
+                break;
         }
         totalval.push(curval);
 
-        const curtime = ((strainValues.sectionLength / 1000) * (i + 1));
-        const curtimestr = Math.floor(curtime / 60) + ':' + `${(curtime % 60) < 10 ? '0' + Math.floor(curtime % 60) : Math.floor(curtime % 60)}`;
+        const curtime = (strainValues.sectionLength / 1000) * (i + 1);
+        const curtimestr =
+            Math.floor(curtime / 60) +
+            ":" +
+            `${curtime % 60 < 10 ? "0" + Math.floor(curtime % 60) : Math.floor(curtime % 60)}`;
         straintimes.push(curtimestr);
     }
     const strains = {
@@ -216,7 +245,9 @@ export async function calcStrains(input: {
     return strains;
 }
 let x: rosu.GameMode;
-export function template(mapdata: osuapi.types_v2.BeatmapExtended): rosu.PerformanceAttributes {
+export function template(
+    mapdata: osuapi.types_v2.BeatmapExtended,
+): rosu.PerformanceAttributes {
     return {
         pp: 0,
         estimatedUnstableRate: 0,
@@ -243,14 +274,17 @@ export function template(mapdata: osuapi.types_v2.BeatmapExtended): rosu.Perform
             nDroplets: mapdata.count_sliders,
             nTinyDroplets: mapdata.count_spinners,
             toJSON() {
-                return { x: 'Hello world!' };
+                return { x: "Hello world!" };
             },
             free() {
                 return;
             },
             hp: mapdata.drain,
             isConvert: mapdata.convert,
-            nObjects: mapdata.count_circles + mapdata.count_sliders + mapdata.count_spinners,
+            nObjects:
+                mapdata.count_circles +
+                mapdata.count_sliders +
+                mapdata.count_spinners,
             aimDifficultStrainCount: 0,
             speedDifficultStrainCount: 0,
             greatHitWindow: 0,
@@ -261,6 +295,14 @@ export function template(mapdata: osuapi.types_v2.BeatmapExtended): rosu.Perform
             aimDifficultSliderCount: 0,
             reading: 0,
             mehHitWindow: 0,
+            aimTopWeightedSliderFactor: 0,
+            speedTopWeightedSliderFactor: 0,
+            nestedScorePerObject: 0,
+            legacyScoreBaseMultiplier: 0,
+            maximumLegacyComboScore: 0,
+            preempt: 0,
+            mechanicalDifficulty: 0,
+            consistencyFactor: 0,
         },
         ppAccuracy: 0,
         ppAim: 0,
@@ -269,13 +311,17 @@ export function template(mapdata: osuapi.types_v2.BeatmapExtended): rosu.Perform
         effectiveMissCount: 0,
         ppDifficulty: 0,
         speedDeviation: 0,
+        comboBasedEstimatedMissCount: 0,
+        scoreBasedEstimatedMissCount: 0,
+        aimEstimatedSliderBreaks: 0,
+        speedEstimatedSliderBreaks: 0,
         toJSON() {
-            return { x: 'Hello world!' };
+            return { x: "Hello world!" };
         },
         free() {
             return;
         },
-        state: null
+        state: null,
     } as rosu.PerformanceAttributes;
 }
 
@@ -345,8 +391,8 @@ export async function fullPerformance(
 }
 
 const speeds = {
-    '1.5': ['DT', 'NC'],
-    '0.75': ['HT', 'DC']
+    "1.5": ["DT", "NC"],
+    "0.75": ["HT", "DC"],
 };
 
 export function getModSpeed(mods: osuapi.types_v2.Mod[]) {
@@ -354,9 +400,9 @@ export function getModSpeed(mods: osuapi.types_v2.Mod[]) {
     for (const mod of mods) {
         if (mod?.settings?.speed_change) {
             rate *= mod?.settings?.speed_change;
-        } else if (speeds['1.5'].includes(mod.acronym)) {
+        } else if (speeds["1.5"].includes(mod.acronym)) {
             rate *= 1.5;
-        } else if (speeds['0.75'].includes(mod.acronym)) {
+        } else if (speeds["0.75"].includes(mod.acronym)) {
             rate *= 0.75;
         }
     }
@@ -376,7 +422,12 @@ function fixAcc(n: number) {
     return n;
 }
 
-function setBaseScoreValue(data: Dict, baseScore: rosu.PerformanceArgs, dKey: string, bKey: string = dKey) {
+function setBaseScoreValue(
+    data: Dict,
+    baseScore: rosu.PerformanceArgs,
+    dKey: string,
+    bKey: string = dKey,
+) {
     if (data[dKey] != null && !isNaN(data[dKey])) {
         baseScore[bKey] = data[dKey];
     }
@@ -385,7 +436,11 @@ function setBaseScoreValue(data: Dict, baseScore: rosu.PerformanceArgs, dKey: st
 /**
  * for keys dict - key is for data, value is for base score
  */
-function scoreIterateKeys(data: Dict, baseScore: rosu.PerformanceArgs, keys: Dict<string>) {
+function scoreIterateKeys(
+    data: Dict,
+    baseScore: rosu.PerformanceArgs,
+    keys: Dict<string>,
+) {
     for (const key in keys) {
         setBaseScoreValue(data, baseScore, key, keys[key]);
     }
