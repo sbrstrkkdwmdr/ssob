@@ -1,10 +1,9 @@
-import * as helper from '../helper';
+import * as helper from "../helper";
 
-import * as buttonsObjs from './buttons';
+import * as buttonsObjs from "./buttons";
 
-const mods = 'See [here](https://ssob.sbrstrkkdwmdr.me/types#mods)';
-const scoreListString =
-    `Mods can be specified with \`+[mods]\`, \`-mx [exact mods]\` or \`-me [exclude mods]\`
+const mods = "See [here](https://ssob.sbrstrkkdwmdr.me/types#mods)";
+const scoreListString = `Mods can be specified with \`+[mods]\`, \`-mx [exact mods]\` or \`-me [exclude mods]\`
 The arguments \`pp\`, \`score\`, \`acc\`, \`bpm\` and \`miss\` use the following format:
 \`-key value\` to filter by that exact value (eg. \`-bpm 220\`)
 \`-key >value\` to filter scores above that value (eg. \`-pp >500\`)
@@ -16,7 +15,9 @@ You can also show a single score by using \`-parse <index>\` (eg. \`-parse 5\`)
 `;
 
 const range = (key: string): string[] => {
-    return ['>{min}', '<{max}', '{min}..{max}', '!{value}'].map(x => '-' + key + ' ' + x);
+    return [">{min}", "<{max}", "{min}..{max}", "!{value}"].map(
+        (x) => "-" + key + " " + x,
+    );
 };
 
 /**
@@ -25,1915 +26,2205 @@ const range = (key: string): string[] => {
  */
 
 const user: helper.bottypes.commandInfoOption = {
-    name: 'user',
-    type: 'string/integer/user mention',
+    name: "user",
+    type: "string/integer/user mention",
     required: false,
-    description: 'The user to show',
-    format: ['-u {user}', '-user {user}', '-uid {user}', '{user}', '@{discord user}', 'osu.ppy.sh/u/{user}', 'osu.ppy.sh/users/{user}'],
-    defaultValue: 'The user who ran the command',
+    description: "The user to show",
+    format: [
+        "-u {user}",
+        "-user {user}",
+        "-uid {user}",
+        "{user}",
+        "@{discord user}",
+        "osu.ppy.sh/u/{user}",
+        "osu.ppy.sh/users/{user}",
+    ],
+    defaultValue: "The user who ran the command",
 };
 const mode: helper.bottypes.commandInfoOption = {
-    name: 'mode',
-    type: 'string',
+    name: "mode",
+    type: "string",
     required: false,
-    description: 'The mode to use',
-    options: ['osu', 'taiko', 'fruits', 'mania'],
-    format: ['-{mode}'],
-    defaultValue: 'osu',
+    description: "The mode to use",
+    options: ["osu", "taiko", "fruits", "mania"],
+    format: ["-{mode}"],
+    defaultValue: "osu",
 };
 const sort: helper.bottypes.commandInfoOption = {
-    name: 'sort',
-    type: 'string',
+    name: "sort",
+    type: "string",
     required: false,
-    description: 'The sort order of the scores',
-    options: ['pp', 'score', 'recent', 'acc', 'combo', 'miss', 'rank', 'sr'],
-    format: ['-{pp/recent/sr}', '-sort {sort}'],
-    defaultValue: 'pp (NoChokes/OsuTop), recent (Firsts/MapScores/Pinned/RecentList)',
+    description: "The sort order of the scores",
+    options: ["pp", "score", "recent", "acc", "combo", "miss", "rank", "sr"],
+    format: ["-{pp/recent/sr}", "-sort {sort}"],
+    defaultValue:
+        "pp (NoChokes/OsuTop), recent (Firsts/MapScores/Pinned/RecentList)",
 };
 const page: helper.bottypes.commandInfoOption = {
-    name: 'page',
-    type: 'integer',
+    name: "page",
+    type: "integer",
     required: false,
-    description: 'The page to show',
-    format: ['-p {page}', '-page {page}'],
-    defaultValue: '1',
+    description: "The page to show",
+    format: ["-p {page}", "-page {page}"],
+    defaultValue: "1",
 };
 const userTrack: helper.bottypes.commandInfoOption = {
-    name: 'user',
-    type: 'string',
+    name: "user",
+    type: "string",
     required: true,
-    description: 'The user to use',
+    description: "The user to use",
     format: user.format,
-    defaultValue: 'N/A',
+    defaultValue: "N/A",
 };
 const userAdmin: helper.bottypes.commandInfoOption = {
-    name: 'user',
-    type: 'integer/user mention',
+    name: "user",
+    type: "integer/user mention",
     required: false,
-    description: 'The user to use',
+    description: "The user to use",
     format: user.format,
-    defaultValue: 'The user who ran the command',
+    defaultValue: "The user who ran the command",
 };
 
-const scoreListArgs = '[user] [page] [mode] [mapper] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]';
+const scoreListArgs =
+    "[user] [page] [mode] [mapper] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]";
 const mapformat = [
-    '{map id}',
-    'osu.ppy.sh/b/{map id}',
-    'osu.ppy.sh/s/{set id}',
-    'osu.ppy.sh/beatmaps/{map id}',
-    'osu.ppy.sh/beatmapsets/{set id}',
-    'osu.ppy.sh/beatmapsets/{set id}#{mode}/{map id}',
-    '-b {map ID}',
-    '-map {map ID}'
+    "{map id}",
+    "osu.ppy.sh/b/{map id}",
+    "osu.ppy.sh/s/{set id}",
+    "osu.ppy.sh/beatmaps/{map id}",
+    "osu.ppy.sh/beatmapsets/{set id}",
+    "osu.ppy.sh/beatmapsets/{set id}#{mode}/{map id}",
+    "-b {map ID}",
+    "-map {map ID}",
 ];
 const scoreListCommandOptions: helper.bottypes.commandInfoOption[] = [
-    user, mode,
     {
-        name: 'reverse',
-        type: 'boolean',
+        name: "reverse",
+        type: "boolean",
         required: false,
-        description: 'Whether to reverse the sort order',
-        options: ['true', 'false (omit)'],
-        format: ['-rev', '-reverse'],
-        defaultValue: 'false',
+        description: "Whether to reverse the sort order",
+        options: ["true", "false (omit)"],
+        format: ["-rev", "-reverse"],
+        defaultValue: "false",
     },
     page,
     {
-        name: 'mapper',
-        type: 'string',
-        required: false,
-        description: 'The mapper to filter the scores by',
-        format: ['-mapper {user}'],
-        defaultValue: 'null',
-    },
-    {
-        name: 'mods',
-        type: 'string',
+        name: "mods",
+        type: "string",
         required: false,
         description: `Filter scores including these mods. ${mods}`,
-        format: ['+{mods}', '-mods {mods}'],
-        defaultValue: 'null',
+        format: ["+{mods}", "-mods {mods}"],
+        defaultValue: "null",
     },
     {
-        name: 'exact mods',
-        type: 'string',
+        name: "exact mods",
+        type: "string",
         required: false,
         description: `Filter scores with these exact mods. ${mods}`,
-        defaultValue: 'null',
-        format: ['-mx {mods}', '-modx {mods}'],
+        defaultValue: "null",
+        format: ["-mx {mods}", "-modx {mods}"],
     },
     {
-        name: 'exclude mods',
-        type: 'string',
+        name: "exclude mods",
+        type: "string",
         required: false,
         description: `Filter scores to exclude these mods. ${mods}`,
-        format: ['-me {mods}', '-exmod {mods}'],
-        defaultValue: 'null',
+        format: ["-me {mods}", "-exmod {mods}"],
+        defaultValue: "null",
     },
     {
-        name: 'detailed',
-        type: 'integer',
+        name: "detailed",
+        type: "integer",
         required: false,
-        description: 'How much information to show about the scores. 0 = less details, 2 = more details',
-        format: ['-d', '-detailed'],
-        defaultValue: '1',
+        description:
+            "How much information to show about the scores. 0 = less details, 2 = more details",
+        format: ["-d", "-detailed"],
+        defaultValue: "1",
     },
     {
-        name: 'parse',
-        type: 'integer',
+        name: "parse",
+        type: "integer",
         required: false,
-        description: 'Parse the score with the specific index',
-        format: ['-parse {index}'],
-        defaultValue: '0',
+        description: "Parse the score with the specific index",
+        format: ["-parse {index}"],
+        defaultValue: "0",
+    },
+
+    {
+        name: "grade/rank",
+        type: "string",
+        required: false,
+        description:
+            "Filters all scores to only show scores matching the given grade/rank",
+        options: ["XH", "SSH", "X", "SS", "SH", "S", "A", "B", "C", "D", "F"],
+        format: ["-{rank}"],
+        defaultValue: "null",
     },
     {
-        name: 'filterTitle',
-        type: 'string',
+        name: "pp",
+        type: "float/range",
         required: false,
-        description: 'Filters all scores to only show maps with the specified name',
-        format: ['-? {title}', '-title {title}'],
-        defaultValue: 'null',
+        description:
+            "Filters scores to have more/less/equal/not equal pp than/to this value",
+        format: range("pp"),
+        defaultValue: "null",
     },
     {
-        name: 'filteredMapper',
-        type: 'string',
+        name: "score",
+        type: "int/range",
         required: false,
-        description: 'Filters all scores to only show maps with the specified creator',
-        format: ['-creator {creator}', '-mapper {creator}'],
-        defaultValue: 'null',
+        description:
+            "Filters scores to have more/less/equal/not equal total score than/to this value",
+        format: range("score"),
+        defaultValue: "null",
     },
     {
-        name: 'filterArtist',
-        type: 'string',
+        name: "acc",
+        type: "float/range",
         required: false,
-        description: 'Filters all scores to only show maps with the specified artist',
-        format: ['-artist {artist}', '-a {artist}'],
-        defaultValue: 'null',
+        description:
+            "Filters scores to have more/less/equal/not equal accuracy than/to this value",
+        format: range("acc"),
+        defaultValue: "null",
     },
     {
-        name: 'filterDifficulty',
-        type: 'string',
+        name: "combo",
+        type: "integer/range",
         required: false,
-        description: 'Filters all scores to only show maps with the specified difficulty name',
-        format: ['-version {difficulty}', '-v {difficulty}', '-difficulty {difficulty}', '-diff {difficulty}'],
-        defaultValue: 'null',
+        description:
+            "Filters scores to have more/less/equal/not equal max combo than/to this value",
+        format: range("combo"),
+        defaultValue: "null",
     },
     {
-        name: 'grade/rank',
-        type: 'string',
+        name: "miss",
+        type: "integer/range",
         required: false,
-        description: 'Filters all scores to only show scores matching the given grade/rank',
-        options: ['XH', 'SSH', 'X', 'SS', 'SH', 'S', 'A', 'B', 'C', 'D', 'F'],
-        format: ['-{rank}'],
-        defaultValue: 'null',
+        description:
+            "Filters scores to have more/less/equal/not equal misses than/to this value",
+        format: range("miss"),
+        defaultValue: "null",
     },
     {
-        name: 'pp',
-        type: 'float/range',
+        name: "bpm",
+        type: "float/range",
         required: false,
-        description: 'Filters scores to have more/less/equal/not equal pp than/to this value',
-        format: range('pp'),
-        defaultValue: 'null',
-    },
-    {
-        name: 'score',
-        type: 'int/range',
-        required: false,
-        description: 'Filters scores to have more/less/equal/not equal total score than/to this value',
-        format: range('score'),
-        defaultValue: 'null',
-    },
-    {
-        name: 'acc',
-        type: 'float/range',
-        required: false,
-        description: 'Filters scores to have more/less/equal/not equal accuracy than/to this value',
-        format: range('acc'),
-        defaultValue: 'null',
-    },
-    {
-        name: 'combo',
-        type: 'integer/range',
-        required: false,
-        description: 'Filters scores to have more/less/equal/not equal max combo than/to this value',
-        format: range('combo'),
-        defaultValue: 'null',
-    },
-    {
-        name: 'miss',
-        type: 'integer/range',
-        required: false,
-        description: 'Filters scores to have more/less/equal/not equal misses than/to this value',
-        format: range('miss'),
-        defaultValue: 'null',
-    },
-    {
-        name: 'bpm',
-        type: 'float/range',
-        required: false,
-        description: 'Filters scores to have more/less/equal/not equal bpm than/to this value',
-        format: range('bpm'),
-        defaultValue: 'null',
+        description:
+            "Filters scores to have more/less/equal/not equal bpm than/to this value",
+        format: range("bpm"),
+        defaultValue: "null",
     },
 ];
-
+const scoreListCommandOptionsAll: helper.bottypes.commandInfoOption[] =
+    scoreListCommandOptions.concat([
+        {
+            name: "filterTitle",
+            type: "string",
+            required: false,
+            description:
+                "Filters all scores to only show maps with the specified name",
+            format: ["-? {title}", "-title {title}"],
+            defaultValue: "null",
+        },
+        {
+            name: "filteredMapper",
+            type: "string",
+            required: false,
+            description:
+                "Filters all scores to only show maps with the specified creator",
+            format: ["-creator {creator}", "-mapper {creator}"],
+            defaultValue: "null",
+        },
+        {
+            name: "filterArtist",
+            type: "string",
+            required: false,
+            description:
+                "Filters all scores to only show maps with the specified artist",
+            format: ["-artist {artist}", "-a {artist}"],
+            defaultValue: "null",
+        },
+        {
+            name: "filterDifficulty",
+            type: "string",
+            required: false,
+            description:
+                "Filters all scores to only show maps with the specified difficulty name",
+            format: [
+                "-version {difficulty}",
+                "-v {difficulty}",
+                "-difficulty {difficulty}",
+                "-diff {difficulty}",
+            ],
+            defaultValue: "null",
+        },
+    ]);
 
 export const cmds: helper.bottypes.commandInfo[] = [
     {
-        name: 'Changelog',
-        description: 'Displays the changes for the current version or version requested.',
-        usage: 'changelog [version]',
-        category: 'general',
+        name: "Changelog",
+        description:
+            "Displays the changes for the current version or version requested.",
+        usage: "changelog [version]",
+        category: "general",
         examples: [
             {
-                text: 'changelog 0.4.0',
-                description: 'Returns the changelog for version 0.4.0'
+                text: "changelog 0.4.0",
+                description: "Returns the changelog for version 0.4.0",
             },
             {
-                text: 'changelog first',
-                description: 'Returns the changelog for the first version'
+                text: "changelog first",
+                description: "Returns the changelog for the first version",
             },
             {
-                text: 'changelog pending',
-                description: 'Returns the changelog for the upcoming version'
+                text: "changelog pending",
+                description: "Returns the changelog for the upcoming version",
             },
             {
-                text: 'versions',
-                description: 'Returns a list of all versions'
+                text: "versions",
+                description: "Returns a list of all versions",
             },
         ],
-        aliases: ['clog', 'changes', 'versions'],
+        aliases: ["clog", "changes", "versions"],
         args: [
             {
-                name: 'version',
-                type: 'string',
+                name: "version",
+                type: "string",
                 required: false,
-                description: 'The version',
-                format: ['major.minor.patch (`0.4.1`) or `first`, `second` etc. `pending` shows upcoming changes'],
-                defaultValue: 'latest',
-            },
-        ]
-    },
-    {
-        name: 'Help',
-        description: 'Displays useful information about commands.',
-        usage: 'help [command]',
-        category: 'general',
-        examples: [
-            {
-                text: 'help',
-                description: 'Shows the general help page'
-            },
-            {
-                text: 'help convert',
-                description: 'Shows information about the convert command'
-            },
-            {
-                text: 'help recent',
-                description: 'Shows information about the recent command'
-            },
-            {
-                text: 'help categoryosu',
-                description: 'Lists all commands in the osu category'
-            },
-            {
-                text: 'list',
-                description: 'Lists all available commands'
-            }
-        ],
-        aliases: ['commands', 'list', 'command', 'h'],
-        args: [
-            {
-                name: 'command',
-                type: 'string',
-                required: false,
-                description: 'The command/category to get information about. Categories are always prefixed with `categoryX`.',
-                options: ['list', 'category(category)', '(command)'],
-                format: ['{command}', 'category{category}'],
-                defaultValue: 'N/A',
-            },
-        ]
-    },
-    {
-        name: 'Info',
-        description: 'Shows information about the bot.',
-        usage: 'info [arg]',
-        aliases: ['i', '[arg]'],
-        category: 'general',
-        args: [
-            {
-                name: 'arg',
-                type: 'string',
-                required: false,
-                description: 'Return just that specific value',
-                options: ['uptime', 'version', 'server', 'website', 'source'],
-                format: ['{arg}'],
-                defaultValue: 'null',
-            },
-        ]
-    },
-    {
-        name: 'Invite',
-        description: 'Sends the bot\'s public invite.',
-        usage: 'invite',
-        aliases: [],
-        category: 'general',
-    },
-    {
-        name: 'Ping',
-        description: 'Pings the bot and returns the latency.',
-        usage: 'ping',
-        aliases: [],
-        category: 'general',
-    },
-    {
-        name: 'Stats',
-        description: 'Shows the bot\'s statistics.',
-        usage: 'stats',
-        category: 'general',
-        aliases: [],
-    },
-    {
-        name: 'Badges',
-        description: 'Display\'s the user\'s badges.',
-        usage: 'badges [user]',
-        category: 'osu_profile',
-        examples: [
-            {
-                text: 'badges cookiezi',
-                description: 'Shows cookiezi\'s badges'
-            }
-        ],
-        aliases: [],
-        args: [
-            user,
-        ]
-    },
-    {
-        name: 'BadgeWeightSeed',
-        description: 'Shows the badge weighted rank of a user.',
-        usage: 'badgeweightseed [user]',
-        category: 'osu_profile',
-        examples: [
-            {
-                text: 'bws',
-                description: 'Shows your badge weighted rank'
-            },
-            {
-                text: 'bws peppy',
-                description: 'Shows peppy\'s badge weighted rank'
-            },
-            {
-                text: 'bws DigitalHypno',
-                description: 'Shows DigitalHypno\'s badge weighted rank'
-            },
-        ],
-        aliases: ['bws', 'badgeweightsystem', 'badgeweight', 'badgeweigthseed', 'badgerank'],
-        args: [
-            user,
-        ]
-    },
-    {
-        name: 'Compare',
-        description: 'Compares two users\' osu! stats/top plays/scores.',
-        usage: 'compare [first] [second]',
-        category: 'osu_other',
-        examples: [
-            {
-                text: 'compare SaberStrike',
-                description: 'Compares your stats to SaberStrike\'s'
-            },
-            {
-                text: 'compare peppy SaberStrike',
-                description: 'Compares peppy\'s and SaberStrike\'s stats'
-            },
-            {
-                text: 'common SaberStrike Soragaton',
-                description: 'Compares SaberStrike\'s and Soragaton\'s top plays'
-            },
-        ],
-        aliases: ['common'],
-        args: [
-            {
-                name: 'type',
-                type: 'string',
-                required: false,
-                description: 'The type of comparison',
-                options: [
-                    'profile', 'top plays'
+                description: "The version",
+                format: [
+                    "major.minor.patch (`0.4.1`) or `first`, `second` etc. `pending` shows upcoming changes",
                 ],
-                format: ['{type}'],
+                defaultValue: "latest",
+            },
+        ],
+    },
+    {
+        name: "Help",
+        description: "Displays useful information about commands.",
+        usage: "help [command]",
+        category: "general",
+        examples: [
+            {
+                text: "help",
+                description: "Shows the general help page",
+            },
+            {
+                text: "help convert",
+                description: "Shows information about the convert command",
+            },
+            {
+                text: "help recent",
+                description: "Shows information about the recent command",
+            },
+            {
+                text: "help categoryosu",
+                description: "Lists all commands in the osu category",
+            },
+            {
+                text: "list",
+                description: "Lists all available commands",
+            },
+        ],
+        aliases: ["commands", "list", "command", "h"],
+        args: [
+            {
+                name: "command",
+                type: "string",
+                required: false,
+                description:
+                    "The command/category to get information about. Categories are always prefixed with `categoryX`.",
+                options: ["list", "category(category)", "(command)"],
+                format: ["{command}", "category{category}"],
+                defaultValue: "N/A",
+            },
+        ],
+    },
+    {
+        name: "Info",
+        description: "Shows information about the bot.",
+        usage: "info [arg]",
+        aliases: ["i", "[arg]"],
+        category: "general",
+        args: [
+            {
+                name: "arg",
+                type: "string",
+                required: false,
+                description: "Return just that specific value",
+                options: ["uptime", "version", "server", "website", "source"],
+                format: ["{arg}"],
+                defaultValue: "null",
+            },
+        ],
+    },
+    {
+        name: "Invite",
+        description: "Sends the bot's public invite.",
+        usage: "invite",
+        aliases: [],
+        category: "general",
+    },
+    {
+        name: "Ping",
+        description: "Pings the bot and returns the latency.",
+        usage: "ping",
+        aliases: [],
+        category: "general",
+    },
+    {
+        name: "Stats",
+        description: "Shows the bot's statistics.",
+        usage: "stats",
+        category: "general",
+        aliases: [],
+    },
+    {
+        name: "Badges",
+        description: "Display's the user's badges.",
+        usage: "badges [user]",
+        category: "osu_profile",
+        examples: [
+            {
+                text: "badges cookiezi",
+                description: "Shows cookiezi's badges",
+            },
+        ],
+        aliases: [],
+        args: [user],
+    },
+    {
+        name: "BadgeWeightSeed",
+        description: "Shows the badge weighted rank of a user.",
+        usage: "badgeweightseed [user]",
+        category: "osu_profile",
+        examples: [
+            {
+                text: "bws",
+                description: "Shows your badge weighted rank",
+            },
+            {
+                text: "bws peppy",
+                description: "Shows peppy's badge weighted rank",
+            },
+            {
+                text: "bws DigitalHypno",
+                description: "Shows DigitalHypno's badge weighted rank",
+            },
+        ],
+        aliases: [
+            "bws",
+            "badgeweightsystem",
+            "badgeweight",
+            "badgeweigthseed",
+            "badgerank",
+        ],
+        args: [user],
+    },
+    {
+        name: "Compare",
+        description: "Compares two users' osu! stats/top plays/scores.",
+        usage: "compare [first] [second]",
+        category: "osu_other",
+        examples: [
+            {
+                text: "compare SaberStrike",
+                description: "Compares your stats to SaberStrike's",
+            },
+            {
+                text: "compare peppy SaberStrike",
+                description: "Compares peppy's and SaberStrike's stats",
+            },
+            {
+                text: "common SaberStrike Soragaton",
+                description: "Compares SaberStrike's and Soragaton's top plays",
+            },
+        ],
+        aliases: ["common"],
+        args: [
+            {
+                name: "type",
+                type: "string",
+                required: false,
+                description: "The type of comparison",
+                options: ["profile", "top plays"],
+                format: ["{type}"],
                 defaultValue: 'user stats (top plays if using "common")',
             },
             {
-                name: 'first',
-                type: 'string',
+                name: "first",
+                type: "string",
                 required: false,
-                description: 'The first user to compare',
-                format: ['-u1', '-1', '-first'].concat(user.format.slice(3)),
-                defaultValue: 'The user who ran the command',
+                description: "The first user to compare",
+                format: ["-u1", "-1", "-first"].concat(user.format.slice(3)),
+                defaultValue: "The user who ran the command",
             },
             {
-                name: 'second',
-                type: 'string',
+                name: "second",
+                type: "string",
                 required: false,
-                description: 'The second user to compare',
-                format: ['-u2', '-2', '-second'].concat(user.format.slice(3)),
-                defaultValue: 'most recent user fetched in the guild',
+                description: "The second user to compare",
+                format: ["-u2", "-2", "-second"].concat(user.format.slice(3)),
+                defaultValue: "most recent user fetched in the guild",
             },
-            page
-        ]
+            page,
+        ],
     },
     {
-        name: 'Firsts',
-        description: 'Shows the #1 global scores of a user.\n' + scoreListString,
-        usage: 'firsts ' + scoreListArgs,
-        category: 'osu_scores',
+        name: "Firsts",
+        description:
+            "Shows the #1 global scores of a user.\n" + scoreListString,
+        usage: "firsts " + scoreListArgs,
+        category: "osu_scores",
         examples: [
             {
-                text: 'firsts SaberStrike',
-                description: 'Shows SaberStrike\'s #1 scores'
+                text: "firsts SaberStrike",
+                description: "Shows SaberStrike's #1 scores",
             },
             {
-                text: 'firsts -p 3 ',
-                description: 'Shows the 3rd page of your #1 scores'
+                text: "firsts -p 3 ",
+                description: "Shows the 3rd page of your #1 scores",
             },
             {
-                text: 'firsts -mania',
-                description: 'Shows your #1 mania scores'
+                text: "firsts -mania",
+                description: "Shows your #1 mania scores",
             },
             {
-                text: 'firsts +HDHR -recent',
-                description: 'Shows your #1 scores with HDHR sorted by recent'
+                text: "firsts +HDHR -recent",
+                description: "Shows your #1 scores with HDHR sorted by recent",
             },
             {
-                text: 'firsts -parse 3',
-                description: 'Returns your 3rd most recent first score'
-            }
+                text: "firsts -parse 3",
+                description: "Returns your 3rd most recent first score",
+            },
         ],
-        aliases: ['firstplaceranks', 'first', 'fpr', 'fp', '#1s', '1s', '#1'],
-        args: [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions)
+        aliases: ["firstplaceranks", "first", "fpr", "fp", "#1s", "1s", "#1"],
+        args: [user, mode, { ...sort, defaultValue: "recent" }].concat(
+            scoreListCommandOptionsAll,
+        ),
     },
     {
-        name: 'ServerLeaderboard',
-        description: 'Shows the osu! rankings of a server.',
-        usage: 'serverleaderboard [id] [mode]',
-        category: 'osu_other',
-        aliases: ['serverlb', 'slb'],
+        name: "ServerLeaderboard",
+        description: "Shows the osu! rankings of a server.",
+        usage: "serverleaderboard [id] [mode]",
+        category: "osu_other",
+        aliases: ["serverlb", "slb"],
         args: [
             {
-                name: 'id',
-                type: 'string/integer',
+                name: "id",
+                type: "string/integer",
                 required: false,
-                description: 'The server to get the rankings of. Use global to combine the rankings of all servers the bot is in.',
-                format: ['{guild ID}'],
-                defaultValue: 'Current server',
+                description:
+                    "The server to get the rankings of. Use global to combine the rankings of all servers the bot is in.",
+                format: ["{guild ID}"],
+                defaultValue: "Current server",
             },
             mode,
             page,
-        ]
+        ],
     },
     {
-        name: 'MapParse',
-        description: 'Shows information about a beatmap.',
-        usage: 'map [query] [id] +[mods] [detailed] [bpm] [speed] [cs] [ar] [od] [hp] [ppcalc] [bg]',
-        category: 'osu_map',
-        linkUsage: mapformat.slice(0, -3).map(x => x + ' +[mods]'),
+        name: "MapParse",
+        description: "Shows information about a beatmap.",
+        usage: "map [query] [id] +[mods] [detailed] [bpm] [speed] [cs] [ar] [od] [hp] [ppcalc] [bg]",
+        category: "osu_map",
+        linkUsage: mapformat.slice(0, -3).map((x) => x + " +[mods]"),
         examples: [
             {
                 text: 'map "kimi no shiranai monogatari"',
-                description: 'Returns the first result for "kimi no shiranai monogatari"'
+                description:
+                    'Returns the first result for "kimi no shiranai monogatari"',
             },
             {
-                text: 'map 3013912 +HDHR',
-                description: 'Returns the beatmap with the id 3013912 with HDHR'
+                text: "map 3013912 +HDHR",
+                description:
+                    "Returns the beatmap with the id 3013912 with HDHR",
             },
             {
-                text: 'https://osu.ppy.sh/beatmapsets?q=blue%20dragon%20blue%20dragon',
-                description: 'Returns the first result for "blue dragon blue dragon"'
+                text: "https://osu.ppy.sh/beatmapsets?q=blue%20dragon%20blue%20dragon",
+                description:
+                    'Returns the first result for "blue dragon blue dragon"',
             },
             {
-                text: 'https://osu.ppy.sh/beatmapsets/326920#osu/725718 +HDHR',
-                description: 'Returns beatmap 725718 with HDHR'
-            }
+                text: "https://osu.ppy.sh/beatmapsets/326920#osu/725718 +HDHR",
+                description: "Returns beatmap 725718 with HDHR",
+            },
         ],
-        aliases: ['m', 'map'],
+        aliases: ["m", "map"],
         args: [
             {
-                name: 'query',
-                type: 'string',
+                name: "query",
+                type: "string",
                 required: false,
-                description: 'The map to search for',
-                format: ['-? {search query}'],
-                defaultValue: 'null',
+                description: "The map to search for",
+                format: ["-? {search query}"],
+                defaultValue: "null",
             },
             {
-                name: 'id',
-                type: 'integer',
+                name: "id",
+                type: "integer",
                 required: false,
-                description: 'The map ID to search for',
+                description: "The map ID to search for",
                 format: mapformat,
-                defaultValue: 'the most recent map in the guild',
+                defaultValue: "the most recent map in the guild",
             },
             {
-                name: 'mods',
-                type: 'string',
+                name: "mods",
+                type: "string",
                 required: false,
                 description: `The mods to calculate the map with. ${mods}`,
-                format: ['+{mods}', '-mods {mods}'],
-                defaultValue: 'none',
+                format: ["+{mods}", "-mods {mods}"],
+                defaultValue: "none",
             },
             {
-                name: 'detailed',
-                type: 'boolean',
+                name: "detailed",
+                type: "boolean",
                 required: false,
-                description: 'Whether to show detailed information about the map',
-                options: ['true', 'false'],
-                format: ['-d', '-detailed'],
-                defaultValue: 'false',
+                description:
+                    "Whether to show detailed information about the map",
+                options: ["true", "false"],
+                format: ["-d", "-detailed"],
+                defaultValue: "false",
             },
             {
-                name: 'bpm',
-                type: 'float',
+                name: "bpm",
+                type: "float",
                 required: false,
-                description: 'The BPM to calculate the map with. This value is still affected by mods',
-                options: ['1-1000'],
-                format: ['-bpm {bpm}'],
-                defaultValue: 'the map\'s BPM',
+                description:
+                    "The BPM to calculate the map with. This value is still affected by mods",
+                options: ["1-1000"],
+                format: ["-bpm {bpm}"],
+                defaultValue: "the map's BPM",
             },
             {
-                name: 'speed',
-                type: 'float',
+                name: "speed",
+                type: "float",
                 required: false,
-                description: 'The speed multiplier to calculate the map with. Overrides BPM. This value is still affected by mods',
-                options: ['0.1-10'],
-                format: ['-speed {speed}'],
-                defaultValue: '1',
+                description:
+                    "The speed multiplier to calculate the map with. Overrides BPM. This value is still affected by mods",
+                options: ["0.1-10"],
+                format: ["-speed {speed}"],
+                defaultValue: "1",
             },
             {
-                name: 'cs',
-                type: 'float',
+                name: "cs",
+                type: "float",
                 required: false,
-                description: 'The circle size to calculate the map with. This value is still affected by mods',
-                options: ['0-11'],
-                format: ['-cs {circle size}'],
-                defaultValue: 'The current map\'s value',
+                description:
+                    "The circle size to calculate the map with. This value is still affected by mods",
+                options: ["0-11"],
+                format: ["-cs {circle size}"],
+                defaultValue: "The current map's value",
             },
             {
-                name: 'ar',
-                type: 'float',
+                name: "ar",
+                type: "float",
                 required: false,
-                description: 'The approach rate to calculate the map with. This value is still affected by mods',
-                options: ['0-11'],
-                format: ['-ar {approach rate}'],
-                defaultValue: 'The current map\'s value',
+                description:
+                    "The approach rate to calculate the map with. This value is still affected by mods",
+                options: ["0-11"],
+                format: ["-ar {approach rate}"],
+                defaultValue: "The current map's value",
             },
             {
-                name: 'od',
-                type: 'float',
+                name: "od",
+                type: "float",
                 required: false,
-                description: 'The overall difficulty to calculate the map with. This value is still affected by mods',
-                options: ['0-11'],
-                format: ['-od {overall difficulty}'],
-                defaultValue: 'The current map\'s value',
+                description:
+                    "The overall difficulty to calculate the map with. This value is still affected by mods",
+                options: ["0-11"],
+                format: ["-od {overall difficulty}"],
+                defaultValue: "The current map's value",
             },
             {
-                name: 'hp',
-                type: 'float',
+                name: "hp",
+                type: "float",
                 required: false,
-                description: 'The drain rate to calculate the map with. This value is still affected by mods',
-                options: ['0-11'],
-                format: ['-hp {drain rate}'],
-                defaultValue: 'The current map\'s value',
+                description:
+                    "The drain rate to calculate the map with. This value is still affected by mods",
+                options: ["0-11"],
+                format: ["-hp {drain rate}"],
+                defaultValue: "The current map's value",
             },
             {
-                name: 'ppcalc',
-                type: 'boolean',
+                name: "ppcalc",
+                type: "boolean",
                 required: false,
-                description: 'Shows only the pp calculations for the map. See [here](https://ssob.sbrstrkkdwmdr.me/commands#osucmd-ppcalc) for more info.',
-                format: ['-ppcalc'],
-                defaultValue: 'false',
+                description:
+                    "Shows only the pp calculations for the map. See [here](https://ssob.sbrstrkkdwmdr.me/commands#osucmd-ppcalc) for more info.",
+                format: ["-ppcalc"],
+                defaultValue: "false",
             },
             {
-                name: 'bg',
-                type: 'boolean',
+                name: "bg",
+                type: "boolean",
                 required: false,
-                description: 'Show only the background images of the map',
-                format: ['-bg'],
-                defaultValue: 'false',
+                description: "Show only the background images of the map",
+                format: ["-bg"],
+                defaultValue: "false",
             },
-        ]
+        ],
     },
     {
-        name: 'MapLeaderboard',
-        description: 'Shows the leaderboard of a map.',
-        usage: 'mapleaderboard [id] [page] [parse]',
-        category: 'osu_scores',
+        name: "MapLeaderboard",
+        description: "Shows the leaderboard of a map.",
+        usage: "mapleaderboard [id] [page] [parse]",
+        category: "osu_scores",
         examples: [
             {
-                text: 'maplb 32345',
-                description: 'Returns the leaderboard of the map with the id 32345'
+                text: "maplb 32345",
+                description:
+                    "Returns the leaderboard of the map with the id 32345",
             },
             {
-                text: 'maplb +HDHR',
-                description: 'Returns the leaderboard of the most recent map in the guild with HDHR'
-            }
+                text: "maplb +HDHR",
+                description:
+                    "Returns the leaderboard of the most recent map in the guild with HDHR",
+            },
         ],
-        aliases: ['maplb', 'ml'],
+        aliases: ["maplb", "ml"],
         args: [
             {
-                name: 'id',
-                type: 'integer',
+                name: "id",
+                type: "integer",
                 required: false,
-                description: 'The ID of the map to show the leaderboard of',
-                defaultValue: 'the most recent map in the guild',
+                description: "The ID of the map to show the leaderboard of",
+                defaultValue: "the most recent map in the guild",
                 format: mapformat,
             },
             page,
             {
-                name: 'mods',
-                type: 'string',
+                name: "mods",
+                type: "string",
                 required: false,
                 description: `The mods to filter the leaderboard by. ${mods}`,
-                format: ['+{mods}', '-mods {mods}'],
-                defaultValue: 'none',
+                format: ["+{mods}", "-mods {mods}"],
+                defaultValue: "none",
             },
             {
-                name: 'parse',
-                type: 'integer',
+                name: "parse",
+                type: "integer",
                 required: false,
-                description: 'Parse the score with the specific index',
-                format: ['-parse {index}'],
-                defaultValue: '0',
+                description: "Parse the score with the specific index",
+                format: ["-parse {index}"],
+                defaultValue: "0",
             },
-        ]
+        ],
     },
     {
-        name: 'RandomMap',
-        description: 'Returns the link to a random beatmap. Uses local storage so selection might be limited.',
-        usage: 'randommap [type]',
-        category: 'osu_map',
+        name: "RandomMap",
+        description:
+            "Returns the link to a random beatmap. Uses local storage so selection might be limited.",
+        usage: "randommap [type]",
+        category: "osu_map",
         examples: [
             {
-                text: 'f2',
-                description: 'Returns a random beatmap'
+                text: "f2",
+                description: "Returns a random beatmap",
             },
             {
-                text: 'maprand -ranked',
-                description: 'Returns a random ranked beatmap'
-            }
-        ],
-        aliases: ['f2', 'maprand', 'maprandom', 'randmap'],
-        args: [{
-            name: 'Type',
-            type: 'string',
-            required: false,
-            description: 'Filters to only pick from this type of map',
-            options: ['ranked', 'loved', 'approved', 'qualified', 'pending', 'wip', 'graveyard'],
-            format: ['-{type}'],
-            defaultValue: 'null',
-        }]
-    },
-    {
-        name: 'RecommendMap',
-        description: 'Recommends a random map based off of your recommended difficulty.',
-        usage: 'recommendmap [range] [user]',
-        category: 'osu_map',
-        examples: [
-            {
-                text: 'maprec -range 2 SaberStrike',
-                description: 'Recommends a random map for SaberStrike with a maximum star rating difference of 2'
-            }
-        ],
-        aliases: ['recmap', 'maprecommend', 'maprec', 'mapsuggest', 'suggestmap'],
-        args: [
-            user, mode,
-            {
-                name: 'range',
-                type: 'float',
-                required: false,
-                description: 'The maximum difference in star rating the recommended map can be',
-                options: ['range', 'r', 'diff'],
-                format: ['-range {range}', '-r {range}', '-diff {range}'],
-                defaultValue: '1',
-            },
-            {
-                name: 'type',
-                type: 'string',
-                required: false,
-                description: 'How to fetch the recommended map',
-                options: ['closest', 'random'],
-                format: ['-{type}'],
-                defaultValue: 'random',
-            }
-        ]
-    },
-    {
-        name: 'NoChokes',
-        description: 'Shows the user\'s top plays if no scores had a miss.\n' + scoreListString,
-        usage: 'nochokes ' + scoreListArgs,
-        category: 'osu_scores',
-        examples: [
-            {
-                text: 'nochokes SaberStrike',
-                description: 'Returns SaberStrike\'s top plays without misses'
-            },
-            {
-                text: 'nc -p 3',
-                description: 'Returns the third page of your top plays without misses'
-            },
-            {
-                text: 'nochokes -mania',
-                description: 'Returns your top mania plays without misses'
-            },
-            {
-                text: 'nochokes +HDHR -recent',
-                description: 'Returns your top plays with HDHR sorted by recent without misses'
-            },
-            {
-                text: 'nc -parse 2',
-                description: 'Returns your 2nd no miss top play'
-            }
-        ],
-        aliases: ['nc'],
-        args: [user, mode, { ...sort, defaultValue: 'pp' }].concat(scoreListCommandOptions)
-    },
-    {
-        name: 'Profile',
-        description: 'Shows information about a user\'s osu! profile.',
-        usage: 'profile [user] [graph] [detailed] [mode]',
-        category: 'osu_profile',
-        linkUsage: [
-            'osu.ppy.sh/u/<user>',
-            'osu.ppy.sh/users/<user>/[(mode)]',
-        ],
-        aliases: ['osu', 'o', 'profile', 'user', 'taiko', 'drums', 'fruits', 'ctb', 'catch', 'mania'],
-        examples: [
-            {
-                text: 'profile SaberStrike',
-                description: 'Shows SaberStrike\'s osu! profile'
-            },
-            {
-                text: 'profile -d -taiko',
-                description: 'Shows your taiko profile with extra details'
-            },
-            {
-                text: 'osu -g',
-                description: 'Shows a graph of your osu! rank and playcount'
-            },
-            {
-                text: 'osu.ppy.sh/u/2',
-                description: 'Shows Peppy\'s osu profile'
-            }
-        ],
-        args: [
-            user, mode,
-            {
-                name: 'detailed',
-                type: 'boolean',
-                required: false,
-                description: 'Whether to show detailed information about the user',
-                options: ['true', 'false'],
-                format: ['-detailed', '-d'],
-                defaultValue: 'false',
-            },
-            {
-                name: 'graph',
-                type: 'boolean',
-                required: false,
-                description: 'Whether to show only user statistics graphs',
-                options: ['true', 'false'],
-                format: ['-g'],
-                defaultValue: 'false',
-            },
-        ]
-    },
-    {
-        name: 'Set',
-        description: 'Sets your osu! username/mode/skin or any setting.',
-        usage: 'set <username> [mode] [skin]',
-        category: 'osu_other',
-        examples: [
-            {
-                text: 'osuset SaberStrike',
-                description: 'Sets your username to SaberStrike'
-            },
-            {
-                text: 'osuset SaberStrike -fruits -skin rafis',
-                description: 'Sets your username to SaberStrike, mode to fruits, and skin to rafis'
-            },
-            {
-                text: 'set SaberStrike -taiko -skin rafis',
-                description: 'Sets your username to SaberStrike, mode to taiko, and skin to rafis'
-            },
-            {
-                text: 'setmode ctb',
-                description: 'Sets your mode to fruits (catch the beat)'
-            },
-            {
-                text: 'setskin rafis',
-                description: 'Sets your skin to rafis'
+                text: "maprand -ranked",
+                description: "Returns a random ranked beatmap",
             },
         ],
-        aliases: ['setuser', 'set', 'setmode', 'setskin',],
+        aliases: ["f2", "maprand", "maprandom", "randmap"],
         args: [
             {
-                name: 'username',
-                type: 'string',
+                name: "Type",
+                type: "string",
+                required: false,
+                description: "Filters to only pick from this type of map",
+                options: [
+                    "ranked",
+                    "loved",
+                    "approved",
+                    "qualified",
+                    "pending",
+                    "wip",
+                    "graveyard",
+                ],
+                format: ["-{type}"],
+                defaultValue: "null",
+            },
+        ],
+    },
+    {
+        name: "RecommendMap",
+        description:
+            "Recommends a random map based off of your recommended difficulty.",
+        usage: "recommendmap [range] [user]",
+        category: "osu_map",
+        examples: [
+            {
+                text: "maprec -range 2 SaberStrike",
+                description:
+                    "Recommends a random map for SaberStrike with a maximum star rating difference of 2",
+            },
+        ],
+        aliases: [
+            "recmap",
+            "maprecommend",
+            "maprec",
+            "mapsuggest",
+            "suggestmap",
+        ],
+        args: [
+            user,
+            mode,
+            {
+                name: "range",
+                type: "float",
+                required: false,
+                description:
+                    "The maximum difference in star rating the recommended map can be",
+                options: ["range", "r", "diff"],
+                format: ["-range {range}", "-r {range}", "-diff {range}"],
+                defaultValue: "1",
+            },
+            {
+                name: "type",
+                type: "string",
+                required: false,
+                description: "How to fetch the recommended map",
+                options: ["closest", "random"],
+                format: ["-{type}"],
+                defaultValue: "random",
+            },
+        ],
+    },
+    {
+        name: "NoChokes",
+        description:
+            "Shows the user's top plays if no scores had a miss.\n" +
+            scoreListString,
+        usage: "nochokes " + scoreListArgs,
+        category: "osu_scores",
+        examples: [
+            {
+                text: "nochokes SaberStrike",
+                description: "Returns SaberStrike's top plays without misses",
+            },
+            {
+                text: "nc -p 3",
+                description:
+                    "Returns the third page of your top plays without misses",
+            },
+            {
+                text: "nochokes -mania",
+                description: "Returns your top mania plays without misses",
+            },
+            {
+                text: "nochokes +HDHR -recent",
+                description:
+                    "Returns your top plays with HDHR sorted by recent without misses",
+            },
+            {
+                text: "nc -parse 2",
+                description: "Returns your 2nd no miss top play",
+            },
+        ],
+        aliases: ["nc"],
+        args: [user, mode, { ...sort, defaultValue: "pp" }].concat(
+            scoreListCommandOptionsAll,
+        ),
+    },
+    {
+        name: "Profile",
+        description: "Shows information about a user's osu! profile.",
+        usage: "profile [user] [graph] [detailed] [mode]",
+        category: "osu_profile",
+        linkUsage: ["osu.ppy.sh/u/<user>", "osu.ppy.sh/users/<user>/[(mode)]"],
+        aliases: [
+            "osu",
+            "o",
+            "profile",
+            "user",
+            "taiko",
+            "drums",
+            "fruits",
+            "ctb",
+            "catch",
+            "mania",
+        ],
+        examples: [
+            {
+                text: "profile SaberStrike",
+                description: "Shows SaberStrike's osu! profile",
+            },
+            {
+                text: "profile -d -taiko",
+                description: "Shows your taiko profile with extra details",
+            },
+            {
+                text: "osu -g",
+                description: "Shows a graph of your osu! rank and playcount",
+            },
+            {
+                text: "osu.ppy.sh/u/2",
+                description: "Shows Peppy's osu profile",
+            },
+        ],
+        args: [
+            user,
+            mode,
+            {
+                name: "detailed",
+                type: "boolean",
+                required: false,
+                description:
+                    "Whether to show detailed information about the user",
+                options: ["true", "false"],
+                format: ["-detailed", "-d"],
+                defaultValue: "false",
+            },
+            {
+                name: "graph",
+                type: "boolean",
+                required: false,
+                description: "Whether to show only user statistics graphs",
+                options: ["true", "false"],
+                format: ["-g"],
+                defaultValue: "false",
+            },
+        ],
+    },
+    {
+        name: "Set",
+        description: "Sets your osu! username/mode/skin or any setting.",
+        usage: "set <username> [mode] [skin]",
+        category: "osu_other",
+        examples: [
+            {
+                text: "osuset SaberStrike",
+                description: "Sets your username to SaberStrike",
+            },
+            {
+                text: "osuset SaberStrike -fruits -skin rafis",
+                description:
+                    "Sets your username to SaberStrike, mode to fruits, and skin to rafis",
+            },
+            {
+                text: "set SaberStrike -taiko -skin rafis",
+                description:
+                    "Sets your username to SaberStrike, mode to taiko, and skin to rafis",
+            },
+            {
+                text: "setmode ctb",
+                description: "Sets your mode to fruits (catch the beat)",
+            },
+            {
+                text: "setskin rafis",
+                description: "Sets your skin to rafis",
+            },
+        ],
+        aliases: ["setuser", "set", "setmode", "setskin"],
+        args: [
+            {
+                name: "username",
+                type: "string",
                 required: true,
-                description: 'The osu! username to set',
-                format: ['{username or ID}'],
-                defaultValue: 'null',
+                description: "The osu! username to set",
+                format: ["{username or ID}"],
+                defaultValue: "null",
             },
             mode,
             {
-                name: 'skin',
-                type: 'string',
+                name: "skin",
+                type: "string",
                 required: false,
-                description: 'The skin to set',
-                format: ['-skin {skin name or link}'],
-                defaultValue: 'osu! default 2014',
+                description: "The skin to set",
+                format: ["-skin {skin name or link}"],
+                defaultValue: "osu! default 2014",
             },
-        ]
+        ],
     },
     {
-        name: 'OsuTop',
-        description: 'Shows the top scores of a user.\n' + scoreListString,
-        usage: 'osutop ' + scoreListArgs,
-        category: 'osu_scores',
+        name: "OsuTop",
+        description: "Shows the top scores of a user.\n" + scoreListString,
+        usage: "osutop " + scoreListArgs,
+        category: "osu_scores",
         examples: [
             {
-                text: 'osutop SaberStrike',
-                description: 'Shows SaberStrike\'s top osu! scores'
+                text: "osutop SaberStrike",
+                description: "Shows SaberStrike's top osu! scores",
             },
             {
-                text: 'osutop -p 3',
-                description: 'Shows your top 3 pages of osu! scores'
+                text: "osutop -p 3",
+                description: "Shows your top 3 pages of osu! scores",
             },
             {
-                text: 'osutop -mania',
-                description: 'Shows your top mania scores'
+                text: "osutop -mania",
+                description: "Shows your top mania scores",
             },
             {
-                text: 'osutop -fruits -mods hdhr',
-                description: 'Shows your top fruits scores with HDHR'
+                text: "osutop -fruits -mods hdhr",
+                description: "Shows your top fruits scores with HDHR",
             },
             {
-                text: 'osutop +HDHR -recent',
-                description: 'Shows your top scores with HDHR sorted by recent'
+                text: "osutop +HDHR -recent",
+                description: "Shows your top scores with HDHR sorted by recent",
             },
             {
-                text: 'top -parse 3',
-                description: 'Returns your 3rd personal best score'
+                text: "top -parse 3",
+                description: "Returns your 3rd personal best score",
             },
             {
-                text: 'sotarks',
-                description: 'Returns your top plays mapped by sotarks'
-            }
+                text: "sotarks",
+                description: "Returns your top plays mapped by sotarks",
+            },
         ],
         aliases: [
-            'top', 't', 'ot', 'topo', 'toposu',
-            'taikotop', 'toptaiko', 'tt', 'topt',
-            'ctbtop', 'fruitstop', 'catchtop', 'topctb', 'topfruits', 'topcatch', 'tf', 'tctb', 'topf', 'topc',
-            'maniatop', 'topmania', 'tm', 'topm',
+            "top",
+            "t",
+            "ot",
+            "topo",
+            "toposu",
+            "taikotop",
+            "toptaiko",
+            "tt",
+            "topt",
+            "ctbtop",
+            "fruitstop",
+            "catchtop",
+            "topctb",
+            "topfruits",
+            "topcatch",
+            "tf",
+            "tctb",
+            "topf",
+            "topc",
+            "maniatop",
+            "topmania",
+            "tm",
+            "topm",
         ],
-        args: [user, mode, { ...sort, defaultValue: 'pp' }].concat(scoreListCommandOptions)
+        args: [user, mode, { ...sort, defaultValue: "pp" }].concat(
+            scoreListCommandOptionsAll,
+        ),
     },
     {
-        name: 'Pinned',
-        description: 'Shows the pinned scores of a user.\n' + scoreListString,
-        usage: 'pinned ' + scoreListArgs,
-        category: 'osu_scores',
+        name: "Pinned",
+        description: "Shows the pinned scores of a user.\n" + scoreListString,
+        usage: "pinned " + scoreListArgs,
+        category: "osu_scores",
         examples: [
             {
-                text: 'pinned SaberStrike',
-                description: 'Shows SaberStrike\'s pinned scores'
+                text: "pinned SaberStrike",
+                description: "Shows SaberStrike's pinned scores",
             },
             {
-                text: 'pinned -p 3',
-                description: 'Shows your pinned scores on page 3'
+                text: "pinned -p 3",
+                description: "Shows your pinned scores on page 3",
             },
             {
-                text: 'pinned -mania',
-                description: 'Shows your pinned mania scores'
+                text: "pinned -mania",
+                description: "Shows your pinned mania scores",
             },
             {
-                text: 'pinned +HDHR -recent',
-                description: 'Shows your pinned scores with HDHR sorted by recent'
-
-            }
+                text: "pinned +HDHR -recent",
+                description:
+                    "Shows your pinned scores with HDHR sorted by recent",
+            },
         ],
-        aliases: ['pins'],
-        args: [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions)
+        aliases: ["pins"],
+        args: [user, mode, { ...sort, defaultValue: "recent" }].concat(
+            scoreListCommandOptionsAll,
+        ),
     },
     {
-        name: 'PP',
-        description: 'Estimates the rank of a user from the pp given. If a value matches the database, that will be used instead of an estimation.',
-        usage: 'pp <value> [mode]',
-        category: 'osu_other',
+        name: "PP",
+        description:
+            "Estimates the rank of a user from the pp given. If a value matches the database, that will be used instead of an estimation.",
+        usage: "pp <value> [mode]",
+        category: "osu_other",
         examples: [
             {
-                text: 'pp 100000',
-                description: 'Estimates your rank with 100,000pp'
+                text: "pp 100000",
+                description: "Estimates your rank with 100,000pp",
             },
             {
-                text: 'pp 2999 -fruits',
-                description: 'Estimates your ctb/fruits rank with 2,999pp'
+                text: "pp 2999 -fruits",
+                description: "Estimates your ctb/fruits rank with 2,999pp",
             },
         ],
         aliases: [],
         args: [
             {
-                name: 'value',
-                type: 'integer',
+                name: "value",
+                type: "integer",
                 required: true,
-                description: 'The pp to estimate the rank of',
-                format: ['{points}'],
-                defaultValue: 'N/A',
+                description: "The pp to estimate the rank of",
+                format: ["{points}"],
+                defaultValue: "N/A",
             },
-            mode
-        ]
+            mode,
+        ],
     },
     {
-        name: 'Rank',
-        description: 'Estimates the performance points of a user from the rank given. If a value matches the database, that will be used instead of an estimation.',
-        usage: 'rank <value> [mode]',
-        category: 'osu_other',
+        name: "Rank",
+        description:
+            "Estimates the performance points of a user from the rank given. If a value matches the database, that will be used instead of an estimation.",
+        usage: "rank <value> [mode]",
+        category: "osu_other",
         examples: [
             {
-                text: 'rank 1',
-                description: 'Estimates your pp with rank 1'
+                text: "rank 1",
+                description: "Estimates your pp with rank 1",
             },
             {
-                text: 'rank 1 -taiko',
-                description: 'Estimates your taiko pp with rank 1'
+                text: "rank 1 -taiko",
+                description: "Estimates your taiko pp with rank 1",
             },
         ],
         aliases: [],
         args: [
             {
-                name: 'value',
-                type: 'integer',
+                name: "value",
+                type: "integer",
                 required: true,
-                description: 'The rank to estimate the pp of',
-                format: ['{global rank}'],
-                defaultValue: 'N/A',
+                description: "The rank to estimate the pp of",
+                format: ["{global rank}"],
+                defaultValue: "N/A",
             },
-            mode
-        ]
+            mode,
+        ],
     },
     {
-        name: 'Ranking',
-        description: 'Displays the global leaderboards.',
-        usage: 'ranking [country] [page] [mode] [parse]',
-        category: 'osu_profile',
+        name: "Ranking",
+        description: "Displays the global leaderboards.",
+        usage: "ranking [country] [page] [mode] [parse]",
+        category: "osu_profile",
         examples: [
             {
-                text: 'ranking',
-                description: 'Shows the global leaderboards'
+                text: "ranking",
+                description: "Shows the global leaderboards",
             },
             {
-                text: 'ranking -country us -taiko',
-                description: 'Shows the taiko leaderboards for the US'
+                text: "ranking -country us -taiko",
+                description: "Shows the taiko leaderboards for the US",
             },
             {
-                text: 'ranking -charts -spotlight 227',
-                description: 'Shows the leaderboards for the 227th spotlight'
-            }
+                text: "ranking -charts -spotlight 227",
+                description: "Shows the leaderboards for the 227th spotlight",
+            },
         ],
-        aliases: ['rankings', 'lb', 'leaderboard'],
-        args: [{
-            name: 'country',
-            type: 'string',
-            required: false,
-            description: 'The country code of the country to use',
-            format: ['-country {ISO 3166-1 alpha-2 country code}'],
-            defaultValue: 'global',
-        },
+        aliases: ["rankings", "lb", "leaderboard"],
+        args: [
+            {
+                name: "country",
+                type: "string",
+                required: false,
+                description: "The country code of the country to use",
+                format: ["-country {ISO 3166-1 alpha-2 country code}"],
+                defaultValue: "global",
+            },
             mode,
             page,
-        {
-            name: 'type',
-            type: 'string',
-            required: false,
-            description: 'The type of leaderboard to show',
-            options: ['performance', 'charts', 'score', 'country'],
-            defaultValue: 'performance',
-            format: ['-{type}'],
-        },
-        {
-            name: 'spotlight',
-            type: 'integer',
-            required: false,
-            description: 'The spotlight to show the scores of. Only works with type charts',
-            format: ['-spotlight {spotlight ID}'],
-            defaultValue: 'latest',
-        },
-        {
-            name: 'parse',
-            type: 'integer',
-            required: false,
-            description: 'Parses the user with the given index',
-            format: ['-parse {index}'],
-            defaultValue: '1',
-        },
-        ]
+            {
+                name: "type",
+                type: "string",
+                required: false,
+                description: "The type of leaderboard to show",
+                options: ["performance", "charts", "score", "country"],
+                defaultValue: "performance",
+                format: ["-{type}"],
+            },
+            {
+                name: "spotlight",
+                type: "integer",
+                required: false,
+                description:
+                    "The spotlight to show the scores of. Only works with type charts",
+                format: ["-spotlight {spotlight ID}"],
+                defaultValue: "latest",
+            },
+            {
+                name: "parse",
+                type: "integer",
+                required: false,
+                description: "Parses the user with the given index",
+                format: ["-parse {index}"],
+                defaultValue: "1",
+            },
+        ],
     },
     {
-        name: 'Recent',
-        description: 'Shows the recent score(s) of a user',
-        usage: 'recent [user] [page] [mode] [showfails] [filter]',
-        category: 'osu_scores',
+        name: "Recent",
+        description: "Shows the recent score(s) of a user",
+        usage: "recent [user] [page] [mode] [showfails] [filter]",
+        category: "osu_scores",
         examples: [
             {
-                text: 'recent',
-                description: 'Shows your most recent score'
+                text: "recent",
+                description: "Shows your most recent score",
             },
             {
-                text: 'r SaberStrike',
-                description: 'Shows the most recent score of SaberStrike'
+                text: "r SaberStrike",
+                description: "Shows the most recent score of SaberStrike",
             },
             {
-                text: 'rt -p 2',
-                description: 'Shows your second most recent taiko score'
+                text: "rt -p 2",
+                description: "Shows your second most recent taiko score",
             },
         ],
         aliases: [
-            'recentscore', 'rs', 'r',
-            'recenttaiko', 'rt',
-            'recentfruits', 'rf', 'rctb',
-            'recentmania', 'rm',
+            "recentscore",
+            "rs",
+            "r",
+            "recenttaiko",
+            "rt",
+            "recentfruits",
+            "rf",
+            "rctb",
+            "recentmania",
+            "rm",
         ],
         args: [
             user,
             page,
             mode,
             {
-                name: 'showfails',
-                type: 'boolean',
+                name: "showfails",
+                type: "boolean",
                 required: false,
-                description: 'Whether to show only scores that were passed. If false, all scores will be shown',
-                options: ['true', 'false'],
-                format: ['-passes', '-nf', '-nofail'],
-                defaultValue: 'true',
+                description:
+                    "Whether to show only scores that were passed. If false, all scores will be shown",
+                options: ["true", "false"],
+                format: ["-passes", "-nf", "-nofail"],
+                defaultValue: "true",
             },
             {
-                name: 'filter',
-                type: 'string',
+                name: "filter",
+                type: "string",
                 required: false,
-                description: 'Filter scores by maps matching the given string',
-                format: ['-? {filter query}'],
-                defaultValue: 'null',
+                description: "Filter scores by maps matching the given string",
+                format: ["-? {filter query}"],
+                defaultValue: "null",
             },
-        ]
+        ],
     },
     {
-        name: 'RecentList',
-        description: 'Shows the recent scores of a user.\n' + scoreListString,
-        usage: 'recentlist ' + scoreListArgs,
-        category: 'osu_scores',
+        name: "RecentList",
+        description: "Shows the recent scores of a user.\n" + scoreListString,
+        usage: "recentlist " + scoreListArgs,
+        category: "osu_scores",
         examples: [
             {
-                text: 'rsbest',
-                description: 'Shows a list of your recent scores, sorted by pp'
+                text: "rsbest",
+                description: "Shows a list of your recent scores, sorted by pp",
             },
             {
-                text: 'rl -mania',
-                description: 'Shows a list of your recent mania scores'
+                text: "rl -mania",
+                description: "Shows a list of your recent mania scores",
             },
             {
-                text: 'rlm @SaberStrike',
-                description: 'Shows a list of SaberStrike\'s recent mania scores'
+                text: "rlm @SaberStrike",
+                description:
+                    "Shows a list of SaberStrike's recent mania scores",
             },
             {
                 text: 'rl -nf -? "Shinbatsu"',
-                description: 'Shows your recent scores with the map name/difficulty/artist/creator matching "shinbatsu", excluding fails'
-            }
+                description:
+                    'Shows your recent scores with the map name/difficulty/artist/creator matching "shinbatsu", excluding fails',
+            },
         ],
         aliases: [
-            'rb', 'recentbest', 'rsbest',
-            'rslist', 'rl',
-            'recentlisttaiko', 'rlt',
-            'recentlistfruits', 'rlf', 'rlctb', 'rlc',
-            'recentlistmania', 'rlm',
+            "rb",
+            "recentbest",
+            "rsbest",
+            "rslist",
+            "rl",
+            "recentlisttaiko",
+            "rlt",
+            "recentlistfruits",
+            "rlf",
+            "rlctb",
+            "rlc",
+            "recentlistmania",
+            "rlm",
         ],
-        args: [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions)
+        args: [user, mode, { ...sort, defaultValue: "recent" }].concat(
+            scoreListCommandOptionsAll,
+        ),
     },
     {
-        name: 'RecentActivity',
-        category: 'osu_profile',
-        description: 'Displays the user\'s most recent activity.',
-        usage: 'recentactivity [user] [page]',
-        aliases: ['recentact', 'rsact'],
-        args: [
-            user,
-            page,
-        ]
+        name: "RecentActivity",
+        category: "osu_profile",
+        description: "Displays the user's most recent activity.",
+        usage: "recentactivity [user] [page]",
+        aliases: ["recentact", "rsact"],
+        args: [user, page],
     },
     {
-        name: 'Saved',
-        description: 'Shows a user\'s saved settings.',
-        usage: 'saved [user]',
-        category: 'osu_other',
+        name: "Saved",
+        description: "Shows a user's saved settings.",
+        usage: "saved [user]",
+        category: "osu_other",
         examples: [
             {
-                text: 'saved @SaberStrike',
-                description: 'Shows SaberStrike\'s saved settings'
+                text: "saved @SaberStrike",
+                description: "Shows SaberStrike's saved settings",
             },
         ],
         aliases: [],
-        args: [
-            userAdmin,
-        ]
+        args: [userAdmin],
     },
     {
-        name: 'ScoreParse',
-        description: 'Returns information about a score.',
-        usage: 'scoreparse <id> [mode]',
-        linkUsage: [
-            'osu.ppy.sh/scores/<mode>/<id>'
-        ],
-        category: 'osu_scores',
+        name: "ScoreParse",
+        description: "Returns information about a score.",
+        usage: "scoreparse <id> [mode]",
+        linkUsage: ["osu.ppy.sh/scores/<mode>/<id>"],
+        category: "osu_scores",
         examples: [
             {
-                text: 'scoreparse 1234567890',
-                description: 'Parses the osu! score with the id 1234567890'
+                text: "scoreparse 1234567890",
+                description: "Parses the osu! score with the id 1234567890",
             },
             {
-                text: 'score 1234567890 mania',
-                description: 'Parses the mania score with the id 1234567890'
+                text: "score 1234567890 mania",
+                description: "Parses the mania score with the id 1234567890",
             },
             {
-                text: 'https://osu.ppy.sh/scores/osu/1234567890',
-                description: 'Parses the osu! score with the id 1234567890'
+                text: "https://osu.ppy.sh/scores/osu/1234567890",
+                description: "Parses the osu! score with the id 1234567890",
             },
         ],
-        aliases: ['score', 'sp'],
+        aliases: ["score", "sp"],
         args: [
             {
-                name: 'id',
-                type: 'integer',
+                name: "id",
+                type: "integer",
                 required: true,
-                description: 'The id of the score',
-                format: ['{score ID}', 'osu.ppy.sh/scores/{score ID}'],
-                defaultValue: 'null',
+                description: "The id of the score",
+                format: ["{score ID}", "osu.ppy.sh/scores/{score ID}"],
+                defaultValue: "null",
             },
             {
                 ...mode,
-                description: 'The mode to use. Only required if using the old score ID system.',
-            }
-        ]
-    },
-    {
-        name: 'MapScores',
-        description: 'Shows the scores of a user on a beatmap.\n' + scoreListString,
-        usage: 'mapscores [user] [map id] [page] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]',
-        category: 'osu_scores',
-        examples: [
-            {
-                text: 'scores saberstrike',
-                description: 'Shows SaberStrike\'s scores on the most recent beatmap'
-            },
-            {
-                text: 'c',
-                description: 'Shows your scores on the most recent beatmap'
-            },
-            {
-                text: 'c 4204',
-                description: 'Shows your scores on the beatmap with the id 4204'
-            },
-            {
-                text: 'scores -parse 5',
-                description: 'Returns your fifth most recent score on the most recent beatmap'
-            },
-            {
-                text: 'c https://osu.ppy.sh/beatmapsets/3367#osu/21565',
-                description: 'Shows your scores on the beatmap with the id 21565'
+                description:
+                    "The mode to use. Only required if using the old score ID system.",
             },
         ],
-        aliases: ['c'],
-        args:
-            [user, mode, { ...sort, defaultValue: 'recent' }].concat(scoreListCommandOptions).concat([
+    },
+    {
+        name: "MapScores",
+        description:
+            "Shows the scores of a user on a beatmap.\n" + scoreListString,
+        usage: "mapscores [user] [map id] [page] [mods] [modx] [exmod] [reverse] [sort] [parse] [query] [detailed] [-grade] [pp] [score] [acc] [combo] [miss] [bpm]",
+        category: "osu_scores",
+        examples: [
+            {
+                text: "scores saberstrike",
+                description:
+                    "Shows SaberStrike's scores on the most recent beatmap",
+            },
+            {
+                text: "c",
+                description: "Shows your scores on the most recent beatmap",
+            },
+            {
+                text: "c 4204",
+                description:
+                    "Shows your scores on the beatmap with the id 4204",
+            },
+            {
+                text: "scores -parse 5",
+                description:
+                    "Returns your fifth most recent score on the most recent beatmap",
+            },
+            {
+                text: "c https://osu.ppy.sh/beatmapsets/3367#osu/21565",
+                description:
+                    "Shows your scores on the beatmap with the id 21565",
+            },
+        ],
+        aliases: ["c"],
+        args: [user, mode, { ...sort, defaultValue: "recent" }]
+            .concat(scoreListCommandOptions)
+            .concat([
                 {
-                    name: 'map id',
-                    type: 'integer/map link',
+                    name: "map id",
+                    type: "integer/map link",
                     required: false,
-                    description: 'The map ID to search for',
+                    description: "The map ID to search for",
                     format: mapformat,
-                    defaultValue: 'the most recent map in the guild',
+                    defaultValue: "the most recent map in the guild",
                 },
-            ])
+            ]),
     },
     {
-        name: 'ScoreStats',
-        description: 'Shows the stats of a user\'s scores.',
-        usage: 'scorestats [user] [type] [mode] [all]',
-        category: 'osu_scores',
+        name: "ScoreStats",
+        description: "Shows the stats of a user's scores.",
+        usage: "scorestats [user] [type] [mode] [all]",
+        category: "osu_scores",
         examples: [
             {
-                text: 'scorestats @SaberStrike',
-                description: 'Shows scorestats for SaberStrike\'s top plays'
+                text: "scorestats @SaberStrike",
+                description: "Shows scorestats for SaberStrike's top plays",
             },
             {
-                text: 'scorestats mrekk -firsts',
-                description: 'Shows scorestats for mrekk\'s firsts'
-            }
+                text: "scorestats mrekk -firsts",
+                description: "Shows scorestats for mrekk's firsts",
+            },
         ],
-        aliases: ['ss'],
+        aliases: ["ss"],
         args: [
-            user, mode,
+            user,
+            mode,
             {
-                name: 'type',
-                type: 'string',
+                name: "type",
+                type: "string",
                 required: false,
-                description: 'The type of scores to use',
-                options: ['best', 'firsts', 'recent', 'pinned'],
-                defaultValue: 'best',
-                format: ['-{type}',],
+                description: "The type of scores to use",
+                options: ["best", "firsts", "recent", "pinned"],
+                defaultValue: "best",
+                format: ["-{type}"],
             },
             {
-                name: 'all',
-                type: 'boolean',
+                name: "all",
+                type: "boolean",
                 required: false,
-                description: 'Shows all statistics. May cause the command to lag as it needs to download all maps associated with each score.',
-                options: ['true', 'false'],
-                format: ['-all',],
-                defaultValue: 'false',
-            }
-        ]
+                description:
+                    "Shows all statistics. May cause the command to lag as it needs to download all maps associated with each score.",
+                options: ["true", "false"],
+                format: ["-all"],
+                defaultValue: "false",
+            },
+        ],
     },
     {
-        name: 'Simulate',
-        description: 'Simulates a score on a beatmap.',
-        usage: 'simulate [id] +[mods]  [acc] [combo] [n300] [n100] [n50] [miss] [bpm] [speed] [cs] [ar] [od] [hp] [use previous]',
-        category: 'osu_scores',
+        name: "Simulate",
+        description: "Simulates a score on a beatmap.",
+        usage: "simulate [id] +[mods]  [acc] [combo] [n300] [n100] [n50] [miss] [bpm] [speed] [cs] [ar] [od] [hp] [use previous]",
+        category: "osu_scores",
         examples: [
             {
-                text: 'simulate +HDHR -miss 0 -acc 97.86',
-                description: 'Simulates a score on the most recent beatmap with HDHR, 0 misses, and 97.86% accuracy'
-            }
+                text: "simulate +HDHR -miss 0 -acc 97.86",
+                description:
+                    "Simulates a score on the most recent beatmap with HDHR, 0 misses, and 97.86% accuracy",
+            },
         ],
-        aliases: ['sim', 'simplay'],
+        aliases: ["sim", "simplay"],
         args: [
             {
-                name: 'id',
-                type: 'integer',
+                name: "id",
+                type: "integer",
                 required: false,
-                description: 'The beatmap id to simulate the score on',
-                defaultValue: 'The most recent map in the guild',
+                description: "The beatmap id to simulate the score on",
+                defaultValue: "The most recent map in the guild",
                 format: mapformat,
             },
             {
-                name: 'mods',
-                type: 'string',
+                name: "mods",
+                type: "string",
                 required: false,
                 description: `The mods to simulate the score with. ${mods}`,
-                defaultValue: 'none',
-                format: ['+{mods}', '-mods {mods}'],
+                defaultValue: "none",
+                format: ["+{mods}", "-mods {mods}"],
             },
             {
-                name: 'accuracy',
-                type: 'float',
+                name: "accuracy",
+                type: "float",
                 required: false,
-                description: 'The accuracy to simulate the score with',
-                options: ['0-100'],
-                format: ['-acc {accuracy}', '-accuracy {accuracy}', '-% {accuracy}'],
-                defaultValue: '100',
+                description: "The accuracy to simulate the score with",
+                options: ["0-100"],
+                format: [
+                    "-acc {accuracy}",
+                    "-accuracy {accuracy}",
+                    "-% {accuracy}",
+                ],
+                defaultValue: "100",
             },
             {
-                name: 'combo',
-                type: 'integer',
+                name: "combo",
+                type: "integer",
                 required: false,
-                description: 'The maximum combo to simulate the score with',
-                format: ['-combo {max combo}', '-x {max combo}', '-maxcombo {max combo}'],
-                defaultValue: 'map max combo',
+                description: "The maximum combo to simulate the score with",
+                format: [
+                    "-combo {max combo}",
+                    "-x {max combo}",
+                    "-maxcombo {max combo}",
+                ],
+                defaultValue: "map max combo",
             },
             {
-                name: 'n300',
-                type: 'integer',
+                name: "n300",
+                type: "integer",
                 required: false,
-                description: 'The number of hit 300s to simulate the score with',
-                format: ['-n300 {hit greats/300s}', '-300s {hit greats/300s}', '-greats {hit greats/300s}'],
-                defaultValue: 'calculated from accuracy',
+                description:
+                    "The number of hit 300s to simulate the score with",
+                format: [
+                    "-n300 {hit greats/300s}",
+                    "-300s {hit greats/300s}",
+                    "-greats {hit greats/300s}",
+                ],
+                defaultValue: "calculated from accuracy",
             },
             {
-                name: 'n100',
-                type: 'integer',
+                name: "n100",
+                type: "integer",
                 required: false,
-                description: 'The number of hit 100s to simulate the score with',
-                format: ['-n100 {hit oks/100s}', '-100s {hit oks/100s}', '-ok {hit oks/100s}'],
-                defaultValue: 'calculated from accuracy',
+                description:
+                    "The number of hit 100s to simulate the score with",
+                format: [
+                    "-n100 {hit oks/100s}",
+                    "-100s {hit oks/100s}",
+                    "-ok {hit oks/100s}",
+                ],
+                defaultValue: "calculated from accuracy",
             },
             {
-                name: 'n50',
-                type: 'integer',
+                name: "n50",
+                type: "integer",
                 required: false,
-                description: 'The number of hit 50s to simulate the score with',
-                format: ['-n50 {hit mehs/50s}', '-50s {hit mehs/50s}', '-meh{hit mehs/50s}'],
-                defaultValue: 'calculated from accuracy',
+                description: "The number of hit 50s to simulate the score with",
+                format: [
+                    "-n50 {hit mehs/50s}",
+                    "-50s {hit mehs/50s}",
+                    "-meh{hit mehs/50s}",
+                ],
+                defaultValue: "calculated from accuracy",
             },
             {
-                name: 'misses',
-                type: 'integer',
+                name: "misses",
+                type: "integer",
                 required: false,
-                description: 'The number of misses to simulate the score with',
-                format: ['-miss {misses}', '-misses {misses}', '-n0 {misses}', '-0s {misses}'],
-                defaultValue: '0',
+                description: "The number of misses to simulate the score with",
+                format: [
+                    "-miss {misses}",
+                    "-misses {misses}",
+                    "-n0 {misses}",
+                    "-0s {misses}",
+                ],
+                defaultValue: "0",
             },
             {
-                name: 'bpm',
-                type: 'float',
+                name: "bpm",
+                type: "float",
                 required: false,
-                description: 'The bpm to simulate the score with',
-                format: ['-bpm {bpm}',],
-                defaultValue: 'map bpm',
+                description: "The bpm to simulate the score with",
+                format: ["-bpm {bpm}"],
+                defaultValue: "map bpm",
             },
             {
-                name: 'speed',
-                type: 'float',
+                name: "speed",
+                type: "float",
                 required: false,
-                description: 'The speed multiplier to simulate the score with',
-                format: ['-speed {speed}',],
-                defaultValue: '1 (or mod)',
+                description: "The speed multiplier to simulate the score with",
+                format: ["-speed {speed}"],
+                defaultValue: "1 (or mod)",
             },
             {
-                name: 'cs',
-                type: 'float',
+                name: "cs",
+                type: "float",
                 required: false,
-                description: 'The circle size to simulate the score with',
-                format: ['-cs {circle size}',],
-                defaultValue: 'Map CS',
+                description: "The circle size to simulate the score with",
+                format: ["-cs {circle size}"],
+                defaultValue: "Map CS",
             },
             {
-                name: 'ar',
-                type: 'float',
+                name: "ar",
+                type: "float",
                 required: false,
-                description: 'The approach to simulate the score with',
-                format: ['-ar {approach rate}',],
-                defaultValue: 'Map AR',
+                description: "The approach to simulate the score with",
+                format: ["-ar {approach rate}"],
+                defaultValue: "Map AR",
             },
             {
-                name: 'od',
-                type: 'float',
+                name: "od",
+                type: "float",
                 required: false,
-                description: 'The overall difficulty to simulate the score with',
-                format: ['-od {overall difficulty}',],
-                defaultValue: 'Map OD',
+                description:
+                    "The overall difficulty to simulate the score with",
+                format: ["-od {overall difficulty}"],
+                defaultValue: "Map OD",
             },
             {
-                name: 'hp',
-                type: 'float',
+                name: "hp",
+                type: "float",
                 required: false,
-                description: 'The hp/drain to simulate the score with',
-                format: ['-hp {drain rate}',],
-                defaultValue: 'Map HP',
+                description: "The hp/drain to simulate the score with",
+                format: ["-hp {drain rate}"],
+                defaultValue: "Map HP",
             },
             {
-                name: 'use previous',
-                type: 'boolean',
+                name: "use previous",
+                type: "boolean",
                 required: false,
-                description: 'Use values from the most recent score in the channel (acc, combo, mods)',
-                format: ['-previous', '-p', '-prev'],
-                defaultValue: 'false',
+                description:
+                    "Use values from the most recent score in the channel (acc, combo, mods)",
+                format: ["-previous", "-p", "-prev"],
+                defaultValue: "false",
             },
-        ]
+        ],
     },
     {
-        name: 'TrackAdd',
-        description: 'Adds a user to the tracklist. Only works in the guild\'s set tracking channel.',
-        usage: 'trackadd <user>',
-        category: 'osu_track',
+        name: "TrackAdd",
+        description:
+            "Adds a user to the tracklist. Only works in the guild's set tracking channel.",
+        usage: "trackadd <user>",
+        category: "osu_track",
         examples: [
             {
-                text: 'trackadd 15222484',
-                description: 'Adds the user with the id 15222484 to the tracklist'
+                text: "trackadd 15222484",
+                description:
+                    "Adds the user with the id 15222484 to the tracklist",
             },
             {
-                text: 'ta SaberStrike',
-                description: 'Adds SaberStrike to the tracklist'
-            }
+                text: "ta SaberStrike",
+                description: "Adds SaberStrike to the tracklist",
+            },
         ],
-        aliases: ['ta', 'track'],
-        args: [
-            userTrack,
-        ]
+        aliases: ["ta", "track"],
+        args: [userTrack],
     },
     {
-        name: 'TrackChannel',
-        description: 'Sets the channel to send tracklist updates to.',
-        category: 'osu_track',
-        usage: 'trackchannel <channel>',
+        name: "TrackChannel",
+        description: "Sets the channel to send tracklist updates to.",
+        category: "osu_track",
+        usage: "trackchannel <channel>",
         examples: [
             {
-                text: 'trackchannel #tracklist',
-                description: 'Sets the channel to send tracklist updates to #tracklist'
+                text: "trackchannel #tracklist",
+                description:
+                    "Sets the channel to send tracklist updates to #tracklist",
             },
             {
-                text: 'trackchannel 123456789012345678',
-                description: 'Sets the channel to send tracklist updates to the channel with the id 123456789012345678'
-            }
+                text: "trackchannel 123456789012345678",
+                description:
+                    "Sets the channel to send tracklist updates to the channel with the id 123456789012345678",
+            },
         ],
-        aliases: ['tc'],
+        aliases: ["tc"],
         args: [
             {
-                name: 'channel',
-                type: 'channel mention',
+                name: "channel",
+                type: "channel mention",
                 required: true,
-                description: 'The channel to send tracklist updates to',
-                format: ['#{channel name or ID}',],
-                defaultValue: 'N/A',
-            }
-        ]
+                description: "The channel to send tracklist updates to",
+                format: ["#{channel name or ID}"],
+                defaultValue: "N/A",
+            },
+        ],
     },
     {
-        name: 'TrackList',
-        description: 'Displays a list of the currently tracked users in the server.',
-        category: 'osu_track',
-        usage: 'tracklist',
-        aliases: ['tl'],
+        name: "TrackList",
+        description:
+            "Displays a list of the currently tracked users in the server.",
+        category: "osu_track",
+        usage: "tracklist",
+        aliases: ["tl"],
     },
     {
-        name: 'TrackRemove',
-        description: 'Removes a user from the tracklist. Only works in the guild\'s set tracking channel.',
-        category: 'osu_track',
-        usage: 'trackremove <user>',
+        name: "TrackRemove",
+        description:
+            "Removes a user from the tracklist. Only works in the guild's set tracking channel.",
+        category: "osu_track",
+        usage: "trackremove <user>",
         examples: [
             {
-                text: 'trackremove 15222484',
-                description: 'Removes the user with the id 15222484 from the tracklist'
+                text: "trackremove 15222484",
+                description:
+                    "Removes the user with the id 15222484 from the tracklist",
             },
             {
-                text: 'tr SaberStrike',
-                description: 'Removes SaberStrike from the tracklist'
-            }
+                text: "tr SaberStrike",
+                description: "Removes SaberStrike from the tracklist",
+            },
         ],
-        aliases: ['tr', 'trackrm', 'untrack'],
-        args: [
-            userTrack,
-        ]
+        aliases: ["tr", "trackrm", "untrack"],
+        args: [userTrack],
     },
     {
-        name: 'UserBeatmaps',
-        description: 'Shows a user\'s beatmaps. (favourites/ranked/pending/graveyard/loved)',
-        category: 'osu_map',
-        usage: 'userbeatmaps [user] [type] [reverse] [page] [parse] [query]',
+        name: "UserBeatmaps",
+        description:
+            "Shows a user's beatmaps. (favourites/ranked/pending/graveyard/loved)",
+        category: "osu_map",
+        usage: "userbeatmaps [user] [type] [reverse] [page] [parse] [query]",
         examples: [
             {
-                text: 'ubm sotarks -p 4 -ranked',
-                description: 'Shows sotarks\'s ranked beatmaps on page 4'
+                text: "ubm sotarks -p 4 -ranked",
+                description: "Shows sotarks's ranked beatmaps on page 4",
             },
             {
-                text: 'userbeatmaps Mismagius -loved -reverse -p 2 -title',
-                description: 'Shows Mismagius\'s loved beatmaps on page 2, sorted by title in reverse'
-            }
+                text: "userbeatmaps Mismagius -loved -reverse -p 2 -title",
+                description:
+                    "Shows Mismagius's loved beatmaps on page 2, sorted by title in reverse",
+            },
         ],
-        aliases: ['ub', 'userb', 'ubm', 'um', 'usermaps',
-            'ranked', 'favourite', 'favourites', 'graveyard', 'unranked', 'loved', 'pending', 'wip', 'nominated', 'bn', 'guest', 'gd', 'most_played', 'mp', 'mostplayed'
+        aliases: [
+            "ub",
+            "userb",
+            "ubm",
+            "um",
+            "usermaps",
+            "ranked",
+            "favourite",
+            "favourites",
+            "graveyard",
+            "unranked",
+            "loved",
+            "pending",
+            "wip",
+            "nominated",
+            "bn",
+            "guest",
+            "gd",
+            "most_played",
+            "mp",
+            "mostplayed",
         ],
         args: [
             user,
             {
-                name: 'type',
-                type: 'string',
+                name: "type",
+                type: "string",
                 required: false,
-                description: 'The type of beatmaps to show',
-                options: ['favourites', 'ranked', 'pending', 'graveyard', 'loved', 'most_played'],
-                format: ['-{type}',],
-                defaultValue: 'Favourites',
+                description: "The type of beatmaps to show",
+                options: [
+                    "favourites",
+                    "ranked",
+                    "pending",
+                    "graveyard",
+                    "loved",
+                    "most_played",
+                ],
+                format: ["-{type}"],
+                defaultValue: "Favourites",
             },
             {
-                name: 'reverse',
-                type: 'boolean',
+                name: "reverse",
+                type: "boolean",
                 required: false,
-                description: 'Whether to sort the beatmaps in reverse',
-                options: ['true', 'false'],
-                format: ['-rev', '-reverse'],
-                defaultValue: 'false',
+                description: "Whether to sort the beatmaps in reverse",
+                options: ["true", "false"],
+                format: ["-rev", "-reverse"],
+                defaultValue: "false",
             },
             page,
             {
-                name: 'sort',
-                type: 'string',
+                name: "sort",
+                type: "string",
                 required: false,
-                description: 'The way to sort the beatmaps',
-                options: ['Title', 'Artist', 'Difficulty', 'Status', 'Fails', 'Plays', 'Date Added', 'Favourites', 'BPM', 'CS', 'AR', 'OD', 'HP', 'Length'],
-                format: ['-sort {sort}',],
-                defaultValue: 'Date Added',
+                description: "The way to sort the beatmaps",
+                options: [
+                    "Title",
+                    "Artist",
+                    "Difficulty",
+                    "Status",
+                    "Fails",
+                    "Plays",
+                    "Date Added",
+                    "Favourites",
+                    "BPM",
+                    "CS",
+                    "AR",
+                    "OD",
+                    "HP",
+                    "Length",
+                ],
+                format: ["-sort {sort}"],
+                defaultValue: "Date Added",
             },
             {
-                name: 'parse',
-                type: 'integer',
+                name: "parse",
+                type: "integer",
                 required: false,
-                description: 'Parses the beatmap with the given index',
-                format: ['-parse {index',],
-                defaultValue: '1',
+                description: "Parses the beatmap with the given index",
+                format: ["-parse {index"],
+                defaultValue: "1",
             },
             {
-                name: 'filter',
-                type: 'string',
+                name: "filter",
+                type: "string",
                 required: false,
-                description: 'Filters the beatmaps by the given string',
-                format: ['-? {filter query}',],
-                defaultValue: 'N/A',
+                description: "Filters the beatmaps by the given string",
+                format: ["-? {filter query}"],
+                defaultValue: "N/A",
             },
-        ]
+        ],
     },
     {
-        name: 'WhatIf',
-        description: 'Estimates user stats if they gain a certain amount of raw pp.',
-        category: 'osu_other',
-        usage: 'whatif [user] <pp>',
+        name: "WhatIf",
+        description:
+            "Estimates user stats if they gain a certain amount of raw pp.",
+        category: "osu_other",
+        usage: "whatif [user] <pp>",
         examples: [
             {
-                text: 'whatif 1000',
-                description: 'Shows the user\'s stats if they achieved a 1000pp score'
+                text: "whatif 1000",
+                description:
+                    "Shows the user's stats if they achieved a 1000pp score",
             },
             {
-                text: 'whatif SaberStrike 300',
-                description: 'Shows SaberStrike\'s stats if they achieved a 300pp score'
-            }
+                text: "whatif SaberStrike 300",
+                description:
+                    "Shows SaberStrike's stats if they achieved a 300pp score",
+            },
         ],
-        aliases: ['wi'],
+        aliases: ["wi"],
         args: [
-            user, mode,
+            user,
+            mode,
             {
-                name: 'pp',
-                type: 'float',
+                name: "pp",
+                type: "float",
                 required: true,
-                description: 'The amount of raw pp to gain',
-                format: ['{points}',],
-                defaultValue: '0',
+                description: "The amount of raw pp to gain",
+                format: ["{points}"],
+                defaultValue: "0",
             },
-        ]
+        ],
     },
 
     {
-        name: '8Ball',
-        description: 'Returns a yes/no/maybe answer to a question.',
-        category: 'misc',
-        usage: '8ball ',
+        name: "8Ball",
+        description: "Returns a yes/no/maybe answer to a question.",
+        category: "misc",
+        usage: "8ball ",
         examples: [
             {
-                text: '8ball is this a good bot?',
-                description: 'Returns a yes/no/maybe answer to the question'
-            }
+                text: "8ball is this a good bot?",
+                description: "Returns a yes/no/maybe answer to the question",
+            },
         ],
-        aliases: ['ask'],
+        aliases: ["ask"],
     },
     {
-        name: 'CoinFlip',
-        description: 'Flips a coin.',
-        category: 'misc',
-        usage: 'coinflip',
-        aliases: ['coin', 'flip'],
+        name: "CoinFlip",
+        description: "Flips a coin.",
+        category: "misc",
+        usage: "coinflip",
+        aliases: ["coin", "flip"],
     },
     {
-        name: 'Gif',
-        description: 'Sends a gif.',
-        category: 'misc',
-        usage: '<type> [target]',
+        name: "Gif",
+        description: "Sends a gif.",
+        category: "misc",
+        usage: "<type> [target]",
         examples: [
             {
-                text: 'slap @SaberStrike',
-                description: 'Sends a random gif matching "slap"'
-            }
+                text: "slap @SaberStrike",
+                description: 'Sends a random gif matching "slap"',
+            },
         ],
-        aliases: ['hug', 'kiss', 'lick', 'pet', 'punch', 'slap'],
+        aliases: ["hug", "kiss", "lick", "pet", "punch", "slap"],
         args: [
             {
-                name: 'type',
-                type: 'string',
+                name: "type",
+                type: "string",
                 required: true,
-                description: 'The type of gif to send',
-                options: ['hug', 'kiss', 'lick', 'pet', 'punch', 'slap'],
+                description: "The type of gif to send",
+                options: ["hug", "kiss", "lick", "pet", "punch", "slap"],
                 format: [],
-                defaultValue: 'N/A',
+                defaultValue: "N/A",
             },
             {
-                name: 'target',
-                type: 'user mention',
+                name: "target",
+                type: "user mention",
                 required: true,
-                description: 'The user to target',
-                format: ['<@{user ID}>', '@{discord username}'],
-                defaultValue: 'N/A',
-            }
-        ]
-    },
-    {
-        name: 'Janken',
-        description: 'Plays janken with the bot. (aka paper scissors rock or rock paper scissors or whatever weird order it\'s in).',
-        category: 'misc',
-        usage: 'janken',
-        aliases: ['paperscissorsrock', 'rockpaperscissors', 'rps', 'psr'],
-        args: [
-            {
-                name: 'choice',
-                type: 'string',
-                required: true,
-                description: 'Paper, scissors or rock.',
-                options: ['rock', 'paper', 'scissors', 'グー', 'チョキ', 'パー'],
-                format: ['{choice}',],
-                defaultValue: 'N/A',
-            }
+                description: "The user to target",
+                format: ["<@{user ID}>", "@{discord username}"],
+                defaultValue: "N/A",
+            },
         ],
     },
     {
-        name: 'Roll',
-        description: 'Rolls a random number.',
-        category: 'misc',
-        usage: 'roll [max] [min]',
+        name: "Janken",
+        description:
+            "Plays janken with the bot. (aka paper scissors rock or rock paper scissors or whatever weird order it's in).",
+        category: "misc",
+        usage: "janken",
+        aliases: ["paperscissorsrock", "rockpaperscissors", "rps", "psr"],
+        args: [
+            {
+                name: "choice",
+                type: "string",
+                required: true,
+                description: "Paper, scissors or rock.",
+                options: [
+                    "rock",
+                    "paper",
+                    "scissors",
+                    "グー",
+                    "チョキ",
+                    "パー",
+                ],
+                format: ["{choice}"],
+                defaultValue: "N/A",
+            },
+        ],
+    },
+    {
+        name: "Roll",
+        description: "Rolls a random number.",
+        category: "misc",
+        usage: "roll [max] [min]",
         examples: [
             {
-                text: 'roll',
-                description: 'Rolls a random number between 1 and 100'
+                text: "roll",
+                description: "Rolls a random number between 1 and 100",
             },
             {
-                text: 'roll 100 50',
-                description: 'Rolls a random number between 50 and 100'
-            }
+                text: "roll 100 50",
+                description: "Rolls a random number between 50 and 100",
+            },
         ],
-        aliases: ['rng', 'randomnumber', 'randomnumbergenerator', 'pickanumber', 'pickanum'],
+        aliases: [
+            "rng",
+            "randomnumber",
+            "randomnumbergenerator",
+            "pickanumber",
+            "pickanum",
+        ],
         args: [
             {
-                name: 'max',
-                type: 'integer',
+                name: "max",
+                type: "integer",
                 required: false,
-                description: 'The maximum number to roll',
-                format: ['{maximum value}',],
-                defaultValue: '100',
+                description: "The maximum number to roll",
+                format: ["{maximum value}"],
+                defaultValue: "100",
             },
             {
-                name: 'min',
-                type: 'integer',
+                name: "min",
+                type: "integer",
                 required: false,
-                description: 'The minimum number to roll',
-                format: ['{minimum value}',],
-                defaultValue: '1',
-            }
-        ]
+                description: "The minimum number to roll",
+                format: ["{minimum value}"],
+                defaultValue: "1",
+            },
+        ],
     },
     {
-        name: 'CheckPerms',
-        description: 'Checks the permissions of the user.',
-        category: 'admin',
-        usage: 'checkperms [user]',
+        name: "CheckPerms",
+        description: "Checks the permissions of the user.",
+        category: "admin",
+        usage: "checkperms [user]",
         examples: [
             {
-                text: 'checkperms @SSoB',
-                description: 'Checks the permissions of the user @SSoB'
-            }
+                text: "checkperms @SSoB",
+                description: "Checks the permissions of the user @SSoB",
+            },
         ],
-        aliases: ['perms'],
-        args: [
-            userAdmin,
-        ]
+        aliases: ["perms"],
+        args: [userAdmin],
     },
     {
-        name: 'Clear',
-        description: 'Clears cached data within the bot',
-        usage: 'clear <arg>',
-        category: 'admin',
+        name: "Clear",
+        description: "Clears cached data within the bot",
+        usage: "clear <arg>",
+        category: "admin",
         examples: [],
         aliases: [],
         args: [
             {
-                name: 'arg',
-                type: 'integer/string',
+                name: "arg",
+                type: "integer/string",
                 required: false,
-                description: 'the helper.bottypes of files to clear (read the options section)',
-                options: ['normal', 'all (only cmd data)', 'trueall', 'map', 'users', 'previous', 'pmaps', 'pscores', 'pusers', 'errors', 'graph'],
-                format: ['{arg}',],
-                defaultValue: 'temporary files only',
-            }
-        ]
+                description:
+                    "the helper.bottypes of files to clear (read the options section)",
+                options: [
+                    "normal",
+                    "all (only cmd data)",
+                    "trueall",
+                    "map",
+                    "users",
+                    "previous",
+                    "pmaps",
+                    "pscores",
+                    "pusers",
+                    "errors",
+                    "graph",
+                ],
+                format: ["{arg}"],
+                defaultValue: "temporary files only",
+            },
+        ],
     },
     {
-        name: 'Debug',
-        description: 'Runs a debugging command.',
-        category: 'admin',
-        usage: 'debug <type> [arg]',
+        name: "Debug",
+        description: "Runs a debugging command.",
+        category: "admin",
+        usage: "debug <type> [arg]",
         examples: [
             {
-                text: 'debug commandfile 1',
-                description: 'Returns all files associated with the command matching ID 1'
+                text: "debug commandfile 1",
+                description:
+                    "Returns all files associated with the command matching ID 1",
             },
             {
-                text: 'debug commandfiletype map',
-                description: 'Returns all files associated with the command "map"'
+                text: "debug commandfiletype map",
+                description:
+                    'Returns all files associated with the command "map"',
             },
             {
-                text: 'debug servers',
-                description: 'Returns a list of all guilds the bot is in'
+                text: "debug servers",
+                description: "Returns a list of all guilds the bot is in",
             },
             {
-                text: 'debug channels',
-                description: 'Returns a list of all channels in the current guild'
+                text: "debug channels",
+                description:
+                    "Returns a list of all channels in the current guild",
             },
             {
-                text: 'debug users',
-                description: 'Returns a list of all members in the current guild'
+                text: "debug users",
+                description:
+                    "Returns a list of all members in the current guild",
             },
             {
-                text: 'debug forcetrack',
-                description: 'Forces the osu!track to run a cycle (takes a minute to complete)'
+                text: "debug forcetrack",
+                description:
+                    "Forces the osu!track to run a cycle (takes a minute to complete)",
             },
             {
-                text: 'debug curcmdid',
-                description: 'Returns the current command\'s ID'
+                text: "debug curcmdid",
+                description: "Returns the current command's ID",
             },
             {
-                text: 'debug logs',
-                description: 'Returns the logs associated with the current guild'
+                text: "debug logs",
+                description:
+                    "Returns the logs associated with the current guild",
             },
             {
-                text: 'debug clear all',
-                description: 'Deletes all command-related files cached'
+                text: "debug clear all",
+                description: "Deletes all command-related files cached",
             },
             {
-                text: 'debug maps name',
-                description: 'Returns all maps stored in the cache, and lists them by name'
+                text: "debug maps name",
+                description:
+                    "Returns all maps stored in the cache, and lists them by name",
             },
         ],
         aliases: [],
         args: [
             {
-                name: 'type',
-                type: 'string',
+                name: "type",
+                type: "string",
                 required: false,
-                description: 'The type of debug to perform',
-                options: ['commandfile', 'commandfiletype', 'servers', 'channels', 'users', 'forcetrack', 'curcmdid', 'logs', 'clear', 'maps', 'ls', 'memory'],
-                format: ['{type}',],
-                defaultValue: 'list options',
-            }, {
-                name: 'arg',
-                type: 'integer/string',
-                required: false,
-                description: 'commandfile -> the id of the command to search for\ncommandfiletype -> the name of the command to search\nlogs -> the ID of the guild to send logs from',
-                options: ['normal', 'all (only cmd data)', 'trueall', 'map', 'users', 'previous', 'pmaps', 'pscores', 'pusers', 'errors', 'graph'],
-                format: ['{arg}',],
-                defaultValue: 'commandfile -> latest command\ncommandfiletype -> list options\nlogs -> current server',
-            }
-        ]
-    },
-    {
-        name: 'Find',
-        description: 'Finds details of a user/guild/channel/role/emoji/sticker.',
-        usage: 'find <type> <ID>',
-        category: 'admin',
-        examples: [
-            {
-                text: 'find user 777125560869978132',
-                description: 'Returns info for user with id 777125560869978132'
-            }
-        ],
-        aliases: ['get'],
-        args: [
-            {
-                name: 'type',
-                type: 'string',
-                required: true,
-                description: 'The type of info to fetch',
-                options: ['user', 'guild', 'channel', 'role', 'emoji', 'sticker'],
-                format: ['{type}',],
-                defaultValue: 'N/A',
+                description: "The type of debug to perform",
+                options: [
+                    "commandfile",
+                    "commandfiletype",
+                    "servers",
+                    "channels",
+                    "users",
+                    "forcetrack",
+                    "curcmdid",
+                    "logs",
+                    "clear",
+                    "maps",
+                    "ls",
+                    "memory",
+                ],
+                format: ["{type}"],
+                defaultValue: "list options",
             },
             {
-                name: 'id',
-                type: 'integer',
-                required: true,
-                description: 'The ID to fetch',
-                format: ['{ID}',],
-                defaultValue: 'N/A',
-            }
-        ]
-    },
-    {
-        name: 'LeaveGuild',
-        description: 'Makes the bot leave a guild.',
-        usage: 'leaveguild [guild]',
-        category: 'admin',
-        examples: [
-            {
-                text: 'leaveguild 1234567890',
-                description: 'Makes the bot leave the guild with the id 1234567890'
+                name: "arg",
+                type: "integer/string",
+                required: false,
+                description:
+                    "commandfile -> the id of the command to search for\ncommandfiletype -> the name of the command to search\nlogs -> the ID of the guild to send logs from",
+                options: [
+                    "normal",
+                    "all (only cmd data)",
+                    "trueall",
+                    "map",
+                    "users",
+                    "previous",
+                    "pmaps",
+                    "pscores",
+                    "pusers",
+                    "errors",
+                    "graph",
+                ],
+                format: ["{arg}"],
+                defaultValue:
+                    "commandfile -> latest command\ncommandfiletype -> list options\nlogs -> current server",
             },
         ],
-        aliases: ['leave'],
-        args: [
-            {
-                name: 'guild',
-                type: 'integer',
-                required: false,
-                description: 'The id of the guild to leave',
-                format: ['{guild ID}',],
-                defaultValue: 'the guild the command was sent in',
-            }
-        ]
     },
     {
-        name: 'Prefix',
-        description: 'Sets/gets the prefix of the current server.',
-        usage: 'prefix [prefix]',
-        category: 'admin',
+        name: "Find",
+        description:
+            "Finds details of a user/guild/channel/role/emoji/sticker.",
+        usage: "find <type> <ID>",
+        category: "admin",
         examples: [
             {
-                text: 'prefix !',
-                description: 'Sets the prefix to "!"'
-            }
+                text: "find user 777125560869978132",
+                description: "Returns info for user with id 777125560869978132",
+            },
+        ],
+        aliases: ["get"],
+        args: [
+            {
+                name: "type",
+                type: "string",
+                required: true,
+                description: "The type of info to fetch",
+                options: [
+                    "user",
+                    "guild",
+                    "channel",
+                    "role",
+                    "emoji",
+                    "sticker",
+                ],
+                format: ["{type}"],
+                defaultValue: "N/A",
+            },
+            {
+                name: "id",
+                type: "integer",
+                required: true,
+                description: "The ID to fetch",
+                format: ["{ID}"],
+                defaultValue: "N/A",
+            },
+        ],
+    },
+    {
+        name: "LeaveGuild",
+        description: "Makes the bot leave a guild.",
+        usage: "leaveguild [guild]",
+        category: "admin",
+        examples: [
+            {
+                text: "leaveguild 1234567890",
+                description:
+                    "Makes the bot leave the guild with the id 1234567890",
+            },
+        ],
+        aliases: ["leave"],
+        args: [
+            {
+                name: "guild",
+                type: "integer",
+                required: false,
+                description: "The id of the guild to leave",
+                format: ["{guild ID}"],
+                defaultValue: "the guild the command was sent in",
+            },
+        ],
+    },
+    {
+        name: "Prefix",
+        description: "Sets/gets the prefix of the current server.",
+        usage: "prefix [prefix]",
+        category: "admin",
+        examples: [
+            {
+                text: "prefix !",
+                description: 'Sets the prefix to "!"',
+            },
         ],
         aliases: [],
         args: [
             {
-                name: 'prefix',
-                type: 'string',
+                name: "prefix",
+                type: "string",
                 required: false,
-                description: 'The prefix to set',
-                format: ['{prefix}',],
-                defaultValue: 'N/A',
-            }
-        ]
+                description: "The prefix to set",
+                format: ["{prefix}"],
+                defaultValue: "N/A",
+            },
+        ],
     },
     {
-        name: 'Servers',
-        description: 'Shows the servers the bot is in.',
-        usage: 'servers',
-        category: 'admin',
+        name: "Servers",
+        description: "Shows the servers the bot is in.",
+        usage: "servers",
+        category: "admin",
         aliases: [],
     },
 ];
 
-
-
-
 export const buttons: {
-    name: string,
-    description: string,
+    name: string;
+    description: string;
     emoji: string;
 }[] = [
-        {
-            name: 'Refresh',
-            description: 'Refreshes the current embed.',
-            emoji: buttonsObjs.label.main.refresh,
-        }, {
-            name: 'BigLeftArrow',
-            description: 'Switches to the first page.',
-            emoji: buttonsObjs.label.page.first,
-        }, {
-            name: 'LeftArrow',
-            description: 'Switches to the previous page.',
-            emoji: buttonsObjs.label.page.previous,
-        }, {
-            name: 'Search',
-            description: 'Switches to the chosen page.',
-            emoji: buttonsObjs.label.page.search,
-        }, {
-            name: 'RightArrow',
-            description: 'Switches to the next page.',
-            emoji: buttonsObjs.label.page.next,
-        }, {
-            name: 'BigRightArrow',
-            description: 'Switches to the last page.',
-            emoji: buttonsObjs.label.page.last,
-        }, {
-            name: 'detailMore',
-            description: 'Expands the current embed.',
-            emoji: buttonsObjs.label.main.detailMore,
-        }, {
-            name: 'detailLess',
-            description: 'Collapses the current embed.',
-            emoji: buttonsObjs.label.main.detailLess,
-        }, {
-            name: 'Detailed',
-            description: 'Toggles the amount of content on the current embed.',
-            emoji: buttonsObjs.label.main.detailed,
-        }, {
-            name: 'Random',
-            description: 'Picks a random command to display.',
-            emoji: buttonsObjs.label.extras.random,
-        }, {
-            name: 'Graph',
-            description: 'Displays any graphs related.',
-            emoji: buttonsObjs.label.extras.graph
-        }, {
-            name: 'Map',
-            description: 'Displays the map of the current score(s).',
-            emoji: buttonsObjs.label.extras.map
-        }, {
-            name: 'User',
-            description: 'Displays the user',
-            emoji: buttonsObjs.label.extras.user
-        }, {
-            name: 'Leaderboard',
-            description: 'Displays the leaderboard of the map or other scores the user has on that map.',
-            emoji: buttonsObjs.label.extras.leaderboard
-        }, {
-            name: 'Time',
-            description: 'Displays the time for the given region.',
-            emoji: buttonsObjs.label.extras.time
-        }, {
-            name: 'Weather',
-            description: 'Displays the weather for the given region.',
-            emoji: buttonsObjs.label.extras.weather
-        }
-
-    ];
+    {
+        name: "Refresh",
+        description: "Refreshes the current embed.",
+        emoji: buttonsObjs.label.main.refresh,
+    },
+    {
+        name: "BigLeftArrow",
+        description: "Switches to the first page.",
+        emoji: buttonsObjs.label.page.first,
+    },
+    {
+        name: "LeftArrow",
+        description: "Switches to the previous page.",
+        emoji: buttonsObjs.label.page.previous,
+    },
+    {
+        name: "Search",
+        description: "Switches to the chosen page.",
+        emoji: buttonsObjs.label.page.search,
+    },
+    {
+        name: "RightArrow",
+        description: "Switches to the next page.",
+        emoji: buttonsObjs.label.page.next,
+    },
+    {
+        name: "BigRightArrow",
+        description: "Switches to the last page.",
+        emoji: buttonsObjs.label.page.last,
+    },
+    {
+        name: "detailMore",
+        description: "Expands the current embed.",
+        emoji: buttonsObjs.label.main.detailMore,
+    },
+    {
+        name: "detailLess",
+        description: "Collapses the current embed.",
+        emoji: buttonsObjs.label.main.detailLess,
+    },
+    {
+        name: "Detailed",
+        description: "Toggles the amount of content on the current embed.",
+        emoji: buttonsObjs.label.main.detailed,
+    },
+    {
+        name: "Random",
+        description: "Picks a random command to display.",
+        emoji: buttonsObjs.label.extras.random,
+    },
+    {
+        name: "Graph",
+        description: "Displays any graphs related.",
+        emoji: buttonsObjs.label.extras.graph,
+    },
+    {
+        name: "Map",
+        description: "Displays the map of the current score(s).",
+        emoji: buttonsObjs.label.extras.map,
+    },
+    {
+        name: "User",
+        description: "Displays the user",
+        emoji: buttonsObjs.label.extras.user,
+    },
+    {
+        name: "Leaderboard",
+        description:
+            "Displays the leaderboard of the map or other scores the user has on that map.",
+        emoji: buttonsObjs.label.extras.leaderboard,
+    },
+    {
+        name: "Time",
+        description: "Displays the time for the given region.",
+        emoji: buttonsObjs.label.extras.time,
+    },
+    {
+        name: "Weather",
+        description: "Displays the weather for the given region.",
+        emoji: buttonsObjs.label.extras.weather,
+    },
+];
