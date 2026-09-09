@@ -1,28 +1,37 @@
-import axios from 'axios';
-import * as fs from 'fs';
-import * as helper from '../helper';
-import * as log from './log';
-export async function dlMap(mapid: number | string, curCall: number, lastUpdated: Date) {
-    if (!fs.existsSync(helper.path.main + '/files/maps/')) {
-        log.stdout('creating files/maps/');
-        fs.mkdirSync(helper.path.main + '/files/maps/');
+import axios from "axios";
+import * as fs from "fs";
+import * as helper from "../helper";
+import * as log from "./log";
+export async function dlMap(
+    mapid: number | string,
+    curCall: number,
+    lastUpdated: Date,
+) {
+    if (!fs.existsSync(helper.path.main + "/files/maps/")) {
+        log.stdout("creating files/maps/");
+        fs.mkdirSync(helper.path.main + "/files/maps/");
     }
     const mapFiles = fs.readdirSync(`${helper.path.main}/files/maps`);
     let isFound = false;
-    let mapDir = '';
-    if (!mapFiles.some(x => x == mapid + '.osu') || !fs.existsSync(`${helper.path.main}/files/maps/` + mapid + '.osu')) {
+    let mapDir = "";
+    if (
+        !mapFiles.some((x) => x == mapid + ".osu") ||
+        !fs.existsSync(`${helper.path.main}/files/maps/` + mapid + ".osu")
+    ) {
         const url = `https://osu.ppy.sh/osu/${mapid}`;
         const thispath = `${helper.path.main}/files/maps/${mapid}.osu`;
         mapDir = thispath;
         if (!fs.existsSync(thispath)) {
-            fs.mkdirSync(`${helper.path.main}/files/maps/`, { recursive: true });
+            fs.mkdirSync(`${helper.path.main}/files/maps/`, {
+                recursive: true,
+            });
         }
-        log.stdout('DOWNLOAD MAP: ' + url);
+        log.stdout("DOWNLOAD MAP: " + url);
         const res = await axios.get(url);
-        fs.writeFileSync(thispath, res.data, 'utf-8');
+        fs.writeFileSync(thispath, res.data, "utf-8");
         await new Promise((resolve, reject) => {
             setTimeout(() => {
-                resolve('w');
+                resolve("w");
             }, 200);
         });
     } else {
@@ -41,7 +50,7 @@ export async function dlMap(mapid: number | string, curCall: number, lastUpdated
             curCall = 0;
         }
         if (curCall > 3) {
-            throw new Error('Map file size is too small. Deleting file...');
+            throw new Error("Map file size is too small. Deleting file...");
         } else {
             return await dlMap(mapid, curCall + 1, lastUpdated);
         }
@@ -56,21 +65,27 @@ export async function dlMap(mapid: number | string, curCall: number, lastUpdated
 // tenor
 
 export async function getGif(find: string) {
-    log.stdout(`GIF: https://g.tenor.com/v2/search?q=${find}&key=REDACTED&limit=50`);
-    if (helper.vars.config.tenorKey == 'INVALID_ID') {
+    log.stdout(
+        `GIF: https://g.tenor.com/v2/search?q=${find}&key=REDACTED&limit=50`,
+    );
+    if (helper.vars.config.tenorKey == "INVALID_ID") {
         return {
             data: {
                 error: "Invalid or missing tenor key",
                 results: [],
-            }
+            },
         };
-    };
-    const dataf = await axios.get(`https://g.tenor.com/v2/search?q=${find}&key=${helper.vars.config.tenorKey}&limit=50`).catch(err => {
-        return {
-            data: {
-                error: err
-            }
-        };
-    });
+    }
+    const dataf = await axios
+        .get(
+            `https://g.tenor.com/v2/search?q=${find}&key=${helper.vars.config.tenorKey}&limit=50`,
+        )
+        .catch((err) => {
+            return {
+                data: {
+                    error: err,
+                },
+            };
+        });
     return dataf;
 }

@@ -1,12 +1,14 @@
-import * as helper from '../helper';
+import * as helper from "../helper";
 
 /**
- * 
+ *
  * @param str string formatted as #rrggbb
  * @returns string as r,g,b
  */
 function hexToRgb(str: string) {
-    const str1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(str.replace('#', ''));
+    const str1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
+        str.replace("#", ""),
+    );
 
     const r = parseInt(str1[1], 16);
     const g = parseInt(str1[2], 16);
@@ -16,69 +18,71 @@ function hexToRgb(str: string) {
     return rgb;
 }
 function rgbToHex(str: string) {
-    const array = str.split(',');
+    const array = str.split(",");
     const r = parseInt(array[0]);
     const g = parseInt(array[1]);
     const b = parseInt(array[2]);
-    const hex = '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    const hex =
+        "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
     return hex;
 }
 
 /**
- * 
+ *
  * @param str string formatted as r,g,b
  * @returns decimal value of rgb
  */
 function rgbToDec(str: string) {
-    const array = str.split(',');
+    const array = str.split(",");
     const r = parseInt(array[0]);
     const g = parseInt(array[1]);
     const b = parseInt(array[2]);
-    const dec = (r * 65536) + (g * 256) + b;
+    const dec = r * 65536 + g * 256 + b;
     return dec;
-
 }
 
 /**
- * 
- * @param num number to be converted to rgb 
+ *
+ * @param num number to be converted to rgb
  * @returns string as r,g,b
  */
 function decToRgb(num: number) {
     const r = num >> 16;
-    const g = num >> 8 & 255;
+    const g = (num >> 8) & 255;
     const b = num & 255;
     const rgb = `${r},${g},${b}`;
     return rgb;
 }
 
 /**
- * 
- * @param num decimal number to be converted to hex 
+ *
+ * @param num decimal number to be converted to hex
  * @returns string formatted as #rrggbb
  */
 function decToHex(num: number) {
-    const hex = '#' + num.toString(16);
+    const hex = "#" + num.toString(16);
     return hex;
 }
 
 /**
- * 
+ *
  * @param str string formatted as #rrggbb
  * @returns decimal value of hex
  */
 function hexToDec(str: string) {
-    const str1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(str.replace('#', ''));
+    const str1 = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(
+        str.replace("#", ""),
+    );
     const r = parseInt(str1[1], 16);
     const g = parseInt(str1[2], 16);
     const b = parseInt(str1[3], 16);
-    const dec = (r * 65536) + (g * 256) + b;
+    const dec = r * 65536 + g * 256 + b;
     return dec;
 }
 
 /**
- * 
- * @returns 
+ *
+ * @returns
  */
 function rgbToHsv(r: number, g: number, b: number) {
     r /= 255;
@@ -160,12 +164,25 @@ function hsvToRgb(h: number, s: number, v: number) {
     return `${r},${g},${b}`;
 }
 
-export { decToHex, decToRgb, hexToDec, hexToRgb, hsvToRgb, rgbToDec, rgbToHex, rgbToHsv };
+export {
+    decToHex,
+    decToRgb,
+    hexToDec,
+    hexToRgb,
+    hsvToRgb,
+    rgbToDec,
+    rgbToHex,
+    rgbToHsv,
+};
 
 //[nm
 /**
  * [nm
  */
-export function codeBlockColourText(str: string, colour: string, type: 'background' | 'text') {
+export function codeBlockColourText(
+    str: string,
+    colour: string,
+    type: "background" | "text",
+) {
     return `\`\`\`ansi\n[${helper.colours.codeBlockColour[type][colour]}m${str}\n\`\`\``;
 }

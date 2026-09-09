@@ -1,11 +1,11 @@
-import Discord from 'discord.js';
-import * as helper from '../../helper';
-import * as commandTools from '../../tools/commands';
-import * as data from '../../tools/data';
-import * as log from '../../tools/log';
-import * as osuapi from '../../tools/osuapi';
-import * as other from '../../tools/other';
-import { SingleScoreCommand } from './SingleScoreCommand';
+import Discord from "discord.js";
+import * as helper from "../../helper";
+import * as commandTools from "../../tools/commands";
+import * as data from "../../tools/data";
+import * as log from "../../tools/log";
+import * as osuapi from "../../tools/osuapi";
+import * as other from "../../tools/other";
+import { SingleScoreCommand } from "./SingleScoreCommand";
 
 export class Recent extends SingleScoreCommand {
     declare protected params: {
@@ -18,8 +18,8 @@ export class Recent extends SingleScoreCommand {
     };
     constructor() {
         super();
-        this.name = 'Recent';
-        this.type = 'recent';
+        this.name = "Recent";
+        this.type = "recent";
         this.params = {
             user: undefined,
             searchid: undefined,
@@ -31,9 +31,19 @@ export class Recent extends SingleScoreCommand {
     }
 
     async setParamsMsg() {
-        this.params.showFails = this.setParam(this.params.showFails, ['-nf', '-nofail', '-pass', '-passes', 'passes=true'], 'bool', {});
+        this.params.showFails = this.setParam(
+            this.params.showFails,
+            ["-nf", "-nofail", "-pass", "-passes", "passes=true"],
+            "bool",
+            {},
+        );
         this.setParamPage();
-        this.params.filter = this.setParam(this.params.filter, ['-?'], 'string', { string_isMultiple: true });
+        this.params.filter = this.setParam(
+            this.params.filter,
+            ["-?"],
+            "string",
+            { string_isMultiple: true },
+        );
         this.setParamMode();
 
         const usertemp = this.setParamUser();
@@ -44,21 +54,24 @@ export class Recent extends SingleScoreCommand {
         this.setUserParams();
     }
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
-        this.params.user = interaction.options.getString('user');
-        this.params.page = interaction.options.getNumber('page');
-        this.params.mode = interaction.options.getString('mode') as osuapi.types_v2.GameMode;
-        this.params.filter = interaction.options.getString('filter');
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
+        this.params.user = interaction.options.getString("user");
+        this.params.page = interaction.options.getNumber("page");
+        this.params.mode = interaction.options.getString(
+            "mode",
+        ) as osuapi.types_v2.GameMode;
+        this.params.filter = interaction.options.getString("filter");
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
-        const interaction = (this.input.interaction as Discord.ButtonInteraction);
+        const interaction = this.input.interaction as Discord.ButtonInteraction;
         const temp = commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
                 content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
-                allowedMentions: { repliedUser: false }
+                allowedMentions: { repliedUser: false },
             });
             commandTools.disableAllButtons(this.input.message);
             return;
@@ -66,15 +79,18 @@ export class Recent extends SingleScoreCommand {
         this.params.searchid = temp.searchid;
         this.params.user = temp.user;
         this.params.mode = temp.mode;
-        this.params.page = commandTools.buttonPage(temp.page, temp.maxPage, this.input.buttonType);
+        this.params.page = commandTools.buttonPage(
+            temp.page,
+            temp.maxPage,
+            this.input.buttonType,
+        );
         this.params.showFails = temp.fails;
         this.params.filter = temp.filterTitle;
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        this.setParamOverride('page', 'number');
-        this.setParamOverride('mode',);
-
+        this.setParamOverride("page", "number");
+        this.setParamOverride("mode");
     }
     async execute() {
         await this.setParams();
@@ -99,17 +115,20 @@ export class Recent extends SingleScoreCommand {
 
         buttons.addComponents(
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.osudata.id}+${this.osudata.playmode}`)
+                .setCustomId(
+                    `${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.osudata.id}+${this.osudata.playmode}`,
+                )
                 .setStyle(helper.buttons.type.current)
                 .setEmoji(helper.buttons.label.extras.user),
         );
 
-        if (data.findFile(this.input.id, 'rsdata') &&
-            this.input.type == 'button' &&
-            !('error' in data.findFile(this.input.id, 'rsdata')) &&
-            this.input.buttonType != 'Refresh'
+        if (
+            data.findFile(this.input.id, "rsdata") &&
+            this.input.type == "button" &&
+            !("error" in data.findFile(this.input.id, "rsdata")) &&
+            this.input.buttonType != "Refresh"
         ) {
-            this.scores = data.findFile(this.input.id, 'rsdata');
+            this.scores = data.findFile(this.input.id, "rsdata");
         } else {
             this.scores = await osuapi.v2.scores.recent({
                 user_id: this.osudata.id,
@@ -118,26 +137,39 @@ export class Recent extends SingleScoreCommand {
             });
         }
 
-        data.debug(this.scores, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'rsData');
+        data.debug(
+            this.scores,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "rsData",
+        );
         if (helper.errors.isErrorObject(this.scores)) {
             await this.sendError(helper.errors.scores.recent(this.params.user));
         }
 
-        data.storeFile(this.scores, this.input.id, 'rsdata');
+        data.storeFile(this.scores, this.input.id, "rsdata");
 
         if (this.params.filter) {
-            this.scores = other.filterScoreQuery(this.scores, this.params.filter);
+            this.scores = other.filterScoreQuery(
+                this.scores,
+                this.params.filter,
+            );
         }
 
-        const pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
+        const pgbuttons = await commandTools.pageButtons(
+            this.name,
+            this.commanduser,
+            this.input.id,
+        );
         this.ctn.components = [pgbuttons, buttons];
 
         this.params.page = this.scores[this.params.page] ? this.params.page : 0;
 
-        if (this.input.buttonType == 'BigRightArrow') {
+        if (this.input.buttonType == "BigRightArrow") {
             this.params.page = this.scores.length - 1;
         }
-        this.disablePageButtons_check(pgbuttons,
+        this.disablePageButtons_check(
+            pgbuttons,
             this.scores.length <= 1,
             this.params.page <= 0,
             this.params.page >= this.scores.length - 1,
@@ -145,7 +177,10 @@ export class Recent extends SingleScoreCommand {
 
         this.score = this.scores[this.params.page];
         if (!this.score || this.score == undefined || this.score == null) {
-            let err = helper.errors.scores.recent_ms(this.params.user, helper.emojis.gamemodes[other.modeValidator(this.params.mode)]);
+            let err = helper.errors.scores.recent_ms(
+                this.params.user,
+                helper.emojis.gamemodes[other.modeValidator(this.params.mode)],
+            );
             if (this.params.filter) {
                 err += ` matching \`${this.params.filter}\``;
             }
@@ -155,7 +190,7 @@ export class Recent extends SingleScoreCommand {
         this.mapset = this.score.beatmapset;
 
         try {
-            const m = await this.getMap(this.score.beatmap_id + '');
+            const m = await this.getMap(this.score.beatmap_id + "");
             this.map = m;
         } catch (e) {
             return;
@@ -165,18 +200,23 @@ export class Recent extends SingleScoreCommand {
         const s = await this.getStrains(this.map, this.score);
         e.setImage(`attachment://${s}`);
 
-        data.writePreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId,
+        data.writePreviousId(
+            "score",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.score.id}`,
                 apiData: this.score,
                 mods: this.score.mods,
-            });
-        data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+            },
+        );
+        data.writePreviousId(
+            "map",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.map.id}`,
                 apiData: null,
                 mods: this.score.mods,
-            }
+            },
         );
         commandTools.storeButtonArgs(this.input.id, {
             user: this.params.user,
@@ -192,5 +232,4 @@ export class Recent extends SingleScoreCommand {
 
         await this.send();
     }
-
 }

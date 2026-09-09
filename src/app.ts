@@ -1,7 +1,7 @@
-import { begin as begin_bot } from './bot';
-import { begin as begin_web } from './web';
+import { begin as begin_bot } from "./bot";
+import { begin as begin_web } from "./web";
 
-import { setup } from './setup';
+import { setup } from "./setup";
 
 setup();
 begin_web();

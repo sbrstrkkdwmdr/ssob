@@ -1,17 +1,17 @@
-import axios from 'axios';
-import fs from 'fs';
-import { format } from 'util';
-import * as apitypes from './apitypes';
-import { Dict } from './types';
+import axios from "axios";
+import fs from "fs";
+import { format } from "util";
+import * as apitypes from "./apitypes";
+import { Dict } from "./types";
 
 export const credentials: {
-    id?: string,
-    secret?: string,
-    auth?: apitypes.OAuth,
-    lastAuthUpdate?: Date,
-    key?: string,
-    user?: boolean,
-    lazer?: boolean,
+    id?: string;
+    secret?: string;
+    auth?: apitypes.OAuth;
+    lastAuthUpdate?: Date;
+    key?: string;
+    user?: boolean;
+    lazer?: boolean;
 } = {};
 
 export let logCalls = false;
@@ -21,7 +21,7 @@ export function logCaller(i: boolean) {
 }
 
 // TODO - for things like chat access and checking if scopes are enabled
-const validScopes: apitypes.Scope[] = ['public'];
+const validScopes: apitypes.Scope[] = ["public"];
 
 export function allowed(...scopes: apitypes.Scope[]) {
     for (const scope of scopes) {
@@ -34,12 +34,12 @@ export enum Ruleset {
     osu = 0,
     taiko = 1,
     fruits = 2,
-    mania = 3
+    mania = 3,
 }
 
 export const baseUrl = {
-    v1: 'https://osu.ppy.sh/api',
-    v2: 'https://osu.ppy.sh/api/v2'
+    v1: "https://osu.ppy.sh/api",
+    v2: "https://osu.ppy.sh/api/v2",
 };
 
 export function setParams(input: Dict, params: Dict, keys?: string[]) {
@@ -72,8 +72,7 @@ export function log(data: any) {
 }
 
 function twoDigits(number: number) {
-    return number < 10 ? '0' + number : number + '';
+    return number < 10 ? "0" + number : number + "";
 }
 
-export * as requests from './requests';
-
+export * as requests from "./requests";

@@ -1,5 +1,5 @@
-import Discord from 'discord.js';
-import { Command } from '../command';
+import Discord from "discord.js";
+import { Command } from "../command";
 
 export class Roll extends Command {
     declare protected params: {
@@ -8,7 +8,7 @@ export class Roll extends Command {
     };
     constructor() {
         super();
-        this.name = 'Roll';
+        this.name = "Roll";
         this.params = {
             maxNum: 100,
             minNum: 0,
@@ -25,9 +25,12 @@ export class Roll extends Command {
         }
     }
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
-        this.params.maxNum = interaction.options.getNumber('max') ?? this.params.maxNum;
-        this.params.minNum = interaction.options.getNumber('min') ?? this.params.minNum;
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
+        this.params.maxNum =
+            interaction.options.getNumber("max") ?? this.params.maxNum;
+        this.params.minNum =
+            interaction.options.getNumber("min") ?? this.params.minNum;
     }
     async execute() {
         await this.setParams();
@@ -40,8 +43,11 @@ export class Roll extends Command {
         if (isNaN(this.params.minNum)) {
             this.params.minNum = 0;
         }
-        const eq = Math.floor(Math.random() * (this.params.maxNum - this.params.minNum)) + this.params.minNum;
-        this.ctn.content = eq + '';
+        const eq =
+            Math.floor(
+                Math.random() * (this.params.maxNum - this.params.minNum),
+            ) + this.params.minNum;
+        this.ctn.content = eq + "";
         await this.send();
     }
 }

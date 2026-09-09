@@ -17,12 +17,10 @@ export class ButtonHandler extends InputHandler {
     buttonWarnedUsers = new Set();
     async onMessage(message: Discord.Message) {}
     async onInteraction(interaction: Discord.Interaction) {
-        if (
-            !(
-                interaction.type == Discord.InteractionType.MessageComponent ||
-                interaction.type == Discord.InteractionType.ModalSubmit
-            )
-        )
+        if (!(
+            interaction.type == Discord.InteractionType.MessageComponent ||
+            interaction.type == Discord.InteractionType.ModalSubmit
+        ))
             return;
         if (interaction.applicationId != helper.vars.client?.application?.id)
             return;

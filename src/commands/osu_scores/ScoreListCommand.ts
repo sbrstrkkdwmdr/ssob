@@ -1,22 +1,30 @@
-import Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../../helper';
-import * as calculate from '../../tools/calculate';
-import * as commandTools from '../../tools/commands';
-import * as data from '../../tools/data';
-import * as formatters from '../../tools/formatters';
-import * as osuapi from '../../tools/osuapi';
-import { OsuCommand } from '../command';
-import { ScoreParse } from './ScoreParse';
+import Discord from "discord.js";
+import * as osumodcalc from "osumodcalculator";
+import * as helper from "../../helper";
+import * as calculate from "../../tools/calculate";
+import * as commandTools from "../../tools/commands";
+import * as data from "../../tools/data";
+import * as formatters from "../../tools/formatters";
+import * as osuapi from "../../tools/osuapi";
+import { OsuCommand } from "../command";
+import { ScoreParse } from "./ScoreParse";
 
 export class ScoreListCommand extends OsuCommand {
     declare protected params: {
         user: string;
         searchid: string;
-        mode: osuapi.types_v2.GameMode,
+        mode: osuapi.types_v2.GameMode;
         page: number;
         detailed: number;
-        sort: "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss" | 'sr';
+        sort:
+            | "score"
+            | "rank"
+            | "pp"
+            | "recent"
+            | "acc"
+            | "combo"
+            | "miss"
+            | "sr";
         reverse: boolean;
         filterTitle: string;
         filterArtist: string;
@@ -26,7 +34,7 @@ export class ScoreListCommand extends OsuCommand {
         parseScore: boolean;
         parseId: string | number;
         modsInclude: osumodcalc.types.Mod[];
-        modsExact: (osumodcalc.types.Mod | 'NONE')[];
+        modsExact: (osumodcalc.types.Mod | "NONE")[];
         modsExclude: osumodcalc.types.Mod[];
         pp: string;
         score: string;
@@ -36,7 +44,8 @@ export class ScoreListCommand extends OsuCommand {
         bpm: string;
         mapid: string | number | boolean;
     };
-    protected type: 'osutop' | 'nochokes' | 'recent' | 'map' | 'firsts' | 'pinned';
+    protected type:
+        "osutop" | "nochokes" | "recent" | "map" | "firsts" | "pinned";
     constructor() {
         super();
         this.params = {
@@ -68,45 +77,117 @@ export class ScoreListCommand extends OsuCommand {
     }
     async setParamsMsg() {
         {
-            this.params.parseId = this.setParam(this.params.parseId, ['-parse'], 'number', { number_isInt: true });
+            this.params.parseId = this.setParam(
+                this.params.parseId,
+                ["-parse"],
+                "number",
+                { number_isInt: true },
+            );
             this.params.parseScore = Boolean(this.params.parseId);
         }
 
         this.setParamPage();
         this.params.detailed =
-            this.setParam(this.params.detailed, helper.argflags.details, 'bool', { bool_setValue: 2 }) ??
-            this.setParam(this.params.detailed, helper.argflags.compress, 'bool', { bool_setValue: 0 });
+            this.setParam(
+                this.params.detailed,
+                helper.argflags.details,
+                "bool",
+                { bool_setValue: 2 },
+            ) ??
+            this.setParam(
+                this.params.detailed,
+                helper.argflags.compress,
+                "bool",
+                { bool_setValue: 0 },
+            );
 
         {
             this.setParamMode();
-
         }
-        this.params.reverse = this.setParam(this.params.reverse, ['-reverse', '-rev'], 'bool', {});
+        this.params.reverse = this.setParam(
+            this.params.reverse,
+            ["-reverse", "-rev"],
+            "bool",
+            {},
+        );
 
-        this.params.sort = this.setParam(this.params.sort, ['-sort',], 'string', {}) ??
-            this.setParamBoolList(this.params.sort,
-                { set: 'recent', flags: ['-r', '-recent'] },
-                { set: 'pp', flags: ['-performance', '-perf'] },
-                { set: 'sr', flags: ['-sr', '-stars', '-difficulty'] },
+        this.params.sort =
+            this.setParam(this.params.sort, ["-sort"], "string", {}) ??
+            this.setParamBoolList(
+                this.params.sort,
+                { set: "recent", flags: ["-r", "-recent"] },
+                { set: "pp", flags: ["-performance", "-perf"] },
+                { set: "sr", flags: ["-sr", "-stars", "-difficulty"] },
             );
 
         // range args
         // these are 'foo' '>foo' '<foo' 'min..max'
-        this.params.pp = this.setParam(this.params.pp, ['-pp'], 'string', {});
-        this.params.score = this.setParam(this.params.score, ['-score'], 'string', {});
-        this.params.acc = this.setParam(this.params.acc, ['-acc'], 'string', {});
-        this.params.combo = this.setParam(this.params.combo, ['-combo', '-maxcombo'], 'string', {});
+        this.params.pp = this.setParam(this.params.pp, ["-pp"], "string", {});
+        this.params.score = this.setParam(
+            this.params.score,
+            ["-score"],
+            "string",
+            {},
+        );
+        this.params.acc = this.setParam(
+            this.params.acc,
+            ["-acc"],
+            "string",
+            {},
+        );
+        this.params.combo = this.setParam(
+            this.params.combo,
+            ["-combo", "-maxcombo"],
+            "string",
+            {},
+        );
         this.params.miss =
-            this.setParam(this.params.miss, ['-miss', '-misses', '-x'], 'string', {}) ??
-            this.setParam(this.params.miss, ['-fc', '-fullcombo'], 'bool', { bool_setValue: '0' });
-        this.params.bpm = this.setParam(this.params.bpm, ['-bpm', '-maxcombo'], 'string', {});
+            this.setParam(
+                this.params.miss,
+                ["-miss", "-misses", "-x"],
+                "string",
+                {},
+            ) ??
+            this.setParam(this.params.miss, ["-fc", "-fullcombo"], "bool", {
+                bool_setValue: "0",
+            });
+        this.params.bpm = this.setParam(
+            this.params.bpm,
+            ["-bpm", "-maxcombo"],
+            "string",
+            {},
+        );
 
-
-        this.params.filterTitle = this.setParam(this.params.filterTitle, helper.argflags.filterTitle, 'string', { string_isMultiple: true });
-        this.params.filteredMapper = this.setParam(this.params.filteredMapper, helper.argflags.filterCreator, 'string', { string_isMultiple: true });
-        this.params.filterArtist = this.setParam(this.params.filterArtist, helper.argflags.filterArtist, 'string', { string_isMultiple: true });
-        this.params.filterDifficulty = this.setParam(this.params.filterDifficulty, helper.argflags.filterVersion, 'string', { string_isMultiple: true });
-        this.params.filterRank = this.setParam(this.params.filterRank, ['-rank'], 'string', { string_isMultiple: false }) as osuapi.types_v2.Rank;
+        this.params.filterTitle = this.setParam(
+            this.params.filterTitle,
+            helper.argflags.filterTitle,
+            "string",
+            { string_isMultiple: true },
+        );
+        this.params.filteredMapper = this.setParam(
+            this.params.filteredMapper,
+            helper.argflags.filterCreator,
+            "string",
+            { string_isMultiple: true },
+        );
+        this.params.filterArtist = this.setParam(
+            this.params.filterArtist,
+            helper.argflags.filterArtist,
+            "string",
+            { string_isMultiple: true },
+        );
+        this.params.filterDifficulty = this.setParam(
+            this.params.filterDifficulty,
+            helper.argflags.filterVersion,
+            "string",
+            { string_isMultiple: true },
+        );
+        this.params.filterRank = this.setParam(
+            this.params.filterRank,
+            ["-rank"],
+            "string",
+            { string_isMultiple: false },
+        ) as osuapi.types_v2.Rank;
         this.modParams();
         await this.paramsMsgExtra();
 
@@ -118,54 +199,98 @@ export class ScoreListCommand extends OsuCommand {
         this.setUserParams();
     }
     modParams() {
-        const mi = this.setParam(this.params.modsInclude, ['-mods'], 'string', {});
-        this.params.modsInclude = mi && mi.length > 1 ? osumodcalc.mod.fromString(mi.toUpperCase()) : null;
-        const mexa = this.setParam(this.params.modsExact, ['-mx', '-modx'], 'string', {});
-        if (mexa != 'NONE') {
-            this.params.modsExact = mexa && mexa.length > 1 ? osumodcalc.mod.fromString(mexa.toUpperCase()) : null;
+        const mi = this.setParam(
+            this.params.modsInclude,
+            ["-mods"],
+            "string",
+            {},
+        );
+        this.params.modsInclude =
+            mi && mi.length > 1
+                ? osumodcalc.mod.fromString(mi.toUpperCase())
+                : null;
+        const mexa = this.setParam(
+            this.params.modsExact,
+            ["-mx", "-modx"],
+            "string",
+            {},
+        );
+        if (mexa != "NONE") {
+            this.params.modsExact =
+                mexa && mexa.length > 1
+                    ? osumodcalc.mod.fromString(mexa.toUpperCase())
+                    : null;
         } else {
-            this.params.modsExact = ['NONE'];
+            this.params.modsExact = ["NONE"];
         }
-        const mexc = this.setParam(this.params.modsExclude, ['-exmod', '-me'], 'string', {});
-        this.params.modsExclude = mexc && mexc.length > 1 ? osumodcalc.mod.fromString(mexc.toUpperCase()) : null;
+        const mexc = this.setParam(
+            this.params.modsExclude,
+            ["-exmod", "-me"],
+            "string",
+            {},
+        );
+        this.params.modsExclude =
+            mexc && mexc.length > 1
+                ? osumodcalc.mod.fromString(mexc.toUpperCase())
+                : null;
         const tmod = this.setParamMods();
         if (tmod && !this.params.modsInclude) {
             this.params.modsInclude = tmod.mods;
         }
     }
     async setParamsInteract() {
-        let interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
+        let interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
 
-        this.params.searchid = interaction?.member?.user?.id ?? interaction?.user.id;
-        this.params.user = interaction.options.getString('user') ?? undefined;
-        this.params.page = interaction.options.getInteger('page') ?? 0;
-        this.params.detailed = interaction.options.getBoolean('detailed') ? 1 : 0;
-        this.params.sort = interaction.options.getString('sort') as "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss";
-        this.params.reverse = interaction.options.getBoolean('reverse') ?? false;
-        this.params.mode = (interaction.options.getString('mode') ?? 'osu') as osuapi.types_v2.GameMode;
-        this.params.filteredMapper = interaction.options.getString('mapper') ?? null;
-        this.params.filterTitle = interaction.options.getString('filter') ?? null;
-        this.params.parseId = interaction.options.getInteger('parse') ?? null;
+        this.params.searchid =
+            interaction?.member?.user?.id ?? interaction?.user.id;
+        this.params.user = interaction.options.getString("user") ?? undefined;
+        this.params.page = interaction.options.getInteger("page") ?? 0;
+        this.params.detailed = interaction.options.getBoolean("detailed")
+            ? 1
+            : 0;
+        this.params.sort = interaction.options.getString("sort") as
+            "score" | "rank" | "pp" | "recent" | "acc" | "combo" | "miss";
+        this.params.reverse =
+            interaction.options.getBoolean("reverse") ?? false;
+        this.params.mode = (interaction.options.getString("mode") ??
+            "osu") as osuapi.types_v2.GameMode;
+        this.params.filteredMapper =
+            interaction.options.getString("mapper") ?? null;
+        this.params.filterTitle =
+            interaction.options.getString("filter") ?? null;
+        this.params.parseId = interaction.options.getInteger("parse") ?? null;
         this.params.parseScore = this.params.parseId != null ? true : false;
-        this.params.modsInclude = osumodcalc.mod.fromString(interaction.options.getString('mods')) as osumodcalc.types.Mod[] ?? null;
-        const tempexact = interaction.options.getString('modsExact');
-        if ([].some(x => tempexact.includes(x))) {
-            this.params.modsExact = ['NONE'];
+        this.params.modsInclude =
+            (osumodcalc.mod.fromString(
+                interaction.options.getString("mods"),
+            ) as osumodcalc.types.Mod[]) ?? null;
+        const tempexact = interaction.options.getString("modsExact");
+        if ([].some((x) => tempexact.includes(x))) {
+            this.params.modsExact = ["NONE"];
         } else {
-            this.params.modsExact = osumodcalc.mod.fromString(tempexact) as osumodcalc.types.Mod[] ?? null;
+            this.params.modsExact =
+                (osumodcalc.mod.fromString(
+                    tempexact,
+                ) as osumodcalc.types.Mod[]) ?? null;
         }
-        this.params.modsExclude = osumodcalc.mod.fromString(interaction.options.getString('modsExclude')) as osumodcalc.types.Mod[] ?? null;
-        this.params.filterRank = interaction.options.getString('filterRank') as osuapi.types_v2.Rank;
-        this.params.pp = interaction.options.getString('pp') ?? null;
-        this.params.score = interaction.options.getString('score') ?? null;
-        this.params.acc = interaction.options.getString('acc') ?? null;
-        this.params.combo = interaction.options.getString('combo') ?? null;
-        this.params.miss = interaction.options.getString('miss') ?? null;
-        this.params.bpm = interaction.options.getString('bpm') ?? null;
+        this.params.modsExclude =
+            (osumodcalc.mod.fromString(
+                interaction.options.getString("modsExclude"),
+            ) as osumodcalc.types.Mod[]) ?? null;
+        this.params.filterRank = interaction.options.getString(
+            "filterRank",
+        ) as osuapi.types_v2.Rank;
+        this.params.pp = interaction.options.getString("pp") ?? null;
+        this.params.score = interaction.options.getString("score") ?? null;
+        this.params.acc = interaction.options.getString("acc") ?? null;
+        this.params.combo = interaction.options.getString("combo") ?? null;
+        this.params.miss = interaction.options.getString("miss") ?? null;
+        this.params.bpm = interaction.options.getString("bpm") ?? null;
         await this.paramsInteractExtra();
     }
     async setParamsBtn() {
-        let interaction = (this.input.interaction as Discord.ButtonInteraction);
+        let interaction = this.input.interaction as Discord.ButtonInteraction;
         if (!this.input.message.embeds[0]) return;
 
         const temp = commandTools.getButtonArgs(this.input.id);
@@ -173,7 +298,7 @@ export class ScoreListCommand extends OsuCommand {
             interaction.followUp({
                 content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
-                allowedMentions: { repliedUser: false }
+                allowedMentions: { repliedUser: false },
             });
             commandTools.disableAllButtons(this.input.message);
             return;
@@ -201,55 +326,55 @@ export class ScoreListCommand extends OsuCommand {
         this.params.reverse = temp?.reverse;
 
         switch (this.input.buttonType) {
-            case 'BigLeftArrow':
+            case "BigLeftArrow":
                 this.params.page = 1;
                 break;
-            case 'LeftArrow':
+            case "LeftArrow":
                 this.params.page -= 1;
                 break;
-            case 'RightArrow':
+            case "RightArrow":
                 this.params.page += 1;
                 break;
-            case 'BigRightArrow':
+            case "BigRightArrow":
                 this.params.page = temp?.page;
                 break;
         }
 
         switch (this.input.buttonType) {
-            case 'Detail0':
+            case "Detail0":
                 this.params.detailed = 0;
                 break;
-            case 'Detail1':
+            case "Detail1":
                 this.params.detailed = 1;
                 break;
-            case 'Detail2':
+            case "Detail2":
                 this.params.detailed = 2;
                 break;
             default:
-                if (this.input.message.embeds[0].footer.text.includes('LE')) {
+                if (this.input.message.embeds[0].footer.text.includes("LE")) {
                     this.params.detailed = 2;
                 }
-                if (this.input.message.embeds[0].footer.text.includes('LC')) {
+                if (this.input.message.embeds[0].footer.text.includes("LC")) {
                     this.params.detailed = 0;
                 }
                 break;
         }
         await this.paramsButtonsExtra();
     }
-    paramsMsgExtra() { };
-    paramsInteractExtra() { };
-    paramsButtonsExtra() { };
+    paramsMsgExtra() {}
+    paramsInteractExtra() {}
+    paramsButtonsExtra() {}
 
     getOverrides(): void {
         if (!this.input.overrides) return;
-        this.setParamOverride('page');
-        this.setParamOverride('sort');
-        this.setParamOverride('reverse');
+        this.setParamOverride("page");
+        this.setParamOverride("sort");
+        this.setParamOverride("reverse");
         if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
         }
-        this.setParamOverride('user');
-        this.setParamOverride('mode');
+        this.setParamOverride("user");
+        this.setParamOverride("mode");
     }
 
     osudata: osuapi.types_v2.UserExtended;
@@ -263,61 +388,80 @@ export class ScoreListCommand extends OsuCommand {
 
     protected async getScores() {
         let req: osuapi.types_v2.Score[] | osuapi.types_v2.ScoreArrA;
-        let fname = '';
-        let getid = this.osudata.id + '';
+        let fname = "";
+        let getid = this.osudata.id + "";
         switch (this.type) {
-            case 'osutop':
-                fname = 'osutopdata';
+            case "osutop":
+                fname = "osutopdata";
                 break;
-            case 'nochokes':
-                fname = 'nochokesdata';
+            case "nochokes":
+                fname = "nochokesdata";
                 break;
-            case 'recent':
-                fname = 'recentscoresdata';
-                getid = this.input.id + '';
+            case "recent":
+                fname = "recentscoresdata";
+                getid = this.input.id + "";
                 break;
-            case 'map':
-                fname = 'mapscoresdata';
-                getid = this.input.id + '';
+            case "map":
+                fname = "mapscoresdata";
+                getid = this.input.id + "";
                 break;
-            case 'firsts':
-                fname = 'firstsdata';
-                getid = this.input.id + '';
+            case "firsts":
+                fname = "firstsdata";
+                getid = this.input.id + "";
                 break;
-            case 'pinned':
-                fname = 'pinneddata';
+            case "pinned":
+                fname = "pinneddata";
                 break;
         }
-        if (this.type == 'map') {
+        if (this.type == "map") {
             try {
                 this.map = await this.getMap(+this.params.mapid);
             } catch (e) {
                 return;
             }
         }
-        if (data.findFile(getid, fname) &&
-            this.input.type == 'button' &&
-            !('error' in data.findFile(getid, fname)) &&
-            this.input.buttonType != 'Refresh'
+        if (
+            data.findFile(getid, fname) &&
+            this.input.type == "button" &&
+            !("error" in data.findFile(getid, fname)) &&
+            this.input.buttonType != "Refresh"
         ) {
             req = data.findFile(getid, fname);
         } else {
             switch (this.type) {
-                case 'osutop': case 'nochokes':
-                    req = await osuapi.v2.scores.best({ user_id: this.osudata.id, mode: this.params.mode });
+                case "osutop":
+                case "nochokes":
+                    req = await osuapi.v2.scores.best({
+                        user_id: this.osudata.id,
+                        mode: this.params.mode,
+                    });
                     break;
-                case 'recent':
-                    req = await osuapi.v2.scores.recent({ user_id: this.osudata.id, mode: this.params.mode, include_fails: 1 });
+                case "recent":
+                    req = await osuapi.v2.scores.recent({
+                        user_id: this.osudata.id,
+                        mode: this.params.mode,
+                        include_fails: 1,
+                    });
                     break;
-                case 'map': {
-                    req = await osuapi.v2.beatmaps.userScores({ user_id: this.osudata.id, map_id: +this.params.mapid });
-                }
+                case "map":
+                    {
+                        req = await osuapi.v2.beatmaps.userScores({
+                            user_id: this.osudata.id,
+                            map_id: +this.params.mapid,
+                        });
+                    }
                     break;
-                case 'firsts':
-                    req = await osuapi.v2.scores.first({ user_id: this.osudata.id, mode: this.params.mode });
+                case "firsts":
+                    req = await osuapi.v2.scores.first({
+                        user_id: this.osudata.id,
+                        mode: this.params.mode,
+                    });
                     break;
-                case 'pinned':
-                    req = await osuapi.v2.scores.pinned({ user_id: this.osudata.id, mode: this.params.mode });
+                case "pinned":
+                    req = await osuapi.v2.scores.pinned({
+                        user_id: this.osudata.id,
+                        mode: this.params.mode,
+                    });
                     break;
             }
         }
@@ -327,18 +471,27 @@ export class ScoreListCommand extends OsuCommand {
         }
 
         const tempscores: osuapi.types_v2.Score[] =
-            this.type == 'map' ?
-                (req as osuapi.types_v2.ScoreArrA).scores :
-                req as osuapi.types_v2.Score[];
+            this.type == "map"
+                ? (req as osuapi.types_v2.ScoreArrA).scores
+                : (req as osuapi.types_v2.Score[]);
 
-        data.debug(req, this.type, this.input.message?.guildId ?? this.input.interaction?.guildId, this.type + 'data');
+        data.debug(
+            req,
+            this.type,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            this.type + "data",
+        );
         data.storeFile(req, getid, fname);
 
-        if (helper.errors.isErrorObject(tempscores) || tempscores.length == 0 || !(tempscores[0]?.user?.username || tempscores[0]?.user_id)) {
+        if (
+            helper.errors.isErrorObject(tempscores) ||
+            tempscores.length == 0 ||
+            !(tempscores[0]?.user?.username || tempscores[0]?.user_id)
+        ) {
             await this.commitError(this?.type);
         }
 
-        if (this.type == 'nochokes') {
+        if (this.type == "nochokes") {
             for (let i = 0; i < tempscores.length; i++) {
                 if (tempscores[i]?.statistics?.miss > 0) {
                     const curscore = tempscores[i];
@@ -351,54 +504,56 @@ export class ScoreListCommand extends OsuCommand {
         }
 
         this.scores = tempscores;
-
-    };
+    }
     async commitError(type: string) {
         const errList = helper.errors.scores;
         switch (type) {
-            case 'osutop': case 'nochokes':
+            case "osutop":
+            case "nochokes":
                 await this.sendError(errList.best(this.params.user));
                 break;
-            case 'recent':
+            case "recent":
                 await this.sendError(errList.recent(this.params.user));
                 break;
-            case 'map':
-                await this.sendError(errList.map(this.params.user, this.params.mapid));
+            case "map":
+                await this.sendError(
+                    errList.map(this.params.user, this.params.mapid),
+                );
                 break;
-            case 'firsts':
+            case "firsts":
                 await this.sendError(errList.first(this.params.user));
                 break;
-            case 'pinned':
+            case "pinned":
                 break;
         }
         await this.sendError(helper.errors.genError);
     }
     protected toName(map?: osuapi.types_v2.Beatmap) {
         switch (this.type) {
-            case 'osutop':
-                return 'Best scores for ' + this.osudata.username;
-            case 'nochokes':
-                return 'Best no-choke scores for ' + this.osudata.username;
-            case 'recent':
-                if (this.params.sort == 'pp') {
-                    return 'Recent best scores for ' + this.osudata.username;
+            case "osutop":
+                return "Best scores for " + this.osudata.username;
+            case "nochokes":
+                return "Best no-choke scores for " + this.osudata.username;
+            case "recent":
+                if (this.params.sort == "pp") {
+                    return "Recent best scores for " + this.osudata.username;
                 }
-                return 'Recent scores for ' + this.osudata.username;
-            case 'map':
+                return "Recent scores for " + this.osudata.username;
+            case "map":
                 return `\`${map?.beatmapset?.artist} - ${map?.beatmapset?.title} [${map?.version}]\``;
-            case 'firsts':
-                return '#1 scores for ' + this.osudata.username;
-            case 'pinned':
-                return 'Pinned scores for ' + this.osudata.username;
+            case "firsts":
+                return "#1 scores for " + this.osudata.username;
+            case "pinned":
+                return "Pinned scores for " + this.osudata.username;
         }
     }
     protected async list(map?: osuapi.types_v2.BeatmapExtended) {
-        let seturl = '';
+        let seturl = "";
         switch (this.type) {
-            case 'recent':
+            case "recent":
                 seturl = `https://osu.ppy.sh/users/${this.osudata.id}/${osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}#historical`;
                 break;
-            case 'map':
+            case "map":
                 seturl = `https://osu.ppy.sh/b/${this.map.id}`;
                 break;
             default:
@@ -408,15 +563,17 @@ export class ScoreListCommand extends OsuCommand {
         const scoresEmbed = new Discord.EmbedBuilder()
             .setColor(helper.colours.embedColour.scorelist.dec)
             .setTitle(this.toName(map))
-            .setThumbnail(`${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`)
+            .setThumbnail(
+                `${this.osudata?.avatar_url ?? helper.defaults.images.any.url}`,
+            )
             .setURL(seturl);
         formatters.userAuthor(this.osudata, scoresEmbed);
 
         const scoresFormat = await this.formatter.execute();
-        if (this.type == 'nochokes') {
+        if (this.type == "nochokes") {
             this.userPerf(scoresEmbed, scoresFormat.used);
         }
-        commandTools.storeButtonArgs(this.input.id + '', {
+        commandTools.storeButtonArgs(this.input.id + "", {
             user: this.params.user,
             searchid: this.params.searchid,
             page: this.params.page,
@@ -435,30 +592,41 @@ export class ScoreListCommand extends OsuCommand {
             filterBpm: this.params.bpm,
             sort: this.params.sort,
             reverse: this.params.reverse,
-            maxPage: scoresFormat.maxPage
+            maxPage: scoresFormat.maxPage,
         });
         scoresEmbed.setFooter({
-            text: `${scoresFormat.curPage}/${scoresFormat.maxPage} | ${this.params.mode ?? osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}`
+            text: `${scoresFormat.curPage}/${scoresFormat.maxPage} | ${this.params.mode ?? osumodcalc.mode.toName(this.scores?.[0]?.ruleset_id)}`,
         });
         scoresEmbed.setDescription(scoresFormat.text);
-        data.writePreviousId('user', this.input.message?.guildId ?? this.input.interaction?.guildId, { id: `${this.osudata.id}`, apiData: null, mods: null });
-        if (this.type == 'map') {
-            data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+        data.writePreviousId(
+            "user",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            { id: `${this.osudata.id}`, apiData: null, mods: null },
+        );
+        if (this.type == "map") {
+            data.writePreviousId(
+                "map",
+                this.input.message?.guildId ?? this.input.interaction?.guildId,
                 {
                     id: `${map.id}`,
                     apiData: null,
-                    mods: null
-                }
+                    mods: null,
+                },
             );
         }
-        if (scoresFormat.text.includes('ERROR')) {
-            scoresEmbed.setDescription('**ERROR**\nNo scores found');
+        if (scoresFormat.text.includes("ERROR")) {
+            scoresEmbed.setDescription("**ERROR**\nNo scores found");
         }
-        this.pgbuttons = await commandTools.pageButtons(this.name, this.commanduser, this.input.id);
-        this.disablePageButtons_check(this.pgbuttons,
-            scoresFormat.text.includes('ERROR'),
+        this.pgbuttons = await commandTools.pageButtons(
+            this.name,
+            this.commanduser,
+            this.input.id,
+        );
+        this.disablePageButtons_check(
+            this.pgbuttons,
+            scoresFormat.text.includes("ERROR"),
             scoresFormat.curPage <= 1,
-            scoresFormat.curPage >= scoresFormat.maxPage
+            scoresFormat.curPage >= scoresFormat.maxPage,
         );
 
         this.ctn.embeds = [scoresEmbed];
@@ -471,9 +639,13 @@ export class ScoreListCommand extends OsuCommand {
         this.logInput();
         await this.fixUser();
 
-        if (this.type == 'map') {
+        if (this.type == "map") {
             if (!this.params.mapid) {
-                const temp = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
+                const temp = data.getPreviousId(
+                    "map",
+                    this.input.message?.guildId ??
+                        this.input.interaction?.guildId,
+                );
                 this.params.mapid = temp.id;
             }
             if (this.params.mapid == false) {
@@ -482,12 +654,15 @@ export class ScoreListCommand extends OsuCommand {
             }
         }
 
-
         this.buttons = new Discord.ActionRowBuilder();
 
         await this.sendLoading();
 
-        if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
+        if (
+            this.params.page < 2 ||
+            typeof this.params.page != "number" ||
+            isNaN(this.params.page)
+        ) {
             this.params.page = 1;
         }
 
@@ -500,7 +675,9 @@ export class ScoreListCommand extends OsuCommand {
 
         this.buttons.addComponents(
             new Discord.ButtonBuilder()
-                .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.osudata.id}+${this.osudata.playmode}`)
+                .setCustomId(
+                    `${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.osudata.id}+${this.osudata.playmode}`,
+                )
                 .setStyle(helper.buttons.type.current)
                 .setEmoji(helper.buttons.label.extras.user),
         );
@@ -524,35 +701,41 @@ export class ScoreListCommand extends OsuCommand {
                 combo: this.params.combo,
                 miss: this.params.miss,
                 bpm: this.params.bpm,
-                isnochoke: this.type == 'nochokes'
+                isnochoke: this.type == "nochokes",
             },
             reverse: this.params.reverse,
             page: this.params.page,
             showOriginalIndex: true,
-            preset: this.type == 'map' ? 'single_map' : undefined,
+            preset: this.type == "map" ? "single_map" : undefined,
             overrideMap: this.map ?? undefined,
         });
 
         if (this.params.parseScore) {
             const user = this.osudata.username;
-            let tempEx = '';
+            let tempEx = "";
             switch (this.type) {
-                case 'osutop':
-                    tempEx = `${user}'s #{idOrd} ${this.params.sort == 'pp' ? formatters.sortDescription(this.params.sort ?? 'pp', this.params.reverse) + ' ' : ''}top score`;
+                case "osutop":
+                    tempEx = `${user}'s #{idOrd} ${this.params.sort == "pp" ? formatters.sortDescription(this.params.sort ?? "pp", this.params.reverse) + " " : ""}top score`;
                     break;
-                case 'nochokes':
-                    tempEx = `${user}'s #{idOrd} ${this.params.sort == 'pp' ? formatters.sortDescription(this.params.sort ?? 'pp', this.params.reverse) + ' ' : ''}no choke score`;
-                    this.input.overrides.type = 'nochoke';
+                case "nochokes":
+                    tempEx = `${user}'s #{idOrd} ${this.params.sort == "pp" ? formatters.sortDescription(this.params.sort ?? "pp", this.params.reverse) + " " : ""}no choke score`;
+                    this.input.overrides.type = "nochoke";
                     break;
-                case 'firsts':
-                    tempEx = `${user}'s {idOrd} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}#1 score`;
+                case "firsts":
+                    tempEx = `${user}'s {idOrd} ${this.params.sort == "recent" ? formatters.sortDescription(this.params.sort ?? "recent", this.params.reverse) + " " : ""}#1 score`;
                     break;
-                case 'pinned':
-                    tempEx = `${user}'s {idOrd} ${this.params.sort == 'recent' ? formatters.sortDescription(this.params.sort ?? 'recent', this.params.reverse) + ' ' : ''}pinned score`;
+                case "pinned":
+                    tempEx = `${user}'s {idOrd} ${this.params.sort == "recent" ? formatters.sortDescription(this.params.sort ?? "recent", this.params.reverse) + " " : ""}pinned score`;
                     break;
             }
             await this.formatter.parseScores();
-            await this.parseId(this.formatter.data.map(x => x.id), +this.params.parseId, new ScoreParse(), helper.errors.score.nf + ` at index {id}`, tempEx);
+            await this.parseId(
+                this.formatter.data.map((x) => x.id),
+                +this.params.parseId,
+                new ScoreParse(),
+                helper.errors.score.nf + ` at index {id}`,
+                tempEx,
+            );
             return;
         }
 
@@ -563,28 +746,32 @@ export class ScoreListCommand extends OsuCommand {
     }
 
     fixParamMap() {
-        if (this.type == 'map') {
+        if (this.type == "map") {
             if (!this.params.mapid) {
-                const temp = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
+                const temp = data.getPreviousId(
+                    "map",
+                    this.input.message?.guildId ??
+                        this.input.interaction?.guildId,
+                );
                 this.params.mapid = temp.id;
             }
             if (this.params.mapid == false) {
                 commandTools.missingPrevID_map(this.input, this.name);
-                throw new Error('');
+                throw new Error("");
             }
         }
     }
     userPerf(embed: Discord.EmbedBuilder, scores: osuapi.types_v2.Score[]) {
-        const pp = calculate.totalWeightedPerformance(scores.map(x => x.pp));
+        const pp = calculate.totalWeightedPerformance(scores.map((x) => x.pp));
         // return;
         const json = embed.toJSON();
-        const temp = json.author!.name.split('|');
+        const temp = json.author!.name.split("|");
         temp.pop();
         temp.push(` est. ${calculate.fixLongDecimal(pp)}pp (excl. bonus)`);
         embed.setAuthor({
             url: json.author.url,
             iconURL: json.author.icon_url,
-            name: temp.join('|')
+            name: temp.join("|"),
         });
     }
 }

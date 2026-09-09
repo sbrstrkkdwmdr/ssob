@@ -1,5 +1,5 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 // WHY DOESNT THIS WORK ITS LITERALLY A COPY PASTE OF AN INSTANCE WHERE IT DOES
 // const __adirname = dirname(fileURLToPath(import.meta.url));
@@ -7,7 +7,7 @@ import { fileURLToPath } from 'url';
 export const main = `${__dirname}`;
 
 export function getParentFolderPath(filePath: string) {
-    const separator = filePath.includes('/') ? '/' : '\\';
+    const separator = filePath.includes("/") ? "/" : "\\";
     const lastIndex = filePath.lastIndexOf(separator);
     if (lastIndex === -1) {
         return filePath; // Parent folder does not exist

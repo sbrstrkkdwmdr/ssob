@@ -1,5 +1,5 @@
-import moment from 'moment';
-import * as osuapi from './osuapi';
+import moment from "moment";
+import * as osuapi from "./osuapi";
 /**
  * eg 1,000 -> 1k
  * 1,000,000 -> 1m
@@ -8,42 +8,47 @@ import * as osuapi from './osuapi';
  */
 export function numberShorthand(input: number) {
     let value = +scientificNotation(input, 3);
-    let output = input + '';
+    let output = input + "";
     switch (true) {
         case value >= 1e9:
-            output = value / 1e9 + 'B';
+            output = value / 1e9 + "B";
             break;
         case value >= 1e8:
         case value >= 1e7:
         case value >= 1e6:
-            output = value / 1e6 + 'M';
+            output = value / 1e6 + "M";
             break;
         case value >= 1e5:
         case value >= 1e4:
         case value >= 1e3:
-            output = value / 1e3 + 'K';
+            output = value / 1e3 + "K";
             break;
     }
     return output;
 }
 
 /**
- * 
+ *
  * @param {number} a first number
  * @param {number} b number of significant figiures
  * @result converts the number to a significant figure
  */
 export function sigfig(a: number, b: number) {
-    if (isNaN(a)) return {
-        number: a,
-        sigfig: NaN,
-    };
-    const aAsArr = `${a}`.replaceAll('.', '').split('');
-    if (b < 2 || b == null) { b = aAsArr.length; }
-    const sigfig = aAsArr.slice(1, b).join('');
-    let mult: number = Math.floor(a / parseFloat(aAsArr[0] + '.' + sigfig));
-    if (mult < 1 && mult != 0) { mult = mult.toString().length - 1; }
-    const answer = aAsArr[0] + '.' + sigfig + 'e' + sigfig.length + 1;
+    if (isNaN(a))
+        return {
+            number: a,
+            sigfig: NaN,
+        };
+    const aAsArr = `${a}`.replaceAll(".", "").split("");
+    if (b < 2 || b == null) {
+        b = aAsArr.length;
+    }
+    const sigfig = aAsArr.slice(1, b).join("");
+    let mult: number = Math.floor(a / parseFloat(aAsArr[0] + "." + sigfig));
+    if (mult < 1 && mult != 0) {
+        mult = mult.toString().length - 1;
+    }
+    const answer = aAsArr[0] + "." + sigfig + "e" + sigfig.length + 1;
     return {
         number: answer,
         sigfig: sigfig.length + 1,
@@ -52,8 +57,8 @@ export function sigfig(a: number, b: number) {
 
 export function scientificNotation(input: number, significantFigures: number) {
     let tNum: string = null;
-    const numString = input.toString().replace(/[-.]/g, ''); // Remove "-" and "."
-    const eIndex = numString.indexOf('e');
+    const numString = input.toString().replace(/[-.]/g, ""); // Remove "-" and "."
+    const eIndex = numString.indexOf("e");
     const numLength = eIndex !== -1 ? eIndex : numString.length;
 
     if (numLength <= significantFigures) {
@@ -73,7 +78,8 @@ export function scientificNotation(input: number, significantFigures: number) {
         }
         let mantissa = input.toFixed(significantFigures - 1);
         // Code to ensure the number has the correct number of significant figures
-        const xFig = significantFigures + (mantissa.match(/[-.]/g) || []).length;
+        const xFig =
+            significantFigures + (mantissa.match(/[-.]/g) || []).length;
         mantissa = mantissa.slice(0, xFig);
         mantissa = mantissa.slice(0, xFig);
         if (exponent !== 0) {
@@ -82,12 +88,11 @@ export function scientificNotation(input: number, significantFigures: number) {
             tNum = mantissa;
         }
     } else {
-        tNum = '0';
+        tNum = "0";
     }
 
-
-    if (tNum.endsWith('.')) {
-        tNum = tNum.replace('.', '');
+    if (tNum.endsWith(".")) {
+        tNum = tNum.replace(".", "");
     }
 
     return tNum;
@@ -95,59 +100,60 @@ export function scientificNotation(input: number, significantFigures: number) {
 
 /**
  * @info separates numbers eg. 3000000 -> 3,000,000
- * @param number 
+ * @param number
  * @param separator default is ,
  * @returns string with numbers separated. Doesn't separate values after the decimal point.
  */
 export function separateNum(number: string | number, separator?: string) {
-    let cursep = ',';
+    let cursep = ",";
     if (separator) {
         cursep = separator;
     }
     let ans = `${number}`.replace(/\B(?=(\d{3})+(?!\d))/g, cursep);
-    if (`${number}`.includes('.')) {
-        const init = `${number}`.split('.')[0];
-        const after = `${number}`.split('.')[1];
+    if (`${number}`.includes(".")) {
+        const init = `${number}`.split(".")[0];
+        const after = `${number}`.split(".")[1];
         ans = init.replace(/\B(?=(\d{3})+(?!\d))/g, cursep) + `.${after}`;
     }
     return ans;
 }
 
-
 export function toOrdinal(num: number) {
     let txt: string;
-    if (num.toString().endsWith('1') && !num.toString().endsWith('11')) {
-        txt = num + 'st';
-    }
-    else if (num.toString().endsWith('2') && !num.toString().endsWith('12')) {
-        txt = num + 'nd';
-    }
-    else if (num.toString().endsWith('3') && !num.toString().endsWith('13')) {
-        txt = num + 'rd';
-    }
-    else {
-        txt = num + 'th';
+    if (num.toString().endsWith("1") && !num.toString().endsWith("11")) {
+        txt = num + "st";
+    } else if (num.toString().endsWith("2") && !num.toString().endsWith("12")) {
+        txt = num + "nd";
+    } else if (num.toString().endsWith("3") && !num.toString().endsWith("13")) {
+        txt = num + "rd";
+    } else {
+        txt = num + "th";
     }
     return txt;
 }
 
 export function getSigFigs(number: string) {
-    return `${number.includes('e') ? number.split('e')[0] : number}`.replace(/[\.\-]/gm, '').length;
+    return `${number.includes("e") ? number.split("e")[0] : number}`.replace(
+        /[\.\-]/gm,
+        "",
+    ).length;
 }
 
-export function numBaseToInt(input: "Binary" | "Octal" | "Decimal" | "Hexadecimal"): number {
+export function numBaseToInt(
+    input: "Binary" | "Octal" | "Decimal" | "Hexadecimal",
+): number {
     let out: number;
     switch (input) {
-        case 'Binary':
+        case "Binary":
             out = 2;
             break;
-        case 'Octal':
+        case "Octal":
             out = 8;
             break;
-        case 'Decimal':
+        case "Decimal":
             out = 10;
             break;
-        case 'Hexadecimal':
+        case "Hexadecimal":
             out = 16;
             break;
     }
@@ -161,7 +167,7 @@ export function numConvert(value: string, inBase: number, outBase: number) {
 }
 
 /**
- * 
+ *
  * @param seconds seconds
  * @param allowDays whether or not to use days
  * @returns the time in hh:mm:ss format
@@ -169,23 +175,36 @@ export function numConvert(value: string, inBase: number, outBase: number) {
 export function secondsToTime(seconds: number, allowDays?: boolean) {
     const days = Math.floor(seconds / 60 / 60 / 24).toString();
     const hours =
-        allowDays == true ?
-            (seconds / 60 / 60 % 24 < 10 ? '0' + Math.floor(seconds / 60 / 60 % 24) : Math.floor(seconds / 60 / 60 % 24)).toString()
-            : (seconds / 60 / 60 < 10 ? '0' + Math.floor(seconds / 60 / 60) : Math.floor(seconds / 60 / 60)).toString();
-    const minutes = seconds / 60 % 60 < 10 ? '0' + Math.floor(seconds / 60 % 60) : Math.floor(seconds / 60 % 60);
-    const secs = seconds % 60 < 10 ? '0' + Math.floor(seconds % 60) : Math.floor(seconds % 60);
+        allowDays == true
+            ? ((seconds / 60 / 60) % 24 < 10
+                  ? "0" + Math.floor((seconds / 60 / 60) % 24)
+                  : Math.floor((seconds / 60 / 60) % 24)
+              ).toString()
+            : (seconds / 60 / 60 < 10
+                  ? "0" + Math.floor(seconds / 60 / 60)
+                  : Math.floor(seconds / 60 / 60)
+              ).toString();
+    const minutes =
+        (seconds / 60) % 60 < 10
+            ? "0" + Math.floor((seconds / 60) % 60)
+            : Math.floor((seconds / 60) % 60);
+    const secs =
+        seconds % 60 < 10
+            ? "0" + Math.floor(seconds % 60)
+            : Math.floor(seconds % 60);
     let str;
     if (allowDays == true) {
         str =
-            parseInt(days) > 0 ?
-                `${days}:${hours}:${minutes}:${secs}` :
-                parseInt(hours) > 0 ?
-                    `${hours}:${minutes}:${secs}` :
-                    `${minutes}:${secs}`;
+            parseInt(days) > 0
+                ? `${days}:${hours}:${minutes}:${secs}`
+                : parseInt(hours) > 0
+                  ? `${hours}:${minutes}:${secs}`
+                  : `${minutes}:${secs}`;
     } else {
-        str = parseInt(hours) > 0 ?
-            `${hours}:${minutes}:${secs}` :
-            `${minutes}:${secs}`;
+        str =
+            parseInt(hours) > 0
+                ? `${hours}:${minutes}:${secs}`
+                : `${minutes}:${secs}`;
     }
     return str;
 }
@@ -193,19 +212,29 @@ export function secondsToTime(seconds: number, allowDays?: boolean) {
 /**
  * EDITED VERSION OF STRING-MATH.JS
  * @source https://www.npmjs.com/package/string-math
- * @param eq 
- * @param callback 
- * @returns 
+ * @param eq
+ * @param callback
+ * @returns
  */
 export async function stringMath(eq: string, callback?) {
-    if (typeof eq !== 'string') return handleCallback(new TypeError('The [String] argument is expected.'), null);
-    const mulDiv = /([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*([*/])\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)/;
-    const plusMin = /([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*([+-])\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)/;
+    if (typeof eq !== "string")
+        return handleCallback(
+            new TypeError("The [String] argument is expected."),
+            null,
+        );
+    const mulDiv =
+        /([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*([*/])\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)/;
+    const plusMin =
+        /([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*([+-])\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)/;
     const parentheses = /(\d)?\s*\(([^()]*)\)\s*/;
     let current;
     while (eq.search(/^\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*$/) === -1) {
         eq = fParentheses(eq);
-        if (eq === current) return handleCallback(new SyntaxError('The equation is invalid.'), null);
+        if (eq === current)
+            return handleCallback(
+                new SyntaxError("The equation is invalid."),
+                null,
+            );
         current = eq;
     }
     return handleCallback(null, +eq);
@@ -215,7 +244,7 @@ export async function stringMath(eq: string, callback?) {
             eq = eq.replace(parentheses, function (a, b, c) {
                 c = fMulDiv(c);
                 c = fPlusMin(c);
-                return typeof b === 'string' ? b + '*' + c : c;
+                return typeof b === "string" ? b + "*" + c : c;
             });
         }
         eq = fMulDiv(eq);
@@ -228,38 +257,44 @@ export async function stringMath(eq: string, callback?) {
             eq = eq.replace(mulDiv, function (a) {
                 const sides = mulDiv.exec(a);
                 //@ts-expect-error types or smth idk
-                const result = sides[2] === '*' ? sides[1] * sides[3] : sides[1] / sides[3];
-                return result >= 0 ? '+' + result : result;
+                const result =
+                    sides[2] === "*"
+                        ? sides[1] * sides[3]
+                        : sides[1] / sides[3];
+                return result >= 0 ? "+" + result : result;
             });
         }
         return eq;
     }
 
     function fPlusMin(eq) {
-        eq = eq.replace(/([+-])([+-])(\d|\.)/g, function (a, b, c, d) { return (b === c ? '+' : '-') + d; });
+        eq = eq.replace(/([+-])([+-])(\d|\.)/g, function (a, b, c, d) {
+            return (b === c ? "+" : "-") + d;
+        });
         while (eq.search(plusMin) !== -1) {
             eq = eq.replace(plusMin, function (a) {
                 const sides = plusMin.exec(a);
                 //@ts-expect-error types or smth idk
-                return sides[2] === '+' ? +sides[1] + +sides[3] : sides[1] - sides[3];
+                return sides[2] === "+"
+                    ? +sides[1] + +sides[3]
+                    : sides[1] - sides[3];
             });
         }
         return eq;
     }
 
     function handleCallback(errObject, result) {
-        if (typeof callback !== 'function') {
+        if (typeof callback !== "function") {
             if (errObject !== null) throw errObject;
         } else {
             callback(errObject, result);
         }
         return result;
-
     }
 }
 
 /**
- * 
+ *
  * @param {number} x first number
  * @param {number} y second number
  * @returns the highest common factor between two numbers
@@ -271,15 +306,14 @@ export function findHCF(x: number, y: number) {
     while (Math.max(x, y) % Math.min(x, y) != 0) {
         if (x > y) {
             x %= y;
-        }
-        else {
+        } else {
             y %= x;
         }
     }
     return Math.min(x, y);
 }
 /**
- * 
+ *
  * @param {number} n1 first number
  * @param {number} n2 second number
  * @returns the lowest common multiple between two numbers
@@ -290,26 +324,24 @@ export function findLCM(n1: number, n2: number) {
     const lar = Math.max(n1, n2);
     const small = Math.min(n1, n2);
 
-
     let i = lar;
     while (i % small !== 0) {
         i += lar;
     }
 
-
     return i;
 }
 /**
- * 
+ *
  * @param {number} a first number
  * @param {number} b second number
  * @returns the length of the hypotenuse (longest side) on a right-angle triange
  */
 export function pythag(a: number, b: number) {
     if (isNaN(a) || isNaN(b)) return NaN;
-    const cp = (a ** 2) + (b ** 2);
+    const cp = a ** 2 + b ** 2;
     const c: number = Math.sqrt(cp);
-    return (c);
+    return c;
 }
 
 export function factorial(part1: number) {
@@ -321,12 +353,17 @@ export function factorial(part1: number) {
 }
 
 /**
- * 
+ *
  * @param str input string. formatted as hh:mm:ss._ms or ?d?h?m?s
  * @returns string converted to milliseconds
  */
 export function timeToMs(str: string) {
-    if (str.includes('d') || str.includes('h') || str.includes('m') || str.includes('s')) {
+    if (
+        str.includes("d") ||
+        str.includes("h") ||
+        str.includes("m") ||
+        str.includes("s")
+    ) {
         return timeToMs_dhms(str);
     } else {
         return timeToMs_timer(str);
@@ -335,17 +372,17 @@ export function timeToMs(str: string) {
 
 function timeToMs_dhms(str: string) {
     const keys = {
-        'd': 24 * 60 * 60 * 1000,
-        'h': 60 * 60 * 1000,
-        'm': 60 * 1000,
-        's': 1000,
+        d: 24 * 60 * 60 * 1000,
+        h: 60 * 60 * 1000,
+        m: 60 * 1000,
+        s: 1000,
     };
-    let tstr = '';
+    let tstr = "";
     let ms = 0;
     for (const char of str) {
         if (isNaN(+(tstr + char))) {
             ms += parseInt(tstr) * (keys[char] ?? 0);
-            tstr = '';
+            tstr = "";
         } else {
             tstr += char;
         }
@@ -354,21 +391,21 @@ function timeToMs_dhms(str: string) {
 }
 
 function timeToMs_timer(str: string) {
-    if (str.includes(':') && str.split(':').length == 2) {
+    if (str.includes(":") && str.split(":").length == 2) {
         // HH:MM:SS.ZZZ
-        str += ':00';
+        str += ":00";
     }
     return moment.duration(str).asMilliseconds();
-};
+}
 
-// 
+//
 export function findMode(input: string[]) {
     const array: {
-        string: string,
-        count: number,
+        string: string;
+        count: number;
     }[] = [];
-    input.forEach(x => {
-        const indx = array.findIndex(y => y.string == x);
+    input.forEach((x) => {
+        const indx = array.findIndex((y) => y.string == x);
         if (indx == -1) {
             array.push({
                 string: x,
@@ -384,7 +421,7 @@ export function findMode(input: string[]) {
 
 export function stats(arr: number[]) {
     const init = arr.slice();
-    arr = arr.filter(x => x != null);
+    arr = arr.filter((x) => x != null);
     arr.sort((a, b) => b - a);
     let median = 0;
     //if even, else
@@ -392,7 +429,7 @@ export function stats(arr: number[]) {
         median = arr[Math.floor(arr.length / 2)];
     } else {
         const temp1 = arr[arr.length / 2];
-        const temp2 = arr[(arr.length / 2) - 1];
+        const temp2 = arr[arr.length / 2 - 1];
         median = (temp1 + temp2) / 2;
     }
 
@@ -411,14 +448,14 @@ export function weightPerformance(pp: number[]) {
     pp = pp.sort((a, b) => b - a);
     const numLen = [];
     for (let i = 0; i < pp.length; i++) {
-        numLen.push(pp[i] * (0.95 ** i));
+        numLen.push(pp[i] * 0.95 ** i);
     }
     return numLen;
 }
 
 export function findWeight(index: number) {
     if (index > 99 || index < 0) return 0;
-    return (0.95 ** (index));
+    return 0.95 ** index;
 }
 
 export function totalWeightedPerformance(input: number[]) {
@@ -431,12 +468,16 @@ export function totalWeightedPerformance(input: number[]) {
     return n;
 }
 
-export function isWithinPercentage(input: number, percentage: number, against: number) {
+export function isWithinPercentage(
+    input: number,
+    percentage: number,
+    against: number,
+) {
     if (percentage < 0 || percentage > 100) {
-        throw new Error('Percentage should be between 0 and 100.');
+        throw new Error("Percentage should be between 0 and 100.");
     }
-    const lowerBound = against - ((against * percentage) / 100);
-    const upperBound = against + ((against * percentage) / 100);
+    const lowerBound = against - (against * percentage) / 100;
+    const upperBound = against + (against * percentage) / 100;
     return input >= lowerBound && input <= upperBound;
 }
 
@@ -446,14 +487,13 @@ export function isWithinValue(input: number, value: number, against: number) {
     return input >= lowerBound && input <= upperBound;
 }
 
-
 export function modOverrides(mods: osuapi.types_v2.Mod[]) {
     let speed: number;
     let cs: number;
     let ar: number;
     let od: number;
     let hp: number;
-    mods.forEach(mod => {
+    mods.forEach((mod) => {
         if (mod?.settings?.speed_change) {
             speed = mod?.settings?.speed_change;
         }
@@ -472,9 +512,12 @@ export function modOverrides(mods: osuapi.types_v2.Mod[]) {
     });
 
     return {
-        cs, ar, hp, od, speed
+        cs,
+        ar,
+        hp,
+        od,
+        speed,
     };
-
 }
 
 export function fixLongDecimal(n: number, maxDecimal: number = 2) {

@@ -1,8 +1,8 @@
-import Discord from 'discord.js';
-import * as helper from '../../helper';
-import * as commandTools from '../../tools/commands';
-import * as formatters from '../../tools/formatters';
-import { Command } from '../command';
+import Discord from "discord.js";
+import * as helper from "../../helper";
+import * as commandTools from "../../tools/commands";
+import * as formatters from "../../tools/formatters";
+import { Command } from "../command";
 
 export class Help extends Command {
     declare protected params: {
@@ -13,11 +13,11 @@ export class Help extends Command {
     };
     constructor() {
         super();
-        this.name = 'Help';
+        this.name = "Help";
         this.params = {
             rdm: false,
             commandfound: false,
-            commandCategory: 'default',
+            commandCategory: "default",
             command: undefined,
         };
     }
@@ -29,33 +29,38 @@ export class Help extends Command {
         }
     }
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
         this.commanduser = interaction?.member?.user ?? interaction?.user;
-        this.params.command = interaction.options.getString('command');
+        this.params.command = interaction.options.getString("command");
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
-        const interaction = (this.input.interaction as Discord.ButtonInteraction);
-        this.commanduser = interaction?.member?.user ?? this.input.interaction?.user;
-        if (this.input.buttonType == 'Random') {
+        const interaction = this.input.interaction as Discord.ButtonInteraction;
+        this.commanduser =
+            interaction?.member?.user ?? this.input.interaction?.user;
+        if (this.input.buttonType == "Random") {
             this.params.rdm = true;
         }
         switch (this.input.buttonType) {
-            case 'Random':
+            case "Random":
                 this.params.rdm = true;
                 break;
-            case 'Detailed':
+            case "Detailed":
                 this.params.command = null;
                 break;
         }
         const curembed: Discord.Embed = this.input.message.embeds[0];
-        if (this.input.buttonType == 'Detailed' && curembed.description.includes('Prefix is')) {
-            this.params.command = 'list';
+        if (
+            this.input.buttonType == "Detailed" &&
+            curembed.description.includes("Prefix is")
+        ) {
+            this.params.command = "list";
         }
     }
     getOverrides(): void {
         if (!this.input.overrides) return;
-        this.setParamOverride('command', 'ex');
+        this.setParamOverride("command", "ex");
     }
     async execute() {
         await this.setParams();
@@ -63,130 +68,157 @@ export class Help extends Command {
         this.logInput();
         // do stuff
         if (this.params.rdm == true) {
-            this.params.command = this.rdmp('cmds');
+            this.params.command = this.rdmp("cmds");
         }
-        const buttons = new Discord.ActionRowBuilder()
-            .setComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-Random-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.random),
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-Detailed-${this.name}-${this.commanduser.id}-${this.input.id}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.main.detailed)
-            );
+        const buttons = new Discord.ActionRowBuilder().setComponents(
+            new Discord.ButtonBuilder()
+                .setCustomId(
+                    `${helper.versions.releaseDate}-Random-${this.name}-${this.commanduser.id}-${this.input.id}`,
+                )
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.extras.random),
+            new Discord.ButtonBuilder()
+                .setCustomId(
+                    `${helper.versions.releaseDate}-Detailed-${this.name}-${this.commanduser.id}-${this.input.id}`,
+                )
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.main.detailed),
+        );
 
         this.getemb();
 
         const inputMenu = new Discord.StringSelectMenuBuilder()
-            .setCustomId(`${helper.versions.releaseDate}-SelectMenu1-help-${this.commanduser.id}-${this.input.id}`)
-            .setPlaceholder('Select a command');
+            .setCustomId(
+                `${helper.versions.releaseDate}-SelectMenu1-help-${this.commanduser.id}-${this.input.id}`,
+            )
+            .setPlaceholder("Select a command");
 
         const selectCategoryMenu = new Discord.StringSelectMenuBuilder()
-            .setCustomId(`${helper.versions.releaseDate}-SelectMenu2-help-${this.commanduser.id}-${this.input.id}`)
-            .setPlaceholder('Select a command category')
+            .setCustomId(
+                `${helper.versions.releaseDate}-SelectMenu2-help-${this.commanduser.id}-${this.input.id}`,
+            )
+            .setPlaceholder("Select a command category")
             .setOptions(
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji('📜' as Discord.APIMessageComponentEmoji)
-                    .setLabel('General')
-                    .setValue('categorygen'),
+                    .setEmoji("📜" as Discord.APIMessageComponentEmoji)
+                    .setLabel("General")
+                    .setValue("categorygen"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji(helper.emojis.gamemodes.standard as Discord.APIMessageComponentEmoji)
-                    .setLabel('osu! (profiles)')
-                    .setValue('categoryosu_profile'),
+                    .setEmoji(
+                        helper.emojis.gamemodes
+                            .standard as Discord.APIMessageComponentEmoji,
+                    )
+                    .setLabel("osu! (profiles)")
+                    .setValue("categoryosu_profile"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji(helper.emojis.gamemodes.standard as Discord.APIMessageComponentEmoji)
-                    .setLabel('osu! (scores)')
-                    .setValue('categoryosu_scores'),
+                    .setEmoji(
+                        helper.emojis.gamemodes
+                            .standard as Discord.APIMessageComponentEmoji,
+                    )
+                    .setLabel("osu! (scores)")
+                    .setValue("categoryosu_scores"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji(helper.emojis.gamemodes.standard as Discord.APIMessageComponentEmoji)
-                    .setLabel('osu! (maps)')
-                    .setValue('categoryosu_map'),
+                    .setEmoji(
+                        helper.emojis.gamemodes
+                            .standard as Discord.APIMessageComponentEmoji,
+                    )
+                    .setLabel("osu! (maps)")
+                    .setValue("categoryosu_map"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji(helper.emojis.gamemodes.standard as Discord.APIMessageComponentEmoji)
-                    .setLabel('osu! (track)')
-                    .setValue('categoryosu_track'),
+                    .setEmoji(
+                        helper.emojis.gamemodes
+                            .standard as Discord.APIMessageComponentEmoji,
+                    )
+                    .setLabel("osu! (track)")
+                    .setValue("categoryosu_track"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji(helper.emojis.gamemodes.standard as Discord.APIMessageComponentEmoji)
-                    .setLabel('osu! (other)')
-                    .setValue('categoryosu_other'),
+                    .setEmoji(
+                        helper.emojis.gamemodes
+                            .standard as Discord.APIMessageComponentEmoji,
+                    )
+                    .setLabel("osu! (other)")
+                    .setValue("categoryosu_other"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji('🤖' as Discord.APIMessageComponentEmoji)
-                    .setLabel('Admin')
-                    .setValue('categoryadmin'),
+                    .setEmoji("🤖" as Discord.APIMessageComponentEmoji)
+                    .setLabel("Admin")
+                    .setValue("categoryadmin"),
                 new Discord.StringSelectMenuOptionBuilder()
-                    .setEmoji('❓' as Discord.APIMessageComponentEmoji)
-                    .setLabel('Misc')
-                    .setValue('categorymisc'),
+                    .setEmoji("❓" as Discord.APIMessageComponentEmoji)
+                    .setLabel("Misc")
+                    .setValue("categorymisc"),
             );
         this.ctn.components.push(
-            new Discord.ActionRowBuilder()
-                .setComponents(selectCategoryMenu)
+            new Discord.ActionRowBuilder().setComponents(selectCategoryMenu),
         );
-        let curpick: helper.bottypes.commandInfo[] = commandTools.getCommands(this.params.commandCategory);
+        let curpick: helper.bottypes.commandInfo[] = commandTools.getCommands(
+            this.params.commandCategory,
+        );
 
         if (curpick.length == 0) {
-            curpick = commandTools.getCommands('general');
+            curpick = commandTools.getCommands("general");
         }
         if (this.params.commandfound == true) {
             for (let i = 0; i < curpick.length && i < 25; i++) {
                 inputMenu.addOptions(
                     new Discord.StringSelectMenuOptionBuilder()
-                        .setEmoji('📜')
+                        .setEmoji("📜")
                         .setLabel(`#${i + 1}`)
-                        .setDescription(curpick[i]?.name ?? '_')
-                        .setValue(curpick[i].name)
+                        .setDescription(curpick[i]?.name ?? "_")
+                        .setValue(curpick[i].name),
                 );
-
             }
             this.ctn.components.push(
-                new Discord.ActionRowBuilder()
-                    .setComponents(inputMenu));
+                new Discord.ActionRowBuilder().setComponents(inputMenu),
+            );
         }
         await this.send();
     }
     commandEmb(command: helper.bottypes.commandInfo, embed) {
-        let usetxt = '';
+        let usetxt = "";
         if (command.usage) {
             usetxt += `\`${helper.vars.config.prefix}${command.usage}\``;
         }
         if (command.linkUsage) {
-            usetxt += `### Link Usage\n${command.linkUsage.map(x => `\`${x}\``).join('\n')}`;
+            usetxt += `### Link Usage\n${command.linkUsage.map((x) => `\`${x}\``).join("\n")}`;
         }
 
-        embed.setTitle("Command info for: " + command.name)
+        embed
+            .setTitle("Command info for: " + command.name)
             .setURL(`https://ssob.sbrstrkkdwmdr.me/commands`)
-            .setDescription(`To see full details about this command, visit [here](https://ssob.sbrstrkkdwmdr.me/commands?command=${command.name})\n\n` + command.description + "\n")
+            .setDescription(
+                `To see full details about this command, visit [here](https://ssob.sbrstrkkdwmdr.me/commands?command=${command.name})\n\n` +
+                    command.description +
+                    "\n",
+            )
             .addFields([
                 {
-                    name: 'Usage',
+                    name: "Usage",
                     value: usetxt,
                     inline: false,
                 },
                 {
-                    name: 'Examples',
+                    name: "Examples",
                     value: this.commandExamples(command),
-                    inline: true
+                    inline: true,
                 },
                 {
-                    name: 'Aliases',
+                    name: "Aliases",
                     value: this.commandAliases(command),
-                    inline: true
+                    inline: true,
                 },
             ]);
     }
     commandAliases(command: helper.bottypes.commandInfo) {
-        if (command?.aliases && command.aliases.length > 0) return command.aliases.join(', ');
-        return 'none';
-
+        if (command?.aliases && command.aliases.length > 0)
+            return command.aliases.join(", ");
+        return "none";
     }
     commandExamples(command: helper.bottypes.commandInfo) {
-        let text = '';
+        let text = "";
         for (const example of command.examples) {
             text += `${helper.vars.config.prefix}${example.text}\n`;
         }
-        if (text == '') return 'none';
+        if (text == "") return "none";
         return text;
     }
     /**
@@ -195,15 +227,17 @@ export class Help extends Command {
      *  make into smaller separate functions
      * */
     getemb() {
-        if (this.params.command == 'list') {
+        if (this.params.command == "list") {
             const commandlist: {
                 category: string;
                 cmds: string[];
             }[] = [];
 
             for (const cmd of helper.commandData.cmds) {
-                if (commandlist.map(x => x.category).includes(cmd.category)) {
-                    const idx = commandlist.map(x => x.category).indexOf(cmd.category);
+                if (commandlist.map((x) => x.category).includes(cmd.category)) {
+                    const idx = commandlist
+                        .map((x) => x.category)
+                        .indexOf(cmd.category);
                     commandlist[idx].cmds.push(cmd.name);
                 } else {
                     commandlist.push({
@@ -215,51 +249,53 @@ export class Help extends Command {
 
             const clembed = new Discord.EmbedBuilder()
                 .setColor(helper.colours.embedColour.info.dec)
-                .setTitle('Command List')
-                .setURL('https://ssob.sbrstrkkdwmdr.me/commands')
-                .setDescription('use `/help <command>` to get more info on a command')
+                .setTitle("Command List")
+                .setURL("https://ssob.sbrstrkkdwmdr.me/commands")
+                .setDescription(
+                    "use `/help <command>` to get more info on a command",
+                )
                 .addFields(
-                    commandlist.map(x => {
+                    commandlist.map((x) => {
                         return {
-                            name: x.category.replace('_', ' '),
-                            value: x.cmds.map(x => '`' + x + '`').join(', ')
+                            name: x.category.replace("_", " "),
+                            value: x.cmds.map((x) => "`" + x + "`").join(", "),
                         };
-                    })
+                    }),
                 )
                 .setFooter({
-                    text: 'Website: https://ssob.sbrstrkkdwmdr.me/commands | Github: https://github.com/sbrstrkkdwmdr/ssob/tree/ts'
+                    text: "Website: https://ssob.sbrstrkkdwmdr.me/commands | Github: https://github.com/sbrstrkkdwmdr/ssob/tree/ts",
                 });
             this.ctn.embeds = [clembed];
-            this.params.commandCategory = 'default';
+            this.params.commandCategory = "default";
         } else if (this.params.command != null) {
             const fetchcmd = this.params.command;
-            const commandInfo = new Discord.EmbedBuilder()
-                .setColor(helper.colours.embedColour.info.dec);
-            if (this.params.command.includes('button')) {
+            const commandInfo = new Discord.EmbedBuilder().setColor(
+                helper.colours.embedColour.info.dec,
+            );
+            if (this.params.command.includes("button")) {
                 this.params.commandfound = false;
-                this.params.commandCategory = 'default';
-                let desc = 'List of all buttons available';
-                let buttonstxt = '\n';
+                this.params.commandCategory = "default";
+                let desc = "List of all buttons available";
+                let buttonstxt = "\n";
                 for (let i = 0; i < helper.commandData.buttons.length; i++) {
                     const curbtn = helper.commandData.buttons[i];
                     buttonstxt += `${curbtn.emoji}\`${curbtn.name}\`: ${curbtn.description}\n`;
                 }
                 desc += buttonstxt;
-                commandInfo.setTitle('Buttons')
-                    .setDescription(desc);
+                commandInfo.setTitle("Buttons").setDescription(desc);
             } else if (commandTools.getCommand(fetchcmd)) {
                 const res = commandTools.getCommand(fetchcmd);
                 this.params.commandfound = true;
                 this.params.commandCategory = res.category;
                 this.commandEmb(res, commandInfo);
-            } else if (this.params.command.toLowerCase().includes('category')) {
-                let sp = this.params.command.toLowerCase().split('category')[1];
-                if (sp == 'all') {
-                    this.params.command = 'list';
+            } else if (this.params.command.toLowerCase().includes("category")) {
+                let sp = this.params.command.toLowerCase().split("category")[1];
+                if (sp == "all") {
+                    this.params.command = "list";
                     this.getemb();
                 } else {
                     let c = this.categorise(sp);
-                    if (c != '') {
+                    if (c != "") {
                         commandInfo
                             .setTitle(formatters.toCapital(sp) + " Commands")
                             .setDescription(c);
@@ -270,8 +306,7 @@ export class Help extends Command {
                         return;
                     }
                 }
-            }
-            else {
+            } else {
                 this.params.command = null;
                 this.getemb();
                 return;
@@ -279,11 +314,13 @@ export class Help extends Command {
 
             this.ctn.embeds = [commandInfo];
         } else {
-            this.ctn.embeds = [new Discord.EmbedBuilder()
-                .setColor(helper.colours.embedColour.info.dec)
-                .setTitle('Help')
-                .setURL('https://ssob.sbrstrkkdwmdr.me/commands')
-                .setDescription(`Prefix is: MSGPREFIX
+            this.ctn.embeds = [
+                new Discord.EmbedBuilder()
+                    .setColor(helper.colours.embedColour.info.dec)
+                    .setTitle("Help")
+                    .setURL("https://ssob.sbrstrkkdwmdr.me/commands")
+                    .setDescription(
+                        `Prefix is: MSGPREFIX
 - Use \`MSGPREFIXhelp <command>\` to get more info on a command or \`/help list\` to get a list of commands
 - \`MSGPREFIXhelp category<category>\` will list only commands from that category
 - Arguments are shown as either <arg> or [arg]. Angled brackets "<arg>" are required and square brackets "[arg]" are optional.
@@ -292,27 +329,32 @@ export class Help extends Command {
 - You can use \`MSGPREFIXosuset\` to automatically set your osu! username and gamemode for commands such as \`recent\` (rs)
 - Mods are specified with +[mods] (include), -mx [mods] (match exact) or -me [mods] (exclude). -mx overrides +[mods]
 - Gamemode can be specified by using -(mode) in commands that support it (eg. -taiko)
-`.replaceAll('MSGPREFIX', helper.vars.config.prefix))
-                .setFooter({
-                    text: 'Website: https://ssob.sbrstrkkdwmdr.me/commands | Github: https://github.com/sbrstrkkdwmdr/ssob/tree/ts'
-                })];
-            this.params.commandCategory = 'default';
+`.replaceAll("MSGPREFIX", helper.vars.config.prefix),
+                    )
+                    .setFooter({
+                        text: "Website: https://ssob.sbrstrkkdwmdr.me/commands | Github: https://github.com/sbrstrkkdwmdr/ssob/tree/ts",
+                    }),
+            ];
+            this.params.commandCategory = "default";
         }
     }
     rdmp(w: string) {
-        const fullyrando = Math.floor(Math.random() * helper.commandData[w].length);
+        const fullyrando = Math.floor(
+            Math.random() * helper.commandData[w].length,
+        );
         return helper.commandData.cmds[fullyrando].name;
     }
     categorise(type: string) {
-        let desctxt = '';
+        let desctxt = "";
         const cmds = commandTools.getCommands(type);
         for (let i = 0; i < cmds.length; i++) {
-            desctxt += `\n\`${cmds[i].name}\`: ${cmds[i].description.split('.')[0]}`;
+            desctxt += `\n\`${cmds[i].name}\`: ${cmds[i].description.split(".")[0]}`;
         }
         this.params.commandfound = true;
         if (desctxt.length > 4000) {
             desctxt = desctxt.slice(0, 3900);
-            desctxt += "\n\nThe text has reached maximum length. See [here](https://ssob.sbrstrkkdwmdr.me/commands) for the rest of the commands";
+            desctxt +=
+                "\n\nThe text has reached maximum length. See [here](https://ssob.sbrstrkkdwmdr.me/commands) for the rest of the commands";
         }
         return desctxt;
     }

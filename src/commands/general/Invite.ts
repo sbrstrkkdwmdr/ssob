@@ -1,11 +1,11 @@
-import * as helper from '../../helper';
-import { Command } from '../command';
+import * as helper from "../../helper";
+import { Command } from "../command";
 
 export class Invite extends Command {
     declare protected params: {};
     constructor() {
         super();
-        this.name = 'Invite';
+        this.name = "Invite";
     }
     async execute() {
         await this.setParams();

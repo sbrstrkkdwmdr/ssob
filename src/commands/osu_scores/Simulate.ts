@@ -1,13 +1,13 @@
-import Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import * as rosu from 'rosu-pp-js';
-import * as helper from '../../helper';
-import * as calculate from '../../tools/calculate';
-import * as commandTools from '../../tools/commands';
-import * as data from '../../tools/data';
-import * as osuapi from '../../tools/osuapi';
-import * as performance from '../../tools/performance';
-import { OsuCommand } from '../command';
+import Discord from "discord.js";
+import * as osumodcalc from "osumodcalculator";
+import * as rosu from "rosu-pp-js";
+import * as helper from "../../helper";
+import * as calculate from "../../tools/calculate";
+import * as commandTools from "../../tools/commands";
+import * as data from "../../tools/data";
+import * as osuapi from "../../tools/osuapi";
+import * as performance from "../../tools/performance";
+import { OsuCommand } from "../command";
 
 export class Simulate extends OsuCommand {
     declare protected params: {
@@ -29,7 +29,7 @@ export class Simulate extends OsuCommand {
     };
     constructor() {
         super();
-        this.name = 'Simulate';
+        this.name = "Simulate";
         this.params = {
             mapid: null,
             mods: null,
@@ -49,27 +49,97 @@ export class Simulate extends OsuCommand {
         };
     }
     async setParamsMsg() {
-        this.params.acc = this.setParam(this.params.acc, ['acc', 'accuracy', '%',], 'number', {});
-        this.params.combo = this.setParam(this.params.combo, ['x', 'combo', 'maxcombo',], 'number', { number_isInt: true });
-        this.params.n300 = this.setParam(this.params.n300, ['n300', '300s', 'great'], 'number', { number_isInt: true });
-        this.params.n100 = this.setParam(this.params.n100, ['n100', '100s', 'ok'], 'number', { number_isInt: true });
-        this.params.n50 = this.setParam(this.params.n50, ['n50', '50s', 'meh'], 'number', { number_isInt: true });
-        this.params.nMiss = this.setParam(this.params.nMiss, ['miss', 'misses', 'n0', '0s',], 'number', { number_isInt: true });
-        this.params.usePrevious = this.setParam(this.params.usePrevious, ['-previous', '-p', '-prev'], 'bool', {});
+        this.params.acc = this.setParam(
+            this.params.acc,
+            ["acc", "accuracy", "%"],
+            "number",
+            {},
+        );
+        this.params.combo = this.setParam(
+            this.params.combo,
+            ["x", "combo", "maxcombo"],
+            "number",
+            { number_isInt: true },
+        );
+        this.params.n300 = this.setParam(
+            this.params.n300,
+            ["n300", "300s", "great"],
+            "number",
+            { number_isInt: true },
+        );
+        this.params.n100 = this.setParam(
+            this.params.n100,
+            ["n100", "100s", "ok"],
+            "number",
+            { number_isInt: true },
+        );
+        this.params.n50 = this.setParam(
+            this.params.n50,
+            ["n50", "50s", "meh"],
+            "number",
+            { number_isInt: true },
+        );
+        this.params.nMiss = this.setParam(
+            this.params.nMiss,
+            ["miss", "misses", "n0", "0s"],
+            "number",
+            { number_isInt: true },
+        );
+        this.params.usePrevious = this.setParam(
+            this.params.usePrevious,
+            ["-previous", "-p", "-prev"],
+            "bool",
+            {},
+        );
 
-        this.params.overrideBpm = this.setParam(this.params.overrideBpm, ['-bpm'], 'number', {});
-        this.params.overrideSpeed = this.setParam(this.params.overrideSpeed, ['-speed'], 'number', {});
-        this.params.customCS = this.setParam(this.params.customCS, ['-cs'], 'number', {});
-        this.params.customAR = this.setParam(this.params.customAR, ['-ar'], 'number', {});
-        this.params.customOD = this.setParam(this.params.customOD, ['-od', '-accuracy'], 'number', {});
-        this.params.customHP = this.setParam(this.params.customHP, ['-hp', '-drain', 'health'], 'number', {});
+        this.params.overrideBpm = this.setParam(
+            this.params.overrideBpm,
+            ["-bpm"],
+            "number",
+            {},
+        );
+        this.params.overrideSpeed = this.setParam(
+            this.params.overrideSpeed,
+            ["-speed"],
+            "number",
+            {},
+        );
+        this.params.customCS = this.setParam(
+            this.params.customCS,
+            ["-cs"],
+            "number",
+            {},
+        );
+        this.params.customAR = this.setParam(
+            this.params.customAR,
+            ["-ar"],
+            "number",
+            {},
+        );
+        this.params.customOD = this.setParam(
+            this.params.customOD,
+            ["-od", "-accuracy"],
+            "number",
+            {},
+        );
+        this.params.customHP = this.setParam(
+            this.params.customHP,
+            ["-hp", "-drain", "health"],
+            "number",
+            {},
+        );
 
         const tmod = this.setParamMods();
         if (tmod.mods) {
             this.params.mods = tmod.mods;
         } else {
-            const temp = this.setParam(this.params.mods, ['-mods'], 'string', {});
-            const mods = osumodcalc.mod.fromString(temp?.toUpperCase() ?? '');
+            const temp = this.setParam(
+                this.params.mods,
+                ["-mods"],
+                "string",
+                {},
+            );
+            const mods = osumodcalc.mod.fromString(temp?.toUpperCase() ?? "");
             if (mods && mods.length > 0) {
                 this.params.mods = mods;
             }
@@ -82,25 +152,31 @@ export class Simulate extends OsuCommand {
                 try {
                     const bm = await this.getMapSet(mapTemp.set);
                     this.params.mapid = bm.beatmaps[0].id;
-                } catch (e) {
-
-                }
+                } catch (e) {}
             }
         }
         if (!this.params.mapid) {
-            this.params.mapid = this.setParam(this.params.mapid, helper.argflags.beatmap, 'number', { number_isInt: true });
+            this.params.mapid = this.setParam(
+                this.params.mapid,
+                helper.argflags.beatmap,
+                "number",
+                { number_isInt: true },
+            );
         }
     }
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
-        this.params.mapid = interaction.options.getInteger('id');
-        this.params.mods = osumodcalc.mod.fromString(interaction.options.getString('mods')) ?? null;
-        this.params.acc = interaction.options.getNumber('accuracy');
-        this.params.combo = interaction.options.getInteger('combo');
-        this.params.n300 = interaction.options.getInteger('n300');
-        this.params.n100 = interaction.options.getInteger('n100');
-        this.params.n50 = interaction.options.getInteger('n50');
-        this.params.nMiss = interaction.options.getInteger('miss');
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
+        this.params.mapid = interaction.options.getInteger("id");
+        this.params.mods =
+            osumodcalc.mod.fromString(interaction.options.getString("mods")) ??
+            null;
+        this.params.acc = interaction.options.getNumber("accuracy");
+        this.params.combo = interaction.options.getInteger("combo");
+        this.params.n300 = interaction.options.getInteger("n300");
+        this.params.n100 = interaction.options.getInteger("n100");
+        this.params.n50 = interaction.options.getInteger("n50");
+        this.params.nMiss = interaction.options.getInteger("miss");
     }
     async execute() {
         await this.setParams();
@@ -146,7 +222,12 @@ export class Simulate extends OsuCommand {
             this.params.customOD,
             this.params.customHP,
         );
-        data.debug(perfs, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'ppCalc');
+        data.debug(
+            perfs,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "ppCalc",
+        );
 
         const mapPerf = await performance.calcMap({
             mods: this.params?.mods ?? [],
@@ -160,11 +241,14 @@ export class Simulate extends OsuCommand {
             customHP: this.params.customHP,
             isLazer: true,
         });
-        this.ctn.embeds = [this.setEmbed(
-            perfs, mapPerf,
-            `${this.map.beatmapset.artist} - ${this.map.beatmapset.title} [${this.map.version}]`,
-            this.fixAcc()
-        )];
+        this.ctn.embeds = [
+            this.setEmbed(
+                perfs,
+                mapPerf,
+                `${this.map.beatmapset.artist} - ${this.map.beatmapset.title} [${this.map.version}]`,
+                this.fixAcc(),
+            ),
+        ];
 
         await this.send();
     }
@@ -185,12 +269,21 @@ export class Simulate extends OsuCommand {
     }
 
     fixParams() {
-        const tempscore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
-        if (this.params.usePrevious && tempscore?.apiData && tempscore?.apiData.beatmap.id == this.params.mapid) {
-            if (!this.isValidParam(this.params.n300) &&
+        const tempscore = data.getPreviousId(
+            "score",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+        );
+        if (
+            this.params.usePrevious &&
+            tempscore?.apiData &&
+            tempscore?.apiData.beatmap.id == this.params.mapid
+        ) {
+            if (
+                !this.isValidParam(this.params.n300) &&
                 !this.isValidParam(this.params.n100) &&
                 !this.isValidParam(this.params.n50) &&
-                !this.isValidParam(this.params.acc)) {
+                !this.isValidParam(this.params.acc)
+            ) {
                 this.params.n300 = tempscore.apiData.statistics.great;
                 this.params.n100 = tempscore.apiData.statistics.ok;
                 this.params.n50 = tempscore.apiData.statistics.meh;
@@ -203,9 +296,15 @@ export class Simulate extends OsuCommand {
                 this.params.combo = tempscore.apiData.max_combo;
             }
             if (!this.isValidParam(this.params.mods)) {
-                this.params.mods = tempscore.apiData.mods.map(x => x.acronym) as osumodcalc.types.Mod[] ?? [];
+                this.params.mods =
+                    (tempscore.apiData.mods.map(
+                        (x) => x.acronym,
+                    ) as osumodcalc.types.Mod[]) ?? [];
             }
-            if (!this.isValidParam(this.params.overrideSpeed) && !this.isValidParam(this.params.overrideBpm)) {
+            if (
+                !this.isValidParam(this.params.overrideSpeed) &&
+                !this.isValidParam(this.params.overrideBpm)
+            ) {
                 const overs = calculate.modOverrides(tempscore.apiData.mods);
                 if (overs.speed) {
                     this.params.overrideSpeed = overs.speed;
@@ -217,17 +316,25 @@ export class Simulate extends OsuCommand {
     fixSpeedParams() {
         if (this.params.overrideSpeed || this.params.overrideBpm) {
             if (this.params.overrideBpm && !this.params.overrideSpeed) {
-                this.params.overrideSpeed = this.params.overrideBpm / this.map.bpm;
+                this.params.overrideSpeed =
+                    this.params.overrideBpm / this.map.bpm;
             }
             if (this.params.overrideSpeed && !this.params.overrideBpm) {
-                this.params.overrideBpm = this.params.overrideSpeed * this.map.bpm;
+                this.params.overrideBpm =
+                    this.params.overrideSpeed * this.map.bpm;
             }
         } else {
-            if (this.params?.mods?.includes('DT') || this.params?.mods?.includes('NC')) {
+            if (
+                this.params?.mods?.includes("DT") ||
+                this.params?.mods?.includes("NC")
+            ) {
                 this.params.overrideSpeed = 1.5;
                 this.params.overrideBpm = this.map.bpm * 1.5;
             }
-            if (this.params?.mods?.includes('HT') || this.params?.mods?.includes('DC')) {
+            if (
+                this.params?.mods?.includes("HT") ||
+                this.params?.mods?.includes("DC")
+            ) {
                 this.params.overrideSpeed = 0.75;
                 this.params.overrideBpm = this.map.bpm * 0.75;
             }
@@ -235,110 +342,148 @@ export class Simulate extends OsuCommand {
     }
 
     fixAcc() {
-        let use300s = (this.params.n300 ?? 0);
-        const gotTot = use300s + (this.params.n100 ?? 0) + (this.params.n50 ?? 0) + (this.params.nMiss ?? 0);
-        if (gotTot != this.map.count_circles + this.map.count_sliders + this.map.count_spinners) {
-            use300s += (this.map.count_circles + this.map.count_sliders + this.map.count_spinners) - use300s;
+        let use300s = this.params.n300 ?? 0;
+        const gotTot =
+            use300s +
+            (this.params.n100 ?? 0) +
+            (this.params.n50 ?? 0) +
+            (this.params.nMiss ?? 0);
+        if (
+            gotTot !=
+            this.map.count_circles +
+                this.map.count_sliders +
+                this.map.count_spinners
+        ) {
+            use300s +=
+                this.map.count_circles +
+                this.map.count_sliders +
+                this.map.count_spinners -
+                use300s;
         }
-        const useAcc = this.params.acc ?? osumodcalc.accuracy.standard(
-            use300s,
-            this.params.n100 ?? 0,
-            this.params.n50 ?? 0,
-            this.params.nMiss ?? 0
-        ).accuracy;
+        const useAcc =
+            this.params.acc ??
+            osumodcalc.accuracy.standard(
+                use300s,
+                this.params.n100 ?? 0,
+                this.params.n50 ?? 0,
+                this.params.nMiss ?? 0,
+            ).accuracy;
         return useAcc;
     }
 
-    setEmbed(perfs: rosu.PerformanceAttributes[], mapPerf: rosu.PerformanceAttributes[], title: string, useAcc: number) {
+    setEmbed(
+        perfs: rosu.PerformanceAttributes[],
+        mapPerf: rosu.PerformanceAttributes[],
+        title: string,
+        useAcc: number,
+    ) {
         const stats = this.compareStats();
         const scoreEmbed = new Discord.EmbedBuilder()
             .setTitle(`Simulated play on \n\`${title}\``)
             .setURL(`https://osu.ppy.sh/b/${this.params.mapid}`)
-            .setThumbnail(this.map?.beatmapset_id ? osuapi.other.beatmapImages(this.map.beatmapset_id).thumbnailLarge : `https://osu.ppy.sh/images/layout/avatar-guest@2x.png`)
+            .setThumbnail(
+                this.map?.beatmapset_id
+                    ? osuapi.other.beatmapImages(this.map.beatmapset_id)
+                          .thumbnailLarge
+                    : `https://osu.ppy.sh/images/layout/avatar-guest@2x.png`,
+            )
             .addFields([
                 {
-                    name: 'Score Details',
-                    value:
-                        `${calculate.fixLongDecimal(useAcc)}% | ${this.params.nMiss ?? 0}x misses
+                    name: "Score Details",
+                    value: `${calculate.fixLongDecimal(useAcc)}% | ${this.params.nMiss ?? 0}x misses
     ${this.params.combo ?? this.map.max_combo}x/**${this.map.max_combo}**x
-    ${this.params.mods && this.params.mods.length > 0 ? this.params.mods.join('') : 'NM'}
+    ${this.params.mods && this.params.mods.length > 0 ? this.params.mods.join("") : "NM"}
     \`${this.params.n300}/${this.params.n100}/${this.params.n50}/${this.params.nMiss}\`
     Speed: ${calculate.fixLongDecimal(this.params.overrideSpeed ?? 1)}x @ ${calculate.fixLongDecimal(this.params.overrideBpm ?? this.map.bpm)}BPM
     `,
-                    inline: false
+                    inline: false,
                 },
                 {
-                    name: 'Performance',
-                    value:
-                        `
-${calculate.fixLongDecimal(perfs[0].pp)}pp | ${(calculate.fixLongDecimal(perfs[1].pp))}pp if ${calculate.fixLongDecimal(useAcc)}% FC
+                    name: "Performance",
+                    value: `
+${calculate.fixLongDecimal(perfs[0].pp)}pp | ${calculate.fixLongDecimal(perfs[1].pp)}pp if ${calculate.fixLongDecimal(useAcc)}% FC
 SS: ${calculate.fixLongDecimal(mapPerf[0].pp)}
 99: ${calculate.fixLongDecimal(mapPerf[1].pp)}
 98: ${calculate.fixLongDecimal(mapPerf[2].pp)}
 97: ${calculate.fixLongDecimal(mapPerf[3].pp)}
 96: ${calculate.fixLongDecimal(mapPerf[4].pp)}
-95: ${calculate.fixLongDecimal(mapPerf[5].pp)} 
-`
+95: ${calculate.fixLongDecimal(mapPerf[5].pp)}
+`,
                 },
                 {
-                    name: 'Map Details',
-                    value:
-                        `
+                    name: "Map Details",
+                    value: `
 CS${stats.cs}
 AR${stats.ar}
 OD${stats.od}
 HP${stats.hp}
 ${helper.emojis.mapobjs.total_length}${stats.length}
 `,
-                    inline: true
+                    inline: true,
                 },
                 {
                     name: helper.defaults.invisbleChar,
-                    value:
-                        `
+                    value: `
 ${helper.emojis.mapobjs.circle}${this.map.count_circles}
 ${helper.emojis.mapobjs.slider}${this.map.count_sliders}
 ${helper.emojis.mapobjs.spinner}${this.map.count_spinners}
 ${helper.emojis.mapobjs.bpm}${this.map.bpm}
 ${helper.emojis.mapobjs.star}${calculate.fixLongDecimal(perfs[0]?.difficulty?.stars ?? this.map.difficulty_rating)}
 `,
-                    inline: true
+                    inline: true,
                 },
             ]);
         return scoreEmbed;
     }
     mapDetails() {
-        return osumodcalc.stats.modded({
-            cs: this.params.customCS ?? this.map.cs,
-            ar: this.params.customAR ?? this.map.ar,
-            od: this.params.customOD ?? this.map.accuracy,
-            hp: this.params.customHP ?? this.map.drain,
-            bpm: this.map.bpm,
-            songLength: this.map.total_length
-        }, this.params.mods ?? [], this.params.overrideSpeed ?? 1);
+        return osumodcalc.stats.modded(
+            {
+                cs: this.params.customCS ?? this.map.cs,
+                ar: this.params.customAR ?? this.map.ar,
+                od: this.params.customOD ?? this.map.accuracy,
+                hp: this.params.customHP ?? this.map.drain,
+                bpm: this.map.bpm,
+                songLength: this.map.total_length,
+            },
+            this.params.mods ?? [],
+            this.params.overrideSpeed ?? 1,
+        );
     }
     compareStats() {
         const stats = this.mapDetails();
-        const cs = stats.cs == this.map.cs ?
-            stats.cs + '' :
-            this.map.cs + '=>' + stats.cs;
-        const ar = stats.ar == this.map.ar ?
-            stats.ar + '' :
-            this.map.ar + '=>' + stats.ar;
-        const od = stats.od == this.map.accuracy ?
-            stats.od + '' :
-            this.map.accuracy + '=>' + stats.od;
-        const hp = stats.hp == this.map.drain ?
-            stats.hp + '' :
-            this.map.drain + '=>' + stats.hp;
-        const bpm = stats.hp == this.map.bpm ?
-            stats.bpm + '' :
-            this.map.bpm + '=>' + stats.bpm;
-        const length = stats.songLength == this.map.total_length ?
-            calculate.secondsToTime(stats.songLength) :
-            calculate.secondsToTime(this.map.total_length) + '=>' + calculate.secondsToTime(stats.songLength);
+        const cs =
+            stats.cs == this.map.cs
+                ? stats.cs + ""
+                : this.map.cs + "=>" + stats.cs;
+        const ar =
+            stats.ar == this.map.ar
+                ? stats.ar + ""
+                : this.map.ar + "=>" + stats.ar;
+        const od =
+            stats.od == this.map.accuracy
+                ? stats.od + ""
+                : this.map.accuracy + "=>" + stats.od;
+        const hp =
+            stats.hp == this.map.drain
+                ? stats.hp + ""
+                : this.map.drain + "=>" + stats.hp;
+        const bpm =
+            stats.hp == this.map.bpm
+                ? stats.bpm + ""
+                : this.map.bpm + "=>" + stats.bpm;
+        const length =
+            stats.songLength == this.map.total_length
+                ? calculate.secondsToTime(stats.songLength)
+                : calculate.secondsToTime(this.map.total_length) +
+                  "=>" +
+                  calculate.secondsToTime(stats.songLength);
         return {
-            cs, ar, od, hp, bpm, length
+            cs,
+            ar,
+            od,
+            hp,
+            bpm,
+            length,
         };
     }
 }

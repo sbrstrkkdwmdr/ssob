@@ -1,71 +1,99 @@
-import * as Discord from 'discord.js';
-import fs from 'fs';
-import https from 'https';
-import { gen, osu_maps, osu_other, osu_profiles, osu_scores } from './commandHelper';
-import { Command, InputHandler } from './commands/command';
-import * as helper from './helper';
-import * as checks from './tools/checks';
-import * as commandTools from './tools/commands';
-import * as formatters from './tools/formatters';
+import * as Discord from "discord.js";
+import fs from "fs";
+import https from "https";
+import {
+    gen,
+    osu_maps,
+    osu_other,
+    osu_profiles,
+    osu_scores,
+} from "./commandHelper";
+import { Command, InputHandler } from "./commands/command";
+import * as helper from "./helper";
+import * as checks from "./tools/checks";
+import * as commandTools from "./tools/commands";
+import * as formatters from "./tools/formatters";
 
 export class LinkHandler extends InputHandler {
     async onMessage(message: Discord.Message) {
-        if (!(message.content.startsWith('http') || message.content.includes('osu.') || message.attachments.size > 0)) {
+        if (!(
+            message.content.startsWith("http") ||
+            message.content.includes("osu.") ||
+            message.attachments.size > 0
+        )) {
             return;
         }
         let canReply = true;
-        if (!checks.botHasPerms(message, ['ReadMessageHistory'])) {
+        if (!checks.botHasPerms(message, ["ReadMessageHistory"])) {
             canReply = false;
         }
 
         let settings: helper.tooltypes.guildSettings;
         try {
-            const curGuildSettings = await helper.vars.guildSettings.findOne({ where: { guildid: message.guildId } });
+            const curGuildSettings = await helper.vars.guildSettings.findOne({
+                where: { guildid: message.guildId },
+            });
             settings = curGuildSettings.dataValues;
         } catch (error) {
             try {
                 await helper.vars.guildSettings.create({
                     guildid: message.guildId,
-                    guildname: message?.guild?.name ?? 'Unknown',
-                    prefix: 'sbr-',
+                    guildname: message?.guild?.name ?? "Unknown",
+                    prefix: "sbr-",
                     osuParseLinks: true,
                     osuParseScreenshots: true,
                     osuParseReplays: true,
                 });
-            } catch (error) {
-
-            }
+            } catch (error) {}
             settings = {
                 guildid: message.guildId,
-                guildname: message?.guild?.name ?? 'Unknown',
-                prefix: 'sbr-',
+                guildname: message?.guild?.name ?? "Unknown",
+                prefix: "sbr-",
                 osuParseLinks: true,
                 osuParseScreenshots: false,
                 osuParseReplays: true,
             };
         }
 
-        const messagenohttp = message.content.replace('https://', '').replace('http://', '').replace('www.', '');
+        const messagenohttp = message.content
+            .replace("https://", "")
+            .replace("http://", "")
+            .replace("www.", "");
 
-        const args = messagenohttp.split(' ') ?? [];
+        const args = messagenohttp.split(" ") ?? [];
 
-        if (messagenohttp.startsWith('osu.ppy.sh/b/') || messagenohttp.startsWith('osu.ppy.sh/beatmaps/') || messagenohttp.startsWith('osu.ppy.sh/beatmapsets/') || messagenohttp.startsWith('osu.ppy.sh/s/')) {
+        if (
+            messagenohttp.startsWith("osu.ppy.sh/b/") ||
+            messagenohttp.startsWith("osu.ppy.sh/beatmaps/") ||
+            messagenohttp.startsWith("osu.ppy.sh/beatmapsets/") ||
+            messagenohttp.startsWith("osu.ppy.sh/s/")
+        ) {
             this.selected = new osu_maps.MapParse();
             await this.runCommand(message, args);
             return;
         }
-        if (messagenohttp.startsWith('osu.ppy.sh/u/') || messagenohttp.startsWith('osu.ppy.sh/users/')) {
+        if (
+            messagenohttp.startsWith("osu.ppy.sh/u/") ||
+            messagenohttp.startsWith("osu.ppy.sh/users/")
+        ) {
             this.selected = new osu_profiles.Profile();
             await this.runCommand(message, args);
             return;
         }
-        if (message.attachments.size > 0 && message.attachments.every(attachment => formatters.removeURLparams(attachment.url).endsWith('.osr'))) {
+        if (
+            message.attachments.size > 0 &&
+            message.attachments.every((attachment) =>
+                formatters.removeURLparams(attachment.url).endsWith(".osr"),
+            )
+        ) {
             if (settings.osuParseReplays == false) {
                 return;
             }
             const id = commandTools.getCmdId();
             const attachosr = message.attachments.first().url;
-            const osrdlfile = fs.createWriteStream(`${helper.path.files}/replays/${id}.osr`);
+            const osrdlfile = fs.createWriteStream(
+                `${helper.path.files}/replays/${id}.osr`,
+            );
             https.get(`${attachosr}`, function (response) {
                 response.pipe(osrdlfile);
             });
@@ -74,13 +102,17 @@ export class LinkHandler extends InputHandler {
                 await this.runCommand(message, args, id);
             }, 1500);
         }
-        if (messagenohttp.startsWith('osu.ppy.sh/scores/')) {
+        if (messagenohttp.startsWith("osu.ppy.sh/scores/")) {
             this.selected = new osu_scores.ScoreParse();
             await this.runCommand(message, args);
         }
     }
-    async onInteraction(interaction: Discord.Interaction) { }
-    async runCommand(message: Discord.Message, args: string[] = [], tid?: string) {
+    async onInteraction(interaction: Discord.Interaction) {}
+    async runCommand(
+        message: Discord.Message,
+        args: string[] = [],
+        tid?: string,
+    ) {
         this.selected.setInput({
             message,
             interaction: null,
@@ -91,7 +123,9 @@ export class LinkHandler extends InputHandler {
             canReply: true,
             type: "link",
         });
-        await this.selected.execute().catch((e) => { console.log(e); });
+        await this.selected.execute().catch((e) => {
+            console.log(e);
+        });
         this.selected = null;
     }
 }

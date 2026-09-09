@@ -1,11 +1,11 @@
-import Discord from 'discord.js';
-import * as helper from '../../helper';
-import * as calculate from '../../tools/calculate';
-import * as data from '../../tools/data';
-import * as formatters from '../../tools/formatters';
-import * as osuapi from '../../tools/osuapi';
-import * as other from '../../tools/other';
-import { ArgsParser, OsuCommand } from '../command';
+import Discord from "discord.js";
+import * as helper from "../../helper";
+import * as calculate from "../../tools/calculate";
+import * as data from "../../tools/data";
+import * as formatters from "../../tools/formatters";
+import * as osuapi from "../../tools/osuapi";
+import * as other from "../../tools/other";
+import { ArgsParser, OsuCommand } from "../command";
 
 export class WhatIf extends OsuCommand {
     declare protected params: {
@@ -16,7 +16,7 @@ export class WhatIf extends OsuCommand {
     };
     constructor() {
         super();
-        this.name = 'WhatIf';
+        this.name = "WhatIf";
         this.params = {
             user: null,
             searchid: null,
@@ -32,7 +32,10 @@ export class WhatIf extends OsuCommand {
             }
         }
         if (this.params.pp && !isNaN(this.params.pp)) {
-            this.input.args.splice(this.input.args.indexOf(this.params.pp + ''), 1);
+            this.input.args.splice(
+                this.input.args.indexOf(this.params.pp + ""),
+                1,
+            );
             this.argParser = new ArgsParser(this.input.args);
         }
         this.setParamMode();
@@ -44,15 +47,18 @@ export class WhatIf extends OsuCommand {
         this.setUserParams();
     }
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
         this.params.searchid = this.commanduser.id;
-        this.params.user = interaction.options.getString('user');
-        this.params.mode = interaction.options.getString('mode') as osuapi.types_v2.GameMode;
-        this.params.pp = interaction.options.getNumber('pp');
+        this.params.user = interaction.options.getString("user");
+        this.params.mode = interaction.options.getString(
+            "mode",
+        ) as osuapi.types_v2.GameMode;
+        this.params.pp = interaction.options.getNumber("pp");
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
-        const interaction = (this.input.interaction as Discord.ButtonInteraction);
+        const interaction = this.input.interaction as Discord.ButtonInteraction;
         this.params.searchid = this.commanduser.id;
     }
     async execute() {
@@ -60,7 +66,11 @@ export class WhatIf extends OsuCommand {
         this.logInput();
         // do stuff
 
-        if (!this.params.pp || isNaN(this.params.pp) || this.params.pp > 10000) {
+        if (
+            !this.params.pp ||
+            isNaN(this.params.pp) ||
+            this.params.pp > 10000
+        ) {
             await this.sendError(`Please define a valid PP value to calculate`);
             return;
         }
@@ -77,13 +87,14 @@ export class WhatIf extends OsuCommand {
             this.params.mode = osudata.playmode;
         }
 
-        const buttons = new Discord.ActionRowBuilder()
-            .addComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.user),
-            );
+        const buttons = new Discord.ActionRowBuilder().addComponents(
+            new Discord.ButtonBuilder()
+                .setCustomId(
+                    `${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${osudata.id}+${osudata.playmode}`,
+                )
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.extras.user),
+        );
 
         let osutopdata: osuapi.types_v2.Score[];
         try {
@@ -93,7 +104,7 @@ export class WhatIf extends OsuCommand {
             return;
         }
 
-        const pparr = osutopdata.slice().map(x => x.pp);
+        const pparr = osutopdata.slice().map((x) => x.pp);
         pparr.push(this.params.pp);
         pparr.sort((a, b) => b - a);
         const ppindex = pparr.indexOf(this.params.pp);
@@ -104,29 +115,40 @@ export class WhatIf extends OsuCommand {
 
         const newBonus = [];
         for (let i = 0; i < osutopdata.length; i++) {
-            newBonus.push(osutopdata[i].weight.pp/*  ?? (osutopdata[i].pp * osufunc.findWeight(i)) */);
+            newBonus.push(
+                osutopdata[i].weight
+                    .pp /*  ?? (osutopdata[i].pp * osufunc.findWeight(i)) */,
+            );
         }
 
-        const bonus = osudata.statistics.pp - newBonus.reduce((a, b) => a + b, 0);
+        const bonus =
+            osudata.statistics.pp - newBonus.reduce((a, b) => a + b, 0);
 
-        const guessrank = await data.getRankPerformance('pp->rank', (total + bonus), `${other.modeValidator(this.params.mode)}`,);
+        const guessrank = await data.getRankPerformance(
+            "pp->rank",
+            total + bonus,
+            `${other.modeValidator(this.params.mode)}`,
+        );
 
         const embed = new Discord.EmbedBuilder()
             .setTitle(`What if ${osudata.username} gained ${this.params.pp}pp?`)
             .setColor(helper.colours.embedColour.query.dec)
-            .setThumbnail(`${osudata?.avatar_url ?? helper.defaults.images.any.url}`);
+            .setThumbnail(
+                `${osudata?.avatar_url ?? helper.defaults.images.any.url}`,
+            );
         formatters.userAuthor(osudata, embed);
         if (ppindex + 1 > 100) {
             embed.setDescription(
                 `A ${this.params.pp}pp score would be outside of their top 100 plays and be weighted at 0%.
     Their total pp and rank would not change.
-    `);
+    `,
+            );
         } else {
             embed.setDescription(
                 `A ${this.params.pp}pp score would be their **${calculate.toOrdinal(ppindex + 1)}** top play and would be weighted at **${calculate.fixLongDecimal(weight * 100)}%**.
-    Their pp would change by **${calculate.fixLongDecimal(Math.abs((total + bonus) - osudata.statistics.pp))}pp** and their new total pp would be **${calculate.fixLongDecimal(total + bonus)}pp**.
+    Their pp would change by **${calculate.fixLongDecimal(Math.abs(total + bonus - osudata.statistics.pp))}pp** and their new total pp would be **${calculate.fixLongDecimal(total + bonus)}pp**.
     Their new rank would be **${Math.round(guessrank.value)}** (+${Math.round(osudata?.statistics?.global_rank - guessrank.value)}).
-    `
+    `,
             );
         }
 
@@ -136,23 +158,23 @@ export class WhatIf extends OsuCommand {
     }
     async getTopData(user: number, mode: osuapi.types_v2.GameMode) {
         let topdata: osuapi.types_v2.Score[];
-        if (data.findFile(this.input.id, 'osutopdata') &&
-            !('error' in data.findFile(this.input.id, 'osutopdata')) &&
-            this.input.buttonType != 'Refresh'
+        if (
+            data.findFile(this.input.id, "osutopdata") &&
+            !("error" in data.findFile(this.input.id, "osutopdata")) &&
+            this.input.buttonType != "Refresh"
         ) {
-            topdata = data.findFile(this.input.id, 'osutopdata');
+            topdata = data.findFile(this.input.id, "osutopdata");
         } else {
             topdata = await osuapi.v2.scores.best({
                 user_id: user,
-                mode
+                mode,
             });
         }
 
         if (helper.errors.isErrorObject(topdata)) {
             await this.sendError(helper.errors.scores.best(user));
         }
-        data.storeFile(topdata, this.input.id, 'osutopdata');
+        data.storeFile(topdata, this.input.id, "osutopdata");
         return topdata;
-
     }
 }

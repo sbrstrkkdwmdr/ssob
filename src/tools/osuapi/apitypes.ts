@@ -957,12 +957,7 @@ type RankStatus = -2 | -1 | 0 | 1 | 2 | 3 | 4;
 
 //BeatmapsetDiscussion
 type MessageType =
-    | "hype"
-    | "mapper_note"
-    | "praise"
-    | "problem"
-    | "review"
-    | "suggestion";
+    "hype" | "mapper_note" | "praise" | "problem" | "review" | "suggestion";
 
 //Build
 interface Versions {

@@ -1,19 +1,18 @@
-import Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import * as rosu from 'rosu-pp-js';
-import * as helper from '../../helper';
-import * as calculate from '../../tools/calculate';
-import * as data from '../../tools/data';
-import * as formatters from '../../tools/formatters';
-import * as osuapi from '../../tools/osuapi';
-import * as other from '../../tools/other';
-import * as performance from '../../tools/performance';
-import { OsuCommand } from '../command';
+import Discord from "discord.js";
+import * as osumodcalc from "osumodcalculator";
+import * as rosu from "rosu-pp-js";
+import * as helper from "../../helper";
+import * as calculate from "../../tools/calculate";
+import * as data from "../../tools/data";
+import * as formatters from "../../tools/formatters";
+import * as osuapi from "../../tools/osuapi";
+import * as other from "../../tools/other";
+import * as performance from "../../tools/performance";
+import { OsuCommand } from "../command";
 
-type scoretypes = 'firsts' | 'best' | 'recent' | 'pinned';
+type scoretypes = "firsts" | "best" | "recent" | "pinned";
 
 export class ScoreStats extends OsuCommand {
-
     declare protected params: {
         scoreTypes: scoretypes;
         user: string;
@@ -24,9 +23,9 @@ export class ScoreStats extends OsuCommand {
     };
     constructor() {
         super();
-        this.name = 'ScoreStats';
+        this.name = "ScoreStats";
         this.params = {
-            scoreTypes: 'best',
+            scoreTypes: "best",
             user: null,
             searchid: undefined,
             mode: undefined,
@@ -37,15 +36,23 @@ export class ScoreStats extends OsuCommand {
     async setParamsMsg() {
         {
             this.setParamMode();
-
         }
-        this.params.scoreTypes = this.setParamBoolList(this.params.scoreTypes,
-            { set: 'firsts', flags: ['first', 'firsts', 'globals', 'global', 'f', 'g'] },
-            { set: 'best', flags: ['osutop', 'top', 'best', 't', 'b'] },
-            { set: 'recent', flags: ['r', 'recent', 'rs'] },
-            { set: 'pinned', flags: ['pinned', 'pins', 'pin', 'p'] },
+        this.params.scoreTypes = this.setParamBoolList(
+            this.params.scoreTypes,
+            {
+                set: "firsts",
+                flags: ["first", "firsts", "globals", "global", "f", "g"],
+            },
+            { set: "best", flags: ["osutop", "top", "best", "t", "b"] },
+            { set: "recent", flags: ["r", "recent", "rs"] },
+            { set: "pinned", flags: ["pinned", "pins", "pin", "p"] },
         );
-        this.params.all = this.setParam(this.params.all, ['all', 'd', 'a', 'detailed'], 'bool', {});
+        this.params.all = this.setParam(
+            this.params.all,
+            ["all", "d", "a", "detailed"],
+            "bool",
+            {},
+        );
         const usertemp = this.setParamUser();
         this.params.user = usertemp.user;
         if (usertemp?.mode && !this.params.mode) {
@@ -54,23 +61,41 @@ export class ScoreStats extends OsuCommand {
         this.setUserParams();
     }
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
         this.params.searchid = this.commanduser.id;
-        interaction.options.getString('user') ? this.params.user = interaction.options.getString('user') : null;
-        interaction.options.getString('type') ? this.params.scoreTypes = interaction.options.getString('type') as scoretypes : null;
-        interaction.options.getString('mode') ? this.params.mode = interaction.options.getString('mode') as osuapi.types_v2.GameMode : null;
-        interaction.options.getBoolean('all') ? this.params.all = interaction.options.getBoolean('all') : null;
-
+        interaction.options.getString("user")
+            ? (this.params.user = interaction.options.getString("user"))
+            : null;
+        interaction.options.getString("type")
+            ? (this.params.scoreTypes = interaction.options.getString(
+                  "type",
+              ) as scoretypes)
+            : null;
+        interaction.options.getString("mode")
+            ? (this.params.mode = interaction.options.getString(
+                  "mode",
+              ) as osuapi.types_v2.GameMode)
+            : null;
+        interaction.options.getBoolean("all")
+            ? (this.params.all = interaction.options.getBoolean("all"))
+            : null;
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
-        const interaction = (this.input.interaction as Discord.ButtonInteraction);
+        const interaction = this.input.interaction as Discord.ButtonInteraction;
         this.params.searchid = this.commanduser.id;
-        this.params.user = this.input.message.embeds[0].author.url.split('/users/')[1].split('/')[0];
-        this.params.mode = this.input.message.embeds[0].author.url.split('/users/')[1].split('/')[1] as osuapi.types_v2.GameMode;
+        this.params.user = this.input.message.embeds[0].author.url
+            .split("/users/")[1]
+            .split("/")[0];
+        this.params.mode = this.input.message.embeds[0].author.url
+            .split("/users/")[1]
+            .split("/")[1] as osuapi.types_v2.GameMode;
         //user's {type} scores
-        this.params.scoreTypes = this.input.message.embeds[0].title.split(' scores')[0].split(' ')[0].toLowerCase() as scoretypes;
-
+        this.params.scoreTypes = this.input.message.embeds[0].title
+            .split(" scores")[0]
+            .split(" ")[0]
+            .toLowerCase() as scoretypes;
     }
     async execute() {
         await this.setParams();
@@ -82,31 +107,41 @@ export class ScoreStats extends OsuCommand {
         await this.sendLoading();
 
         try {
-            this.user = await this.getProfile(this.params.user, this.params.mode);
+            this.user = await this.getProfile(
+                this.params.user,
+                this.params.mode,
+            );
         } catch (e) {
             return;
         }
 
-        const buttons: Discord.ActionRowBuilder = new Discord.ActionRowBuilder()
-            .addComponents(
+        const buttons: Discord.ActionRowBuilder =
+            new Discord.ActionRowBuilder().addComponents(
                 new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.user.id}+${this.user.playmode}`)
+                    .setCustomId(
+                        `${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.user.id}+${this.user.playmode}`,
+                    )
                     .setStyle(helper.buttons.type.current)
                     .setEmoji(helper.buttons.label.extras.user),
             );
 
         const dataFilename =
-            this.params.scoreTypes == 'firsts' ?
-                'firstscoresdata' :
-                `${this.params.scoreTypes}scoresdata`;
+            this.params.scoreTypes == "firsts"
+                ? "firstscoresdata"
+                : `${this.params.scoreTypes}scoresdata`;
 
-        if (data.findFile(this.user.id, dataFilename) &&
-            !('error' in data.findFile(this.user.id, dataFilename)) &&
-            this.input.buttonType != 'Refresh'
+        if (
+            data.findFile(this.user.id, dataFilename) &&
+            !("error" in data.findFile(this.user.id, dataFilename)) &&
+            this.input.buttonType != "Refresh"
         ) {
             this.scores = data.findFile(this.user.id, dataFilename);
         } else {
-            this.params.reachedMaxCount = await this.getScoreCount(0, this.params, this.input);
+            this.params.reachedMaxCount = await this.getScoreCount(
+                0,
+                this.params,
+                this.input,
+            );
         }
         data.storeFile(this.scores, this.user.id, dataFilename);
 
@@ -121,38 +156,54 @@ export class ScoreStats extends OsuCommand {
     scores: osuapi.types_v2.Score[] = [];
     user: osuapi.types_v2.UserExtended;
 
-    async getScoreCount(cinitnum: number, args = this.params, input = this.input): Promise<boolean> {
+    async getScoreCount(
+        cinitnum: number,
+        args = this.params,
+        input = this.input,
+    ): Promise<boolean> {
         let fd: osuapi.types_v2.Score[];
         const defArgs = {
             user_id: this.user.id,
             mode: other.modeValidator(args.mode),
-            offset: cinitnum
+            offset: cinitnum,
         };
         switch (args.scoreTypes) {
-            case 'firsts':
+            case "firsts":
                 fd = await osuapi.v2.scores.first(defArgs);
                 break;
-            case 'best':
+            case "best":
                 fd = await osuapi.v2.scores.best(defArgs);
                 break;
-            case 'recent':
-                fd = await osuapi.v2.scores.recent({ include_fails: 1, ...defArgs });
+            case "recent":
+                fd = await osuapi.v2.scores.recent({
+                    include_fails: 1,
+                    ...defArgs,
+                });
                 break;
-            case 'pinned':
+            case "pinned":
                 fd = await osuapi.v2.scores.pinned(defArgs);
                 break;
         }
         if (helper.errors.isErrorObject(fd)) {
-            await this.sendError(helper.errors.scores.best(args.user).replace('top', args.scoreTypes == 'best' ? 'top' : args.scoreTypes));
+            await this.sendError(
+                helper.errors.scores
+                    .best(args.user)
+                    .replace(
+                        "top",
+                        args.scoreTypes == "best" ? "top" : args.scoreTypes,
+                    ),
+            );
             return;
         }
         for (let i = 0; i < fd.length; i++) {
-            if (!fd[i] || typeof fd[i] == 'undefined') { break; }
+            if (!fd[i] || typeof fd[i] == "undefined") {
+                break;
+            }
             this.scores.push(fd[i]);
         }
-        if (this.scores.length == 500 && args.scoreTypes == 'firsts') {
+        if (this.scores.length == 500 && args.scoreTypes == "firsts") {
             args.reachedMaxCount = true;
-        } else if (args.scoreTypes == 'firsts') {
+        } else if (args.scoreTypes == "firsts") {
             return await this.getScoreCount(cinitnum + 100, args);
         }
         return args.reachedMaxCount;
@@ -160,12 +211,18 @@ export class ScoreStats extends OsuCommand {
 
     async setEmbed() {
         const embed: Discord.EmbedBuilder = new Discord.EmbedBuilder()
-            .setTitle(`Statistics for ${this.user.username}'s ${this.params.scoreTypes} scores`)
-            .setThumbnail(`${this.user?.avatar_url ?? helper.defaults.images.any.url}`);
+            .setTitle(
+                `Statistics for ${this.user.username}'s ${this.params.scoreTypes} scores`,
+            )
+            .setThumbnail(
+                `${this.user?.avatar_url ?? helper.defaults.images.any.url}`,
+            );
         if (this.scores.length == 0) {
-            embed.setDescription('No scores found');
+            embed.setDescription("No scores found");
         } else {
-            embed.setDescription(`${calculate.separateNum(this.scores.length)} scores found\n${this.params.reachedMaxCount ? 'Only first 100 scores are calculated' : ''}`);
+            embed.setDescription(
+                `${calculate.separateNum(this.scores.length)} scores found\n${this.params.reachedMaxCount ? "Only first 100 scores are calculated" : ""}`,
+            );
             await this.embedData(embed);
         }
         formatters.userAuthor(this.user, embed);
@@ -173,21 +230,25 @@ export class ScoreStats extends OsuCommand {
     }
 
     async embedData(embed: Discord.EmbedBuilder) {
-        const mappers = calculate.findMode(this.scores.map(x => x.beatmapset.creator));
-        const mods = calculate.findMode(this.scores.map(x => {
-            return x.mods.length == 0 ?
-                'NM' :
-                x.mods.map(x => x.acronym).join('');
-        }));
-        const grades = calculate.findMode(this.scores.map(x => x.rank));
-        const acc = calculate.stats(this.scores.map(x => x.accuracy));
+        const mappers = calculate.findMode(
+            this.scores.map((x) => x.beatmapset.creator),
+        );
+        const mods = calculate.findMode(
+            this.scores.map((x) => {
+                return x.mods.length == 0
+                    ? "NM"
+                    : x.mods.map((x) => x.acronym).join("");
+            }),
+        );
+        const grades = calculate.findMode(this.scores.map((x) => x.rank));
+        const acc = calculate.stats(this.scores.map((x) => x.accuracy));
         for (const key in acc) {
             acc[key] *= 100;
         }
-        const combo = calculate.stats(this.scores.map(x => x.max_combo));
-        let pp = calculate.stats(this.scores.map(x => x.pp));
-        let totpp = '';
-        let weighttotpp = '';
+        const combo = calculate.stats(this.scores.map((x) => x.max_combo));
+        let pp = calculate.stats(this.scores.map((x) => x.pp));
+        let totpp = "";
+        let weighttotpp = "";
 
         if (this.params.all) {
             const temp = await this.embedData_isAll();
@@ -196,16 +257,30 @@ export class ScoreStats extends OsuCommand {
             weighttotpp = temp.weighttotpp;
         }
         embed.setFields([
-            this.embedData_statFieldStr('Mappers', mappers),
-            this.embedData_statFieldStr('Mods', calculate.findMode(this.individualMods())),
-            this.embedData_statFieldStr('Mod combinations', calculate.findMode(this.scores.map(x => {
-                return x.mods.length == 0 ?
-                    'NM' :
-                    osumodcalc.mod.order(x.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('');
-            }))),
-            this.embedData_statFieldStr('Ranks', grades),
-            this.embedData_statFieldRange('Accuracy', acc, '%'),
-            this.embedData_statFieldRange('Combo', combo),
+            this.embedData_statFieldStr("Mappers", mappers),
+            this.embedData_statFieldStr(
+                "Mods",
+                calculate.findMode(this.individualMods()),
+            ),
+            this.embedData_statFieldStr(
+                "Mod combinations",
+                calculate.findMode(
+                    this.scores.map((x) => {
+                        return x.mods.length == 0
+                            ? "NM"
+                            : osumodcalc.mod
+                                  .order(
+                                      x.mods.map(
+                                          (x) => x.acronym,
+                                      ) as osumodcalc.types.Mod[],
+                                  )
+                                  .join("");
+                    }),
+                ),
+            ),
+            this.embedData_statFieldStr("Ranks", grades),
+            this.embedData_statFieldRange("Accuracy", acc, "%"),
+            this.embedData_statFieldRange("Combo", combo),
         ]);
         if (this.params.all) {
             const temp = await this.embedData_isAll();
@@ -213,21 +288,21 @@ export class ScoreStats extends OsuCommand {
             totpp = temp.totpp;
             weighttotpp = temp.weighttotpp;
             embed.addFields([
-                this.embedData_statFieldRange('Performance', pp, 'pp'),
+                this.embedData_statFieldRange("Performance", pp, "pp"),
                 {
-                    name: 'Total PP',
+                    name: "Total PP",
                     value: totpp,
-                    inline: true
+                    inline: true,
                 },
                 {
-                    name: '(Weighted)',
+                    name: "(Weighted)",
                     value: weighttotpp,
-                    inline: true
+                    inline: true,
                 },
             ]);
         } else {
             embed.addFields(
-                this.embedData_statFieldRange('Performance', pp, 'pp'),
+                this.embedData_statFieldRange("Performance", pp, "pp"),
             );
         }
     }
@@ -235,7 +310,7 @@ export class ScoreStats extends OsuCommand {
         const mods: osumodcalc.types.Mod[] = [];
         for (const score of this.scores) {
             if (!score.mods || score.mods.length == 0) {
-                mods.push('NM' as unknown as osumodcalc.types.Mod);
+                mods.push("NM" as unknown as osumodcalc.types.Mod);
                 continue;
             }
             for (const mod of score.mods) {
@@ -246,36 +321,70 @@ export class ScoreStats extends OsuCommand {
     }
     async embedData_isAll() {
         const calculations = await this.embedData_isAll_calc();
-        const pp = calculate.stats(calculations.map(x => x.pp));
+        const pp = calculate.stats(calculations.map((x) => x.pp));
         calculations.sort((a, b) => b.pp - a.pp);
 
         const ppcalc = {
-            total: calculations.map(x => x.pp).reduce((a, b) => a + b, 0),
-            acc: calculations.map(x => x.ppAccuracy).reduce((a, b) => a + b, 0),
-            aim: calculations.map(x => x.ppAim).reduce((a, b) => a + b, 0),
-            diff: calculations.map(x => x.ppDifficulty).reduce((a, b) => a + b, 0),
-            speed: calculations.map(x => x.ppSpeed).reduce((a, b) => a + b, 0),
+            total: calculations.map((x) => x.pp).reduce((a, b) => a + b, 0),
+            acc: calculations
+                .map((x) => x.ppAccuracy)
+                .reduce((a, b) => a + b, 0),
+            aim: calculations.map((x) => x.ppAim).reduce((a, b) => a + b, 0),
+            diff: calculations
+                .map((x) => x.ppDifficulty)
+                .reduce((a, b) => a + b, 0),
+            speed: calculations
+                .map((x) => x.ppSpeed)
+                .reduce((a, b) => a + b, 0),
         };
         const weightppcalc = {
-            total: calculate.weightPerformance(calculations.map(x => x.pp)).reduce((a, b) => a + b, 0),
-            acc: calculate.weightPerformance(calculations.map(x => x.ppAccuracy)).reduce((a, b) => a + b, 0),
-            aim: calculate.weightPerformance(calculations.map(x => x.ppAim)).reduce((a, b) => a + b, 0),
-            diff: calculate.weightPerformance(calculations.map(x => x.ppDifficulty)).reduce((a, b) => a + b, 0),
-            speed: calculate.weightPerformance(calculations.map(x => x.ppSpeed)).reduce((a, b) => a + b, 0),
+            total: calculate
+                .weightPerformance(calculations.map((x) => x.pp))
+                .reduce((a, b) => a + b, 0),
+            acc: calculate
+                .weightPerformance(calculations.map((x) => x.ppAccuracy))
+                .reduce((a, b) => a + b, 0),
+            aim: calculate
+                .weightPerformance(calculations.map((x) => x.ppAim))
+                .reduce((a, b) => a + b, 0),
+            diff: calculate
+                .weightPerformance(calculations.map((x) => x.ppDifficulty))
+                .reduce((a, b) => a + b, 0),
+            speed: calculate
+                .weightPerformance(calculations.map((x) => x.ppSpeed))
+                .reduce((a, b) => a + b, 0),
         };
         let totpp = `Total: ${calculate.fixLongDecimal(ppcalc.total)}`;
-        ppcalc.acc ? totpp += `\nAccuracy: ${calculate.fixLongDecimal(ppcalc.acc)}` : '';
-        ppcalc.aim ? totpp += `\nAim: ${calculate.fixLongDecimal(ppcalc.aim)}` : '';
-        ppcalc.diff ? totpp += `\nDifficulty: ${calculate.fixLongDecimal(ppcalc.diff)}` : '';
-        ppcalc.speed ? totpp += `\nSpeed: ${calculate.fixLongDecimal(ppcalc.speed)}` : '';
+        ppcalc.acc
+            ? (totpp += `\nAccuracy: ${calculate.fixLongDecimal(ppcalc.acc)}`)
+            : "";
+        ppcalc.aim
+            ? (totpp += `\nAim: ${calculate.fixLongDecimal(ppcalc.aim)}`)
+            : "";
+        ppcalc.diff
+            ? (totpp += `\nDifficulty: ${calculate.fixLongDecimal(ppcalc.diff)}`)
+            : "";
+        ppcalc.speed
+            ? (totpp += `\nSpeed: ${calculate.fixLongDecimal(ppcalc.speed)}`)
+            : "";
 
         let weighttotpp = `Total: ${calculate.fixLongDecimal(weightppcalc.total)}`;
-        ppcalc.acc ? weighttotpp += `\nAccuracy: ${calculate.fixLongDecimal(weightppcalc.acc)}` : '';
-        ppcalc.aim ? weighttotpp += `\nAim: ${calculate.fixLongDecimal(weightppcalc.aim)}` : '';
-        ppcalc.diff ? weighttotpp += `\nDifficulty: ${calculate.fixLongDecimal(weightppcalc.diff)}` : '';
-        ppcalc.speed ? weighttotpp += `\nSpeed: ${calculate.fixLongDecimal(weightppcalc.speed)}` : '';
+        ppcalc.acc
+            ? (weighttotpp += `\nAccuracy: ${calculate.fixLongDecimal(weightppcalc.acc)}`)
+            : "";
+        ppcalc.aim
+            ? (weighttotpp += `\nAim: ${calculate.fixLongDecimal(weightppcalc.aim)}`)
+            : "";
+        ppcalc.diff
+            ? (weighttotpp += `\nDifficulty: ${calculate.fixLongDecimal(weightppcalc.diff)}`)
+            : "";
+        ppcalc.speed
+            ? (weighttotpp += `\nSpeed: ${calculate.fixLongDecimal(weightppcalc.speed)}`)
+            : "";
         return {
-            pp, totpp, weighttotpp
+            pp,
+            totpp,
+            weighttotpp,
         };
     }
     async embedData_isAll_calc() {
@@ -283,50 +392,60 @@ export class ScoreStats extends OsuCommand {
         for (const score of this.scores) {
             calculations.push(
                 await performance.calcScore({
-                    mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+                    mods: score.mods.map(
+                        (x) => x.acronym,
+                    ) as osumodcalc.types.Mod[],
                     mode: score.ruleset_id,
                     mapid: score.beatmap.id,
                     stats: score.statistics,
                     accuracy: score.accuracy,
                     maxcombo: score.max_combo,
                     mapLastUpdated: new Date(score.beatmap.last_updated),
-                    isLazer: !((score?.legacy_total_score ?? 1) > 0)
-                }));
+                    isLazer: !((score?.legacy_total_score ?? 1) > 0),
+                }),
+            );
         }
         return calculations;
     }
-    embedData_statFieldStr(name: string, stats: {
-        string: string;
-        count: number;
-    }[]): Discord.EmbedField {
+    embedData_statFieldStr(
+        name: string,
+        stats: {
+            string: string;
+            count: number;
+        }[],
+    ): Discord.EmbedField {
         const str = this.embedData_statStr(stats);
         return {
             name,
-            value: str.length == 0 ?
-                'No data available' :
-                str,
-            inline: true
+            value: str.length == 0 ? "No data available" : str,
+            inline: true,
         };
     }
-    embedData_statStr(stats: {
-        string: string;
-        count: number;
-    }[]) {
-        let str = '';
+    embedData_statStr(
+        stats: {
+            string: string;
+            count: number;
+        }[],
+    ) {
+        let str = "";
         for (let i = 0; i < stats.length && i < 5; i++) {
             str += `#${i + 1}. ${stats[i].string} - ${calculate.separateNum(stats[i].count)}\n`;
         }
         return str;
     }
-    embedData_statFieldRange(name: string, stat: {
-        highest: number;
-        mean: number;
-        lowest: number;
-        median: number;
-        ignored: number;
-        calculated: number;
-        total: number;
-    }, suffix: string = ''): Discord.EmbedField {
+    embedData_statFieldRange(
+        name: string,
+        stat: {
+            highest: number;
+            mean: number;
+            lowest: number;
+            median: number;
+            ignored: number;
+            calculated: number;
+            total: number;
+        },
+        suffix: string = "",
+    ): Discord.EmbedField {
         return {
             name,
             value: `
@@ -334,9 +453,9 @@ Highest: ${calculate.fixLongDecimal(stat?.highest)}${suffix}
 Lowest: ${calculate.fixLongDecimal(stat?.lowest)}${suffix}
 Average: ${calculate.fixLongDecimal(stat?.mean)}${suffix}
 Median: ${calculate.fixLongDecimal(stat?.median)}${suffix}
-${stat?.ignored > 0 ? `Skipped: ${stat?.ignored}` : ''}
+${stat?.ignored > 0 ? `Skipped: ${stat?.ignored}` : ""}
 `,
-            inline: true
+            inline: true,
         };
     }
 }

@@ -1,6 +1,6 @@
 // initialise client commands
-import * as Discord from 'discord.js';
-import * as helper from './helper';
+import * as Discord from "discord.js";
+import * as helper from "./helper";
 
 export async function main() {
     const docommands: boolean = true;
@@ -13,799 +13,802 @@ function run() {
     commands?.set([
         // gen
         {
-            name: 'changelog',
-            description: 'Displays the changes for the current version or version requested',
+            name: "changelog",
+            description:
+                "Displays the changes for the current version or version requested",
             dmPermission: true,
             options: [
                 {
-                    name: 'version',
-                    description: 'What version to check',
+                    name: "version",
+                    description: "What version to check",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'convert',
-            description: 'Converts one value to another',
+            name: "convert",
+            description: "Converts one value to another",
             dmPermission: true,
             options: [
                 {
-                    name: 'from',
-                    description: 'What to convert the value from',
+                    name: "from",
+                    description: "What to convert the value from",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                    choices: helper.commandopts.conversionopts
+                    choices: helper.commandopts.conversionopts,
                 },
                 {
-                    name: 'to',
-                    description: 'What to convert the value to',
+                    name: "to",
+                    description: "What to convert the value to",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.conversionopts
+                    choices: helper.commandopts.conversionopts,
                 },
                 {
-                    name: 'number',
-                    description: 'The value to convert',
+                    name: "number",
+                    description: "The value to convert",
                     type: Discord.ApplicationCommandOptionType.Number,
-                    required: false
-                }
-            ]
+                    required: false,
+                },
+            ],
         },
         {
-            name: 'help',
-            description: 'Displays all commands',
+            name: "help",
+            description: "Displays all commands",
             dmPermission: true,
             options: [
                 {
-                    name: 'command',
-                    description: 'Displays help for a specific command',
+                    name: "command",
+                    description: "Displays help for a specific command",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'math',
-            description: 'Solves a simple math problem',
+            name: "math",
+            description: "Solves a simple math problem",
             dmPermission: true,
             options: [
                 {
-                    name: 'type',
-                    description: 'The parameters for the search',
+                    name: "type",
+                    description: "The parameters for the search",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                    choices: helper.commandopts.mathcmdopts
+                    choices: helper.commandopts.mathcmdopts,
                 },
                 {
-                    name: 'num1',
-                    description: 'The first number',
+                    name: "num1",
+                    description: "The first number",
                     type: Discord.ApplicationCommandOptionType.Number,
-                    required: true
+                    required: true,
                 },
                 {
-                    name: 'num2',
-                    description: 'The second number',
+                    name: "num2",
+                    description: "The second number",
                     type: Discord.ApplicationCommandOptionType.Number,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'ping',
-            description: 'Pong!',
+            name: "ping",
+            description: "Pong!",
             dmPermission: true,
         },
         {
-            name: 'stats',
-            description: 'Displays stats about the bot',
+            name: "stats",
+            description: "Displays stats about the bot",
             dmPermission: true,
         },
         {
-            name: 'time',
-            description: 'Displays the current time',
+            name: "time",
+            description: "Displays the current time",
             dmPermission: true,
             options: [
                 {
-                    name: 'timezone',
-                    description: 'The timezone to display the time in',
+                    name: "timezone",
+                    description: "The timezone to display the time in",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'weather',
-            description: 'Displays the weather for a given location',
+            name: "weather",
+            description: "Displays the weather for a given location",
             dmPermission: true,
             options: [
                 {
-                    name: 'location',
-                    description: 'The location to get the weather for',
+                    name: "location",
+                    description: "The location to get the weather for",
                     type: Discord.ApplicationCommandOptionType.String,
-                    required: true
-                }
-            ]
+                    required: true,
+                },
+            ],
         },
         // osu
         {
-            name: 'bws',
-            description: 'Shows the badge weighted rank of a user',
+            name: "bws",
+            description: "Shows the badge weighted rank of a user",
             dmPermission: true,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to show the badge weighted rank of',
+                    name: "user",
+                    description: "The user to show the badge weighted rank of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'compare',
-            description: 'Compares two users/top plays',
+            name: "compare",
+            description: "Compares two users/top plays",
             dmPermission: true,
             options: [
                 {
-                    name: 'type',
-                    description: 'The type of comparison',
+                    name: "type",
+                    description: "The type of comparison",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
                     choices: [
                         {
-                            name: 'profile',
-                            value: 'profile'
+                            name: "profile",
+                            value: "profile",
                         },
                         {
-                            name: 'top plays',
-                            value: 'top'
+                            name: "top plays",
+                            value: "top",
                         },
                         // {
                         //     name: 'map scores',
                         //     value: 'mapscore'
                         // },
-                    ]
+                    ],
                 },
                 {
-                    name: 'first',
-                    description: 'The first user to compare',
+                    name: "first",
+                    description: "The first user to compare",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'second',
-                    description: 'The second user to compare',
+                    name: "second",
+                    description: "The second user to compare",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'mode',
-                    description: 'The gamemode to use',
+                    name: "mode",
+                    description: "The gamemode to use",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
-                    choices: helper.commandopts.modeopts
-                }
-            ]
+                    choices: helper.commandopts.modeopts,
+                },
+            ],
         },
-        {//alias for compare
-            name: 'common',
-            description: 'Compares two user\'s top plays',
+        {
+            //alias for compare
+            name: "common",
+            description: "Compares two user's top plays",
             dmPermission: true,
             options: [
                 {
-                    name: 'first',
-                    description: 'The first user to compare',
+                    name: "first",
+                    description: "The first user to compare",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'second',
-                    description: 'The second user to compare',
+                    name: "second",
+                    description: "The second user to compare",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'mode',
-                    description: 'The gamemode to use',
+                    name: "mode",
+                    description: "The gamemode to use",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
-                    choices: helper.commandopts.modeopts
-                }
-            ]
+                    choices: helper.commandopts.modeopts,
+                },
+            ],
         },
         {
-            name: 'firsts',
-            description: 'Displays the user\'s #1 scores',
+            name: "firsts",
+            description: "Displays the user's #1 scores",
             dmPermission: true,
-            options: helper.commandopts.playArrayOpts
+            options: helper.commandopts.playArrayOpts,
         },
         {
-            name: 'lb',
-            description: 'Displays the server leaderboard',
+            name: "lb",
+            description: "Displays the server leaderboard",
             dmPermission: false,
             options: [
                 {
-                    name: 'id',
-                    description: 'The server to get the rankings of. Use global to combine the rankings of all servers the bot is in.',
+                    name: "id",
+                    description:
+                        "The server to get the rankings of. Use global to combine the rankings of all servers the bot is in.",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to display the plays of',
+                    name: "mode",
+                    description: "The mode to display the plays of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.modeopts
+                    choices: helper.commandopts.modeopts,
                 },
-            ]
+            ],
         },
         {
-            name: 'map',
-            description: 'Displays the map info of the map',
+            name: "map",
+            description: "Displays the map info of the map",
             dmPermission: true,
             options: [
                 {
-                    name: 'id',
-                    description: 'The id of the map to display',
+                    name: "id",
+                    description: "The id of the map to display",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: false,
-                    minValue: 1
+                    minValue: 1,
                 },
                 {
-                    name: 'mods',
-                    description: 'The mods to display the map info of',
+                    name: "mods",
+                    description: "The mods to display the map info of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'detailed',
-                    description: 'Show all details',
+                    name: "detailed",
+                    description: "Show all details",
                     type: Discord.ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
                 {
-                    name: 'query',
-                    description: 'The name of the map to display',
+                    name: "query",
+                    description: "The name of the map to display",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'bpm',
-                    description: 'The BPM to calculate the map with',
+                    name: "bpm",
+                    description: "The BPM to calculate the map with",
                     type: Discord.ApplicationCommandOptionType.Number,
                     required: false,
                     minValue: 1,
-                    maxValue: 1000
+                    maxValue: 1000,
                 },
                 {
-                    name: 'speed',
-                    description: 'The speed to calculate the map with',
+                    name: "speed",
+                    description: "The speed to calculate the map with",
                     type: Discord.ApplicationCommandOptionType.Number,
                     required: false,
                     minValue: 0.1,
-                    maxValue: 10
-                }
-            ]
+                    maxValue: 10,
+                },
+            ],
         },
         {
-            name: 'maplb',
-            description: 'Displays the top five plays on a specific map',
+            name: "maplb",
+            description: "Displays the top five plays on a specific map",
             dmPermission: true,
             options: [
                 {
-                    name: 'id',
-                    description: 'The id of the map to display',
+                    name: "id",
+                    description: "The id of the map to display",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
                 {
-                    name: 'page',
-                    description: 'Which page to display',
+                    name: "page",
+                    description: "Which page to display",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                     minValue: 1,
-                    maxValue: 20
-
+                    maxValue: 20,
                 },
                 {
-                    name: 'mods',
-                    description: 'What mods to sort',
+                    name: "mods",
+                    description: "What mods to sort",
                     required: false,
-                    type: Discord.ApplicationCommandOptionType.String
+                    type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'parse',
-                    description: 'Parse the score with the specified index',
+                    name: "parse",
+                    description: "Parse the score with the specified index",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'nochokes',
-            description: 'Displays the user\'s top scores without misses',
+            name: "nochokes",
+            description: "Displays the user's top scores without misses",
             dmPermission: true,
-            options: helper.commandopts.osutopOpts
+            options: helper.commandopts.osutopOpts,
         },
         {
-            name: 'osu',
-            description: 'Displays the user\'s osu! profile',
+            name: "osu",
+            description: "Displays the user's osu! profile",
             dmPermission: true,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to display the profile of',
+                    name: "user",
+                    description: "The user to display the profile of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'detailed',
-                    description: 'Displays extra information',
+                    name: "detailed",
+                    description: "Displays extra information",
                     type: Discord.ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to display the profile in',
+                    name: "mode",
+                    description: "The mode to display the profile in",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.modeopts
-                }
-            ]
+                    choices: helper.commandopts.modeopts,
+                },
+            ],
         },
         {
-            name: 'osuset',
-            description: 'Sets the user\'s osu! profile',
+            name: "osuset",
+            description: "Sets the user's osu! profile",
             dmPermission: true,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to set the profile of',
+                    name: "user",
+                    description: "The user to set the profile of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to set the profile to',
+                    name: "mode",
+                    description: "The mode to set the profile to",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                     choices: helper.commandopts.modeopts,
                 },
                 {
-                    name: 'skin',
-                    description: 'The player\'s skin',
+                    name: "skin",
+                    description: "The player's skin",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'osutop',
-            description: 'Displays the top plays of the user',
+            name: "osutop",
+            description: "Displays the top plays of the user",
             dmPermission: true,
-            options: helper.commandopts.osutopOpts
+            options: helper.commandopts.osutopOpts,
         },
         {
-            name: 'pinned',
-            description: 'Displays the user\'s pinned scores',
+            name: "pinned",
+            description: "Displays the user's pinned scores",
             dmPermission: true,
-            options: helper.commandopts.playArrayOpts
+            options: helper.commandopts.playArrayOpts,
         },
         {
-            name: 'pp',
-            description: 'Estimates the rank of a user from the pp given',
+            name: "pp",
+            description: "Estimates the rank of a user from the pp given",
             dmPermission: true,
             options: [
                 {
-                    name: 'value',
-                    description: 'The pp to estimate the rank of',
+                    name: "value",
+                    description: "The pp to estimate the rank of",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: true,
-                    minValue: 1
+                    minValue: 1,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to estimate the rank in',
+                    name: "mode",
+                    description: "The mode to estimate the rank in",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.modeopts
+                    choices: helper.commandopts.modeopts,
                 },
-            ]
+            ],
         },
         {
-            name: 'rank',
-            description: 'Estimates the pp of a user from the rank given',
+            name: "rank",
+            description: "Estimates the pp of a user from the rank given",
             dmPermission: true,
             options: [
                 {
-                    name: 'value',
-                    description: 'The rank to estimate the pp of',
+                    name: "value",
+                    description: "The rank to estimate the pp of",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: true,
-                    minValue: 1
+                    minValue: 1,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to estimate the pp in',
+                    name: "mode",
+                    description: "The mode to estimate the pp in",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.modeopts
-                }
-            ]
+                    choices: helper.commandopts.modeopts,
+                },
+            ],
         },
         {
-            name: 'ranking',
-            description: 'Displays the global leaderboards',
+            name: "ranking",
+            description: "Displays the global leaderboards",
             dmPermission: true,
             options: [
                 {
-                    name: 'country',
-                    description: 'The country code of the country to use (defaults to global)',
+                    name: "country",
+                    description:
+                        "The country code of the country to use (defaults to global)",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                     maxLength: 2,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to display the leaderboards in',
+                    name: "mode",
+                    description: "The mode to display the leaderboards in",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.modeopts
+                    choices: helper.commandopts.modeopts,
                 },
                 {
-                    name: 'page',
-                    description: 'The page to display',
+                    name: "page",
+                    description: "The page to display",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: false,
-                    minValue: 1
+                    minValue: 1,
                 },
                 {
-                    name: 'type',
-                    description: 'The type of leaderboards to display',
+                    name: "type",
+                    description: "The type of leaderboards to display",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                     choices: [
-                        { name: 'performance', value: 'performance' },
-                        { name: 'charts (spotlights)', value: 'charts' },
-                        { name: 'score', value: 'score' },
-                        { name: 'country', value: 'country' },
-                    ]
+                        { name: "performance", value: "performance" },
+                        { name: "charts (spotlights)", value: "charts" },
+                        { name: "score", value: "score" },
+                        { name: "country", value: "country" },
+                    ],
                 },
                 {
-                    name: 'spotlight',
-                    description: 'The spotlight to display the leaderboards of',
+                    name: "spotlight",
+                    description: "The spotlight to display the leaderboards of",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'recent',
-            description: 'Displays the user\'s most recent score',
+            name: "recent",
+            description: "Displays the user's most recent score",
             dmPermission: true,
-            options: helper.commandopts.rsopts
+            options: helper.commandopts.rsopts,
         },
         {
-            name: 'recentactivity',
-            description: 'Displays the user\'s most recent activity',
+            name: "recentactivity",
+            description: "Displays the user's most recent activity",
             dmPermission: true,
             options: [
                 {
-                    name: 'user',
-                    description: 'the username or id',
+                    name: "user",
+                    description: "the username or id",
                     required: false,
-                    type: Discord.ApplicationCommandOptionType.String
+                    type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'page',
-                    description: 'the page to show',
+                    name: "page",
+                    description: "the page to show",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
-            ]
+            ],
         },
         {
-            name: 'scores',
-            description: 'Displays the user\'s scores for a set map',
+            name: "scores",
+            description: "Displays the user's scores for a set map",
             dmPermission: true,
-            options: helper.commandopts.useridsortopts
+            options: helper.commandopts.useridsortopts,
         },
         {
-            name: 'scorestats',
-            description: 'Displays statistics for a user\'s scores',
+            name: "scorestats",
+            description: "Displays statistics for a user's scores",
             dmPermission: true,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to display the statistics of',
+                    name: "user",
+                    description: "The user to display the statistics of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to display the statistics in',
+                    name: "mode",
+                    description: "The mode to display the statistics in",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'type',
-                    description: 'The type of scores to use',
+                    name: "type",
+                    description: "The type of scores to use",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                     choices: [
-                        { name: 'firsts', value: 'firsts' },
-                        { name: 'top', value: 'best' },
-                        { name: 'recent', value: 'recent' },
-                        { name: 'pinned', value: 'pinned' },
-                    ]
+                        { name: "firsts", value: "firsts" },
+                        { name: "top", value: "best" },
+                        { name: "recent", value: "recent" },
+                        { name: "pinned", value: "pinned" },
+                    ],
                 },
                 {
-                    name: 'all',
-                    description: 'Shows all statistics',
+                    name: "all",
+                    description: "Shows all statistics",
                     type: Discord.ApplicationCommandOptionType.Boolean,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'simulate',
-            description: 'Simulates a play on a map',
+            name: "simulate",
+            description: "Simulates a play on a map",
             dmPermission: true,
             options: [
                 {
-                    name: 'id',
-                    description: 'The id of the map',
+                    name: "id",
+                    description: "The id of the map",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
                 {
-                    name: 'mods',
-                    description: 'The mods to use',
+                    name: "mods",
+                    description: "The mods to use",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.String,
                 },
                 {
-                    name: 'accuracy',
-                    description: 'The accuracy to use',
+                    name: "accuracy",
+                    description: "The accuracy to use",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Number,
                 },
                 {
-                    name: 'combo',
-                    description: 'The maximum combo',
+                    name: "combo",
+                    description: "The maximum combo",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
                 {
-                    name: 'n300',
-                    description: 'The number of hit 300s',
+                    name: "n300",
+                    description: "The number of hit 300s",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
                 {
-                    name: 'n100',
-                    description: 'The number of hit 100s',
+                    name: "n100",
+                    description: "The number of hit 100s",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
                 {
-                    name: 'n50',
-                    description: 'The number of hit 50s',
+                    name: "n50",
+                    description: "The number of hit 50s",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
                 {
-                    name: 'miss',
-                    description: 'The number of misses',
+                    name: "miss",
+                    description: "The number of misses",
                     required: false,
                     type: Discord.ApplicationCommandOptionType.Integer,
                 },
-            ]
+            ],
         },
         {
-            name: 'userbeatmaps',
-            description: 'Displays the user\'s beatmaps',
+            name: "userbeatmaps",
+            description: "Displays the user's beatmaps",
             dmPermission: true,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to display the beatmaps of',
+                    name: "user",
+                    description: "The user to display the beatmaps of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'type',
-                    description: 'The type of beatmaps to display',
+                    name: "type",
+                    description: "The type of beatmaps to display",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                     choices: [
-                        { name: 'ranked', value: 'ranked' },
-                        { name: 'loved', value: 'loved' },
-                        { name: 'favourites', value: 'favourite' },
-                        { name: 'pending', value: 'pending' },
-                        { name: 'graveyard', value: 'graveyard' },
-                        { name: 'nominated', value: 'nominated' }
-                    ]
+                        { name: "ranked", value: "ranked" },
+                        { name: "loved", value: "loved" },
+                        { name: "favourites", value: "favourite" },
+                        { name: "pending", value: "pending" },
+                        { name: "graveyard", value: "graveyard" },
+                        { name: "nominated", value: "nominated" },
+                    ],
                 },
                 {
-                    name: 'reverse',
-                    description: 'Whether to reverse the order of the beatmaps',
+                    name: "reverse",
+                    description: "Whether to reverse the order of the beatmaps",
                     type: Discord.ApplicationCommandOptionType.Boolean,
                     required: false,
                 },
                 {
-                    name: 'page',
-                    description: 'The page to display',
+                    name: "page",
+                    description: "The page to display",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: false,
-                    minValue: 1
+                    minValue: 1,
                 },
                 {
-                    name: 'sort',
-                    description: 'The sort order to use',
+                    name: "sort",
+                    description: "The sort order to use",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                     choices: [
-                        { name: 'Title', value: 'title' },
-                        { name: 'Artist', value: 'artist' },
-                        { name: 'Difficulty', value: 'difficulty' },
-                        { name: 'Ranked Status', value: 'status' },
-                        { name: 'Fail Count', value: 'fails' },
-                        { name: 'Play Count', value: 'plays' },
-                        { name: 'Date Submitted', value: 'dateadded' },
-                        { name: 'Favourites', value: 'favourites' },
-                        { name: 'BPM', value: 'bpm' },
-                        { name: 'CS', value: 'cs' },
-                        { name: 'AR', value: 'ar' },
-                        { name: 'OD', value: 'od' },
-                        { name: 'HP', value: 'hp' },
-                        { name: 'Song Length', value: 'length' },
-                    ]
+                        { name: "Title", value: "title" },
+                        { name: "Artist", value: "artist" },
+                        { name: "Difficulty", value: "difficulty" },
+                        { name: "Ranked Status", value: "status" },
+                        { name: "Fail Count", value: "fails" },
+                        { name: "Play Count", value: "plays" },
+                        { name: "Date Submitted", value: "dateadded" },
+                        { name: "Favourites", value: "favourites" },
+                        { name: "BPM", value: "bpm" },
+                        { name: "CS", value: "cs" },
+                        { name: "AR", value: "ar" },
+                        { name: "OD", value: "od" },
+                        { name: "HP", value: "hp" },
+                        { name: "Song Length", value: "length" },
+                    ],
                 },
                 {
-                    name: 'filter',
-                    description: 'Show maps matching this string',
+                    name: "filter",
+                    description: "Show maps matching this string",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'parse',
-                    description: 'Parse the map matching this index',
+                    name: "parse",
+                    description: "Parse the map matching this index",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: false,
-                    minValue: 1
-                }
-            ]
+                    minValue: 1,
+                },
+            ],
         },
         {
-            name: 'whatif',
-            description: 'Estimates user stats if they gain a certain amount of raw pp',
+            name: "whatif",
+            description:
+                "Estimates user stats if they gain a certain amount of raw pp",
             dmPermission: true,
             options: [
                 {
-                    name: 'pp',
-                    description: 'The amount of pp to gain',
+                    name: "pp",
+                    description: "The amount of pp to gain",
                     type: Discord.ApplicationCommandOptionType.Number,
                     required: true,
                 },
                 {
-                    name: 'user',
-                    description: 'The user to estimate the stats of',
+                    name: "user",
+                    description: "The user to estimate the stats of",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
                 },
                 {
-                    name: 'mode',
-                    description: 'The mode to use',
+                    name: "mode",
+                    description: "The mode to use",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: false,
-                    choices: helper.commandopts.modeopts
-                }
-            ]
-        },
-        {
-            name: 'hug',
-            description: 'Sends a gif',
-            dmPermission: false,
-            options: [
-                {
-                    name: 'target',
-                    description: 'The user to target',
-                    type: Discord.ApplicationCommandOptionType.User,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: 'kiss',
-            description: 'Sends a gif',
-            dmPermission: false,
-            options: [
-                {
-                    name: 'target',
-                    description: 'The user to target',
-                    type: Discord.ApplicationCommandOptionType.User,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: 'lick',
-            description: 'Sends a gif',
-            dmPermission: false,
-            options: [
-                {
-                    name: 'target',
-                    description: 'The user to target',
-                    type: Discord.ApplicationCommandOptionType.User,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: 'pet',
-            description: 'Sends a gif',
-            dmPermission: false,
-            options: [
-                {
-                    name: 'target',
-                    description: 'The user to target',
-                    type: Discord.ApplicationCommandOptionType.User,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: 'punch',
-            description: 'Sends a gif',
-            dmPermission: false,
-            options: [
-                {
-                    name: 'target',
-                    description: 'The user to target',
-                    type: Discord.ApplicationCommandOptionType.User,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: 'slap',
-            description: 'Sends a gif',
-            dmPermission: false,
-            options: [
-                {
-                    name: 'target',
-                    description: 'The user to target',
-                    type: Discord.ApplicationCommandOptionType.User,
-                    required: true
-                }
-            ]
-        },
-        {
-            name: '8ball',
-            description: 'Responds to a question',
-            dmPermission: true,
-        },
-        {
-            name: 'roll',
-            description: 'Returns a random number',
-            dmPermission: true,
-            options: [
-                {
-                    name: 'max',
-                    description: 'The maximum number to get',
-                    type: Discord.ApplicationCommandOptionType.Number,
-                    required: false
+                    choices: helper.commandopts.modeopts,
                 },
+            ],
+        },
+        {
+            name: "hug",
+            description: "Sends a gif",
+            dmPermission: false,
+            options: [
                 {
-                    name: 'min',
-                    description: 'The minimum number to get',
+                    name: "target",
+                    description: "The user to target",
+                    type: Discord.ApplicationCommandOptionType.User,
+                    required: true,
+                },
+            ],
+        },
+        {
+            name: "kiss",
+            description: "Sends a gif",
+            dmPermission: false,
+            options: [
+                {
+                    name: "target",
+                    description: "The user to target",
+                    type: Discord.ApplicationCommandOptionType.User,
+                    required: true,
+                },
+            ],
+        },
+        {
+            name: "lick",
+            description: "Sends a gif",
+            dmPermission: false,
+            options: [
+                {
+                    name: "target",
+                    description: "The user to target",
+                    type: Discord.ApplicationCommandOptionType.User,
+                    required: true,
+                },
+            ],
+        },
+        {
+            name: "pet",
+            description: "Sends a gif",
+            dmPermission: false,
+            options: [
+                {
+                    name: "target",
+                    description: "The user to target",
+                    type: Discord.ApplicationCommandOptionType.User,
+                    required: true,
+                },
+            ],
+        },
+        {
+            name: "punch",
+            description: "Sends a gif",
+            dmPermission: false,
+            options: [
+                {
+                    name: "target",
+                    description: "The user to target",
+                    type: Discord.ApplicationCommandOptionType.User,
+                    required: true,
+                },
+            ],
+        },
+        {
+            name: "slap",
+            description: "Sends a gif",
+            dmPermission: false,
+            options: [
+                {
+                    name: "target",
+                    description: "The user to target",
+                    type: Discord.ApplicationCommandOptionType.User,
+                    required: true,
+                },
+            ],
+        },
+        {
+            name: "8ball",
+            description: "Responds to a question",
+            dmPermission: true,
+        },
+        {
+            name: "roll",
+            description: "Returns a random number",
+            dmPermission: true,
+            options: [
+                {
+                    name: "max",
+                    description: "The maximum number to get",
                     type: Discord.ApplicationCommandOptionType.Number,
                     required: false,
-                    minValue: 0
-                }
-            ]
+                },
+                {
+                    name: "min",
+                    description: "The minimum number to get",
+                    type: Discord.ApplicationCommandOptionType.Number,
+                    required: false,
+                    minValue: 0,
+                },
+            ],
         },
         // {
         //     name: 'say',
@@ -827,87 +830,84 @@ function run() {
         //     ]
         // },
         {
-            name: 'poll',
-            description: 'Creates a poll',
+            name: "poll",
+            description: "Creates a poll",
             dmPermission: false,
             options: [
                 {
-                    name: 'title',
-                    description: 'The title of the poll',
+                    name: "title",
+                    description: "The title of the poll",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
                 },
                 {
-                    name: 'options',
-                    description: 'The options. SEPARATE WITH +',
+                    name: "options",
+                    description: "The options. SEPARATE WITH +",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                }
-
-            ]
+                },
+            ],
         },
-
 
         //below are admin related commands
         {
-            name: 'checkperms',
-            description: 'Checks the permissions of a user',
+            name: "checkperms",
+            description: "Checks the permissions of a user",
             dmPermission: false,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to check the permissions of',
+                    name: "user",
+                    description: "The user to check the permissions of",
                     type: Discord.ApplicationCommandOptionType.User,
                     required: true,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'find',
-            description: 'Finds details of a user/guild/channel/role/emoji/sticker',
+            name: "find",
+            description:
+                "Finds details of a user/guild/channel/role/emoji/sticker",
             dmPermission: false,
             options: [
                 {
-                    name: 'type',
-                    description: 'The type of info to fetch',
+                    name: "type",
+                    description: "The type of info to fetch",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
                     choices: [
-                        { name: 'User', value: 'user' },
-                        { name: 'Guild (server)', value: 'guild' },
-                        { name: 'Channel', value: 'channel' },
-                        { name: 'Role', value: 'role' },
-                        { name: 'Emoji', value: 'emoji' },
-                        { name: 'Sticker', value: 'sticker' },
-                    ]
+                        { name: "User", value: "user" },
+                        { name: "Guild (server)", value: "guild" },
+                        { name: "Channel", value: "channel" },
+                        { name: "Role", value: "role" },
+                        { name: "Emoji", value: "emoji" },
+                        { name: "Sticker", value: "sticker" },
+                    ],
                 },
                 {
-                    name: 'id',
-                    description: 'The ID to fetch',
+                    name: "id",
+                    description: "The ID to fetch",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'servers',
-            description: 'Displays all servers the bot is in',
+            name: "servers",
+            description: "Displays all servers the bot is in",
             dmPermission: false,
-
         },
         {
-            name: 'leaveguild',
-            description: 'Leaves a server',
+            name: "leaveguild",
+            description: "Leaves a server",
             dmPermission: false,
             options: [
                 {
-                    name: 'guild',
-                    description: 'The server to leave',
+                    name: "guild",
+                    description: "The server to leave",
                     type: Discord.ApplicationCommandOptionType.String,
                     required: true,
-                }
+                },
             ],
-
         },
         // {
         //     name: 'voice',
@@ -968,51 +968,50 @@ function run() {
         //     ]
         // },
         {
-            name: 'userinfo',
-            description: 'Returns information about a user',
+            name: "userinfo",
+            description: "Returns information about a user",
             dmPermission: false,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to get information about',
+                    name: "user",
+                    description: "The user to get information about",
                     type: Discord.ApplicationCommandOptionType.User,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'avatar',
-            description: 'Returns the avatar of a user',
+            name: "avatar",
+            description: "Returns the avatar of a user",
             dmPermission: false,
             options: [
                 {
-                    name: 'user',
-                    description: 'The user to get the avatar of',
+                    name: "user",
+                    description: "The user to get the avatar of",
                     type: Discord.ApplicationCommandOptionType.User,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
         {
-            name: 'purge',
-            description: 'Purges a channel',
+            name: "purge",
+            description: "Purges a channel",
             dmPermission: false,
             options: [
                 {
-                    name: 'count',
-                    description: 'The amount of messages to purge',
+                    name: "count",
+                    description: "The amount of messages to purge",
                     type: Discord.ApplicationCommandOptionType.Integer,
                     required: true,
                     minValue: 1,
                 },
                 {
-                    name: 'user',
-                    description: 'The user to purge messages from',
+                    name: "user",
+                    description: "The user to purge messages from",
                     type: Discord.ApplicationCommandOptionType.User,
                     required: false,
-                }
-            ]
+                },
+            ],
         },
     ]);
-
 }

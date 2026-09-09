@@ -1,16 +1,16 @@
-import * as Discord from 'discord.js';
-import moment from 'moment';
-import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../helper';
-import * as calculate from '../tools/calculate';
-import * as commandTools from '../tools/commands';
-import * as data from '../tools/data';
-import * as formatters from '../tools/formatters';
-import * as log from '../tools/log';
-import * as osuapi from '../tools/osuapi';
-import * as other from '../tools/other';
-import { MapParse } from './osu_maps';
-import { ScoreParse } from './osu_scores';
+import * as Discord from "discord.js";
+import moment from "moment";
+import * as osumodcalc from "osumodcalculator";
+import * as helper from "../helper";
+import * as calculate from "../tools/calculate";
+import * as commandTools from "../tools/commands";
+import * as data from "../tools/data";
+import * as formatters from "../tools/formatters";
+import * as log from "../tools/log";
+import * as osuapi from "../tools/osuapi";
+import * as other from "../tools/other";
+import { MapParse } from "./osu_maps";
+import { ScoreParse } from "./osu_scores";
 
 export abstract class InputHandler {
     protected selected: Command;
@@ -26,19 +26,24 @@ export class Command {
     #name: string;
     protected argParser: ArgsParser;
     protected set name(input: string) {
-        this.#name = input[0] == input[0].toUpperCase() ? input : formatters.toCapital(input);
+        this.#name =
+            input[0] == input[0].toUpperCase()
+                ? input
+                : formatters.toCapital(input);
     }
-    protected get name() { return this.#name; }
+    protected get name() {
+        return this.#name;
+    }
     protected commanduser: Discord.User | Discord.APIUser;
     protected ctn: {
-        content?: string,
-        embeds?: (Discord.EmbedBuilder | Discord.Embed)[],
-        files?: (string | Discord.AttachmentBuilder | Discord.Attachment)[],
-        components?: Discord.ActionRowBuilder<any>[],
-        ephemeral?: boolean,
-        react?: boolean,
-        edit?: boolean,
-        editAsMsg?: boolean,
+        content?: string;
+        embeds?: (Discord.EmbedBuilder | Discord.Embed)[];
+        files?: (string | Discord.AttachmentBuilder | Discord.Attachment)[];
+        components?: Discord.ActionRowBuilder<any>[];
+        ephemeral?: boolean;
+        react?: boolean;
+        edit?: boolean;
+        editAsMsg?: boolean;
     };
     protected params: helper.tooltypes.Dict;
     protected input: helper.bottypes.commandInput;
@@ -64,76 +69,91 @@ export class Command {
     }
     async setParams() {
         switch (this.input.type) {
-            case 'message':
+            case "message":
                 this.commanduser = this.input.message.author;
                 await this.setParamsMsg();
                 break;
-            case 'interaction':
-                this.commanduser = this.input.interaction?.member?.user ?? this.input.interaction?.user;
+            case "interaction":
+                this.commanduser =
+                    this.input.interaction?.member?.user ??
+                    this.input.interaction?.user;
                 await this.setParamsInteract();
                 break;
-            case 'button':
-                this.commanduser = this.input.interaction?.member?.user ?? this.input.interaction?.user;
+            case "button":
+                this.commanduser =
+                    this.input.interaction?.member?.user ??
+                    this.input.interaction?.user;
                 await this.setParamsBtn();
                 break;
-            case 'link':
+            case "link":
                 this.commanduser = this.input.message.author;
                 await this.setParamsLink();
                 break;
-            case 'other':
-                this.commanduser = this.input.interaction?.member?.user ?? this.input.interaction?.user ?? this.input.message.author;
+            case "other":
+                this.commanduser =
+                    this.input.interaction?.member?.user ??
+                    this.input.interaction?.user ??
+                    this.input.message.author;
                 break;
         }
     }
-    async setParamsMsg() {
-    }
+    async setParamsMsg() {}
     /**
      * for message params only
-     * 
+     *
      * ```
      * this.input.args = ['-p', '55.3',]
      * const page = setParam(null, flags: ['-p'], 'number', { number_isInt:true });
      * // => 55
-     * 
+     *
      * this.input.args = ['-p', 'waow',]
      * const page = setParam(null, flags: ['-p'], 'number', { number_isInt:true });
      * // => NaN
      * ```
      */
-    protected setParam<T extends ParamTypes, U extends any>(defaultValue: any, flags: string[], type: T, typeParams: {
-        bool_setValue?: U,
-        number_isInt?: boolean,
-        string_isMultiple?: boolean,
-    }): ParamReturnType<T, U> {
+    protected setParam<T extends ParamTypes, U extends any>(
+        defaultValue: any,
+        flags: string[],
+        type: T,
+        typeParams: {
+            bool_setValue?: U;
+            number_isInt?: boolean;
+            string_isMultiple?: boolean;
+        },
+    ): ParamReturnType<T, U> {
         flags = this.setParamCheckFlags(flags);
         switch (type) {
-            case 'string': {
-                let temparg = this.argParser.getParam(flags);
-                if (temparg) defaultValue = temparg;
-            }
+            case "string":
+                {
+                    let temparg = this.argParser.getParam(flags);
+                    if (temparg) defaultValue = temparg;
+                }
                 break;
-            case 'number': {
-                let temparg = this.argParser.getParam(flags);
-                if (temparg) defaultValue =
-                    typeParams.number_isInt ?
-                        parseInt(temparg) :
-                        +temparg;
-            }
+            case "number":
+                {
+                    let temparg = this.argParser.getParam(flags);
+                    if (temparg)
+                        defaultValue = typeParams.number_isInt
+                            ? parseInt(temparg)
+                            : +temparg;
+                }
                 break;
-            case 'bool': {
-                let temparg = this.argParser.getParamBool(flags);
-                if (temparg) defaultValue = typeParams?.bool_setValue ?? true;
-            }
+            case "bool":
+                {
+                    let temparg = this.argParser.getParamBool(flags);
+                    if (temparg)
+                        defaultValue = typeParams?.bool_setValue ?? true;
+                }
                 break;
         }
         return defaultValue;
-    };
+    }
     private setParamCheckFlags(flags: string[]) {
         if (flags.length == 0) return [];
         const nf: string[] = [];
         for (const flag of flags) {
-            if (!flag.startsWith('-')) {
-                nf.push('-' + flag.toLowerCase());
+            if (!flag.startsWith("-")) {
+                nf.push("-" + flag.toLowerCase());
             } else {
                 nf.push(flag.toLowerCase());
             }
@@ -141,21 +161,23 @@ export class Command {
         return nf;
     }
     protected setParamPage() {
-        this.params.page = this.setParam(this.params.page, helper.argflags.pages, 'number', { number_isInt: true });
+        this.params.page = this.setParam(
+            this.params.page,
+            helper.argflags.pages,
+            "number",
+            { number_isInt: true },
+        );
     }
-    async setParamsInteract() {
-    }
-    async setParamsBtn() {
-    }
-    async setParamsLink() {
-    }
+    async setParamsInteract() {}
+    async setParamsBtn() {}
+    async setParamsLink() {}
     logInput(skipKeys: boolean = false) {
         let keys = [];
         if (!skipKeys) {
-            keys = Object.entries(this.params).map(x => {
+            keys = Object.entries(this.params).map((x) => {
                 return {
                     name: formatters.toCapital(x[0]),
-                    value: x[1]
+                    value: x[1],
                 };
             });
         }
@@ -169,37 +191,44 @@ export class Command {
             this.input.interaction,
         );
     }
-    getOverrides() { }
+    getOverrides() {}
     /**
      * this.params[pKey] = this.input.overrides[oKey]
      */
-    protected setParamOverride(paramKey: string, overrideKey?: string, type?: 'string' | 'number') {
+    protected setParamOverride(
+        paramKey: string,
+        overrideKey?: string,
+        type?: "string" | "number",
+    ) {
         const oKey = overrideKey ?? paramKey;
         if (this.input.overrides[oKey]) {
-            this.params[paramKey] = this.forceType(this.input.overrides[oKey], type);
+            this.params[paramKey] = this.forceType(
+                this.input.overrides[oKey],
+                type,
+            );
         }
     }
     /**
-     * 
+     *
      */
-    protected isValidParam(value: any){
-        if(value == null) return false;
-        if(value == undefined) return false;
+    protected isValidParam(value: any) {
+        if (value == null) return false;
+        if (value == undefined) return false;
         return true;
     }
-    private forceType(value: any, type: 'string' | 'number') {
+    private forceType(value: any, type: "string" | "number") {
         switch (type) {
-            case 'string':
-                value = value + '';
+            case "string":
+                value = value + "";
                 break;
-            case 'number':
+            case "number":
                 value = +value;
                 break;
         }
         return value;
     }
     async execute() {
-        this.ctn.content = 'No execution method has been set';
+        this.ctn.content = "No execution method has been set";
         await this.send();
     }
     protected async send() {
@@ -208,7 +237,7 @@ export class Command {
             message: this.input.message,
             interaction: this.input.interaction,
             args: this.ctn,
-            canReply: this.input.canReply
+            canReply: this.input.canReply,
         });
     }
     protected async sendError(err: string) {
@@ -219,21 +248,27 @@ export class Command {
     }
     protected async sendLoading() {
         const temp = this.ctn;
-        if (this.input.type == 'interaction') {
+        if (this.input.type == "interaction") {
             this.voidcontent();
-            this.ctn.content = 'Loading...';
+            this.ctn.content = "Loading...";
             await this.send();
             this.ctn = temp;
             this.ctn.edit = true;
         }
     }
     protected fixPage() {
-        if (this.params.page < 2 || typeof this.params.page != 'number' || isNaN(this.params.page)) {
+        if (
+            this.params.page < 2 ||
+            typeof this.params.page != "number" ||
+            isNaN(this.params.page)
+        ) {
             this.params.page = 1;
         }
         this.params.page--;
     }
-    protected disableButtons(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+    protected disableButtons(
+        builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>,
+    ) {
         for (const component of builder.components) {
             component.setDisabled(true);
         }
@@ -244,7 +279,12 @@ export class Command {
      * @param startCondition if true, disable first and previous
      * @param endCondition if true, disable next and end
      */
-    protected disablePageButtons_check(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>, allCondition: boolean, startCondition: boolean, endCondition: boolean) {
+    protected disablePageButtons_check(
+        builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>,
+        allCondition: boolean,
+        startCondition: boolean,
+        endCondition: boolean,
+    ) {
         if (allCondition || (startCondition && endCondition)) {
             this.disableButtons(builder);
         } else {
@@ -256,11 +296,15 @@ export class Command {
             }
         }
     }
-    protected disablePageButtons_start(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+    protected disablePageButtons_start(
+        builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>,
+    ) {
         builder.components[0].setDisabled(true);
         builder.components[1].setDisabled(true);
     }
-    protected disablePageButtons_end(builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>) {
+    protected disablePageButtons_end(
+        builder: Discord.ActionRowBuilder<Discord.ButtonBuilder>,
+    ) {
         builder.components[3].setDisabled(true);
         builder.components[4].setDisabled(true);
     }
@@ -269,10 +313,17 @@ export class Command {
      */
     protected setUserParams() {
         if (!this.params.user) {
-            this.params.user = this.argParser.getRemaining().join(' ').trim();
+            this.params.user = this.argParser.getRemaining().join(" ").trim();
         }
-        this.params.searchid = this.input.message.mentions.users.size > 0 ? this.input.message.mentions.users.first().id : this.input.message.author.id;
-        if (!this.input.args[0] || this.input.args[0].includes(this.params.searchid) || this.params.user == '') {
+        this.params.searchid =
+            this.input.message.mentions.users.size > 0
+                ? this.input.message.mentions.users.first().id
+                : this.input.message.author.id;
+        if (
+            !this.input.args[0] ||
+            this.input.args[0].includes(this.params.searchid) ||
+            this.params.user == ""
+        ) {
             this.params.user = null;
         }
     }
@@ -282,70 +333,78 @@ export class Command {
 export class OsuCommand extends Command {
     /**
      * will think of a better name later
-     * 
+     *
      * default value is what to return if args aren't found
-     * 
-     * basically the way this works is 
-     * 
+     *
+     * basically the way this works is
+     *
      * set - what value to return if flag is found
-     * 
+     *
      * flags - what to search for
-     * 
+     *
      * if args includes flags, then return set
-     * 
+     *
      * if multiple args are found, only the first one is returned
-     * 
+     *
      * see this.setParamMode() for an example on how to use
      */
-    protected setParamBoolList(defaultValue: any, ...args: { set: any, flags: string[]; }[]) {
+    protected setParamBoolList(
+        defaultValue: any,
+        ...args: { set: any; flags: string[] }[]
+    ) {
         for (const arg of args) {
-            const temp = this.setParam(false, arg.flags, 'bool', { bool_setValue: arg.set });
+            const temp = this.setParam(false, arg.flags, "bool", {
+                bool_setValue: arg.set,
+            });
             if (temp) {
                 return temp;
             }
         }
         return defaultValue;
     }
-    protected setParamMode(defaultMode = 'osu') {
-        this.params.mode = this.setParamBoolList(defaultMode,
-            { set: 'osu', flags: ['-o', '-osu', '-std'] },
-            { set: 'taiko', flags: ['-t', '-taiko'] },
-            { set: 'fruits', flags: ['-f', '-fruits', '-ctb', '-catch'] },
-            { set: 'mania', flags: ['-m', '-mania'] }
+    protected setParamMode(defaultMode = "osu") {
+        this.params.mode = this.setParamBoolList(
+            defaultMode,
+            { set: "osu", flags: ["-o", "-osu", "-std"] },
+            { set: "taiko", flags: ["-t", "-taiko"] },
+            { set: "fruits", flags: ["-f", "-fruits", "-ctb", "-catch"] },
+            { set: "mania", flags: ["-m", "-mania"] },
         );
     }
     /**
      * +{mods}
-     * 
+     *
      * ```
-     * 
+     *
      * ```
      */
     protected setParamMods() {
         let mods: osumodcalc.types.Mod[] = null;
         let apiMods: osuapi.types_v2.Mod[] = null;
-        if (this.input.args.join(' ').includes('+')) {
-            const temp = this.argParser.getParamFlexible(['+{param}']);
+        if (this.input.args.join(" ").includes("+")) {
+            const temp = this.argParser.getParamFlexible(["+{param}"]);
             if (temp) {
                 mods = osumodcalc.mod.fromString(temp.toUpperCase());
-                apiMods = mods.map(x => { return { acronym: x }; });
+                apiMods = mods.map((x) => {
+                    return { acronym: x };
+                });
             }
             // this.input.args = this.input.args.join(' ').replace('+', '').replace(temp, '').split(' ');
         }
         return { mods, apiMods };
     }
-    protected setParamUser(): { user: string, mode: osuapi.types_v2.GameMode; } {
+    protected setParamUser(): { user: string; mode: osuapi.types_v2.GameMode } {
         const webpatterns = [
-            'osu.ppy.sh/users/{user}/{mode}',
-            'osu.ppy.sh/users/{user}',
-            'osu.ppy.sh/u/{user}',
+            "osu.ppy.sh/users/{user}/{mode}",
+            "osu.ppy.sh/users/{user}",
+            "osu.ppy.sh/u/{user}",
         ];
         for (const pattern of webpatterns.slice()) {
-            webpatterns.push('https://' + pattern);
+            webpatterns.push("https://" + pattern);
         }
         const res: {
-            user: string,
-            mode: osuapi.types_v2.GameMode,
+            user: string;
+            mode: osuapi.types_v2.GameMode;
         } = {
             user: null,
             mode: null,
@@ -356,34 +415,37 @@ export class OsuCommand extends Command {
                 res.user = temp.user ?? res.user;
                 res.mode = this.argParser.paramFixMode(temp.mode ?? res.mode);
                 break;
-            };
+            }
         }
-        return res?.user ?
-            res :
-            { user: this.argParser.getParamFlexible(helper.argflags.user), mode: null };
+        return res?.user
+            ? res
+            : {
+                  user: this.argParser.getParamFlexible(helper.argflags.user),
+                  mode: null,
+              };
     }
     /**
      * get map-related params
      */
     protected setParamMap() {
         const webpatterns = [
-            'osu.ppy.sh/beatmapsets/{set}#{mode}/{map}',
-            'osu.ppy.sh/beatmapsets/{set}',
-            'osu.ppy.sh/beatmaps/{map}?m={mode}',
-            'osu.ppy.sh/beatmaps/{map}',
-            'osu.ppy.sh/s/{set}#{mode}/{map}',
-            'osu.ppy.sh/s/{set}',
-            'osu.ppy.sh/b/{map}?m={modeInt}',
-            'osu.ppy.sh/b/{map}',
+            "osu.ppy.sh/beatmapsets/{set}#{mode}/{map}",
+            "osu.ppy.sh/beatmapsets/{set}",
+            "osu.ppy.sh/beatmaps/{map}?m={mode}",
+            "osu.ppy.sh/beatmaps/{map}",
+            "osu.ppy.sh/s/{set}#{mode}/{map}",
+            "osu.ppy.sh/s/{set}",
+            "osu.ppy.sh/b/{map}?m={modeInt}",
+            "osu.ppy.sh/b/{map}",
         ];
         for (const pattern of webpatterns.slice()) {
-            webpatterns.push('https://' + pattern);
+            webpatterns.push("https://" + pattern);
         }
         const res: {
-            set: number,
-            map: number,
-            mode: osuapi.types_v2.GameMode,
-            modeInt: number,
+            set: number;
+            map: number;
+            mode: osuapi.types_v2.GameMode;
+            modeInt: number;
         } = {
             set: null,
             map: null,
@@ -396,23 +458,25 @@ export class OsuCommand extends Command {
                 res.set = this.argParser.paramFixInt(temp.set ?? res.set);
                 res.map = this.argParser.paramFixInt(temp.map ?? res.map);
                 res.mode = this.argParser.paramFixMode(temp.mode ?? res.mode);
-                res.modeInt = this.argParser.paramFixInt(temp.modeInt ?? res.modeInt);
+                res.modeInt = this.argParser.paramFixInt(
+                    temp.modeInt ?? res.modeInt,
+                );
                 break;
-            };
+            }
         }
         return res;
     }
     protected setParamScore() {
         const webpatterns = [
-            'osu.ppy.sh/scores/{mode}/{score}',
-            'osu.ppy.sh/scores/{score}',
+            "osu.ppy.sh/scores/{mode}/{score}",
+            "osu.ppy.sh/scores/{score}",
         ];
         for (const pattern of webpatterns.slice()) {
-            webpatterns.push('https://' + pattern);
+            webpatterns.push("https://" + pattern);
         }
         const res: {
-            score: number,
-            mode: osuapi.types_v2.GameMode,
+            score: number;
+            mode: osuapi.types_v2.GameMode;
         } = {
             score: null,
             mode: null,
@@ -423,13 +487,17 @@ export class OsuCommand extends Command {
                 res.score = this.argParser.paramFixInt(temp.score ?? res.score);
                 res.mode = this.argParser.paramFixMode(temp.mode ?? res.mode);
                 break;
-            };
+            }
         }
         return res;
     }
 
     // if no user, use DB or disc name
-    protected async validUser(user: string, searchid: string, mode: osuapi.types_v2.GameMode) {
+    protected async validUser(
+        user: string,
+        searchid: string,
+        mode: osuapi.types_v2.GameMode,
+    ) {
         if (user == null) {
             const cuser = await data.searchUser(searchid, true);
             user = cuser?.username;
@@ -445,21 +513,31 @@ export class OsuCommand extends Command {
         return { user, mode };
     }
     async fixUser(doMode = true) {
-        const t = await this.validUser(this.params.user, this.params.searchid, this.params?.mode ?? 'osu');
+        const t = await this.validUser(
+            this.params.user,
+            this.params.searchid,
+            this.params?.mode ?? "osu",
+        );
         this.params.user = t.user;
         if (doMode) {
-            this.params.mode = t.mode ? other.modeValidator(this.params?.mode) : null;
+            this.params.mode = t.mode
+                ? other.modeValidator(this.params?.mode)
+                : null;
         }
     }
 
     protected async getProfile(user: string, mode: osuapi.types_v2.GameMode) {
         let osudata: osuapi.types_v2.UserExtended;
 
-        if (data.findFile(user, 'osudata', other.modeValidator(mode)) &&
-            !('error' in data.findFile(user, 'osudata', other.modeValidator(mode))) &&
-            this.input.buttonType != 'Refresh'
+        if (
+            data.findFile(user, "osudata", other.modeValidator(mode)) &&
+            !(
+                "error" in
+                data.findFile(user, "osudata", other.modeValidator(mode))
+            ) &&
+            this.input.buttonType != "Refresh"
         ) {
-            osudata = data.findFile(user, 'osudata', other.modeValidator(mode));
+            osudata = data.findFile(user, "osudata", other.modeValidator(mode));
         } else {
             osudata = await osuapi.v2.users.profile({ name: user, mode });
         }
@@ -467,21 +545,38 @@ export class OsuCommand extends Command {
         if (helper.errors.isErrorObject(osudata) || !osudata.id) {
             await this.sendError(helper.errors.profile.user(user));
         }
-        data.debug(osudata, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'osuData');
+        data.debug(
+            osudata,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "osuData",
+        );
 
-        data.userStatsCache([osudata], other.modeValidator(mode), 'User');
+        data.userStatsCache([osudata], other.modeValidator(mode), "User");
 
-        data.storeFile(osudata, osudata.id, 'osudata', other.modeValidator(mode));
-        data.storeFile(osudata, osudata.username, 'osudata', other.modeValidator(mode));
+        data.storeFile(
+            osudata,
+            osudata.id,
+            "osudata",
+            other.modeValidator(mode),
+        );
+        data.storeFile(
+            osudata,
+            osudata.username,
+            "osudata",
+            other.modeValidator(mode),
+        );
 
         return osudata;
     }
     protected async getMap(mapid: string | number) {
         let mapdata: osuapi.types_v2.BeatmapExtended;
-        if (data.findFile(mapid, 'mapdata') &&
-            !('error' in data.findFile(mapid, 'mapdata')) &&
-            this.input.buttonType != 'Refresh') {
-            mapdata = data.findFile(mapid, 'mapdata');
+        if (
+            data.findFile(mapid, "mapdata") &&
+            !("error" in data.findFile(mapid, "mapdata")) &&
+            this.input.buttonType != "Refresh"
+        ) {
+            mapdata = data.findFile(mapid, "mapdata");
         } else {
             mapdata = await osuapi.v2.beatmaps.map({ id: +mapid });
         }
@@ -490,20 +585,27 @@ export class OsuCommand extends Command {
             await this.sendError(helper.errors.map.m(mapid));
         }
 
-        data.storeFile(mapdata, mapid, 'mapdata');
+        data.storeFile(mapdata, mapid, "mapdata");
 
         return mapdata;
     }
     protected async getMapSet(mapsetid: number) {
         let bmsdata: osuapi.types_v2.BeatmapsetExtended;
-        if (data.findFile(mapsetid, `bmsdata`) &&
-            !('error' in data.findFile(mapsetid, `bmsdata`)) &&
-            this.input.buttonType != 'Refresh') {
+        if (
+            data.findFile(mapsetid, `bmsdata`) &&
+            !("error" in data.findFile(mapsetid, `bmsdata`)) &&
+            this.input.buttonType != "Refresh"
+        ) {
             bmsdata = data.findFile(mapsetid, `bmsdata`);
         } else {
             bmsdata = await osuapi.v2.beatmaps.mapset({ id: mapsetid });
         }
-        data.debug(bmsdata, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'bmsData');
+        data.debug(
+            bmsdata,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "bmsData",
+        );
         if (helper.errors.isErrorObject(bmsdata)) {
             await this.sendError(helper.errors.map.ms(mapsetid));
             return;
@@ -513,10 +615,16 @@ export class OsuCommand extends Command {
         return bmsdata;
     }
     protected getLatestMap() {
-        const tempMap = data.getPreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId);
-        const tempScore = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
-        const tmt = moment(tempMap.last_access ?? '1975-01-01');
-        const tst = moment(tempScore.last_access ?? '1975-01-01');
+        const tempMap = data.getPreviousId(
+            "map",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+        );
+        const tempScore = data.getPreviousId(
+            "score",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+        );
+        const tmt = moment(tempMap.last_access ?? "1975-01-01");
+        const tst = moment(tempScore.last_access ?? "1975-01-01");
         if (tst.isBefore(tmt)) {
             return {
                 mapid: tempMap?.id,
@@ -530,14 +638,24 @@ export class OsuCommand extends Command {
             mode: tempScore?.mode,
         };
     }
-    protected mapTitle(map: osuapi.types_v2.BeatmapExtended, mapset: osuapi.types_v2.BeatmapsetExtended, showVersion: boolean = true) {
-        let title = mapset.artist + ' - ' + mapset.title;
+    protected mapTitle(
+        map: osuapi.types_v2.BeatmapExtended,
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        showVersion: boolean = true,
+    ) {
+        let title = mapset.artist + " - " + mapset.title;
         if (showVersion) {
-            title += ' [' + map.version + '] ';
+            title += " [" + map.version + "] ";
         }
         return title;
     }
-    protected async parseId(ids: number[], parseId: number, cmd: Command, iferr: string, ex: string = '') {
+    protected async parseId(
+        ids: number[],
+        parseId: number,
+        cmd: Command,
+        iferr: string,
+        ex: string = "",
+    ) {
         parseId--;
         if (isNaN(parseId) || parseId < 0) parseId = 1;
         if (parseId > ids.length) parseId = ids.length - 1;
@@ -546,27 +664,49 @@ export class OsuCommand extends Command {
         this.input.overrides.commanduser = this.commanduser;
         this.input.overrides.commandAs = this.input.type;
         this.input.overrides.ex = ex
-            .replaceAll('{idOrd}', calculate.toOrdinal(parseId + 1) + '')
-            .replaceAll('{id}', parseId + '');
+            .replaceAll("{idOrd}", calculate.toOrdinal(parseId + 1) + "")
+            .replaceAll("{id}", parseId + "");
         if (this.input.overrides.id == null) {
-            await this.sendError(iferr.replaceAll('{id}', parseId + ''));
+            await this.sendError(iferr.replaceAll("{id}", parseId + ""));
             return;
         }
-        this.input.type = 'other';
+        this.input.type = "other";
         cmd.setInput(this.input);
         await cmd.execute();
         return;
     }
-    protected totalHits(stats: osuapi.types_v2.ScoreStatistics, ruleset: osuapi.Ruleset) {
+    protected totalHits(
+        stats: osuapi.types_v2.ScoreStatistics,
+        ruleset: osuapi.Ruleset,
+    ) {
         switch (ruleset) {
-            case osuapi.Ruleset.osu: default:
-                return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+            case osuapi.Ruleset.osu:
+            default:
+                return (
+                    stats.great +
+                    (stats.ok ?? 0) +
+                    (stats.meh ?? 0) +
+                    (stats.miss ?? 0)
+                );
             case osuapi.Ruleset.taiko:
                 return stats.great + (stats.good ?? 0) + (stats.miss ?? 0);
             case osuapi.Ruleset.fruits:
-                return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + stats.small_tick_hit + (stats.miss ?? 0);
+                return (
+                    stats.great +
+                    (stats.ok ?? 0) +
+                    (stats.meh ?? 0) +
+                    stats.small_tick_hit +
+                    (stats.miss ?? 0)
+                );
             case osuapi.Ruleset.mania:
-                return (stats.perfect ?? 0) + stats.great + stats.good + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+                return (
+                    (stats.perfect ?? 0) +
+                    stats.great +
+                    stats.good +
+                    (stats.ok ?? 0) +
+                    (stats.meh ?? 0) +
+                    (stats.miss ?? 0)
+                );
         }
     }
 }
@@ -575,7 +715,7 @@ export class ArgsParser {
     private args: string[];
     private used: Set<number>;
     constructor(args: string[]) {
-        this.args = args.map(x => x.toLowerCase());
+        this.args = args.map((x) => x.toLowerCase());
         this.used = new Set();
     }
     /**
@@ -604,7 +744,7 @@ export class ArgsParser {
                     } else if (collecting) {
                         values.push(arg);
                         this.used.add(j);
-                    } else if (!arg.startsWith('-')) {
+                    } else if (!arg.startsWith("-")) {
                         values.push(arg);
                         this.used.add(j);
                         break;
@@ -613,7 +753,7 @@ export class ArgsParser {
                     }
                 }
 
-                return values.length > 0 ? values.join(' ') : null;
+                return values.length > 0 ? values.join(" ") : null;
             }
         }
 
@@ -650,17 +790,17 @@ export class ArgsParser {
     }
     /**
      * assisted by ChatGPT
-     * 
+     *
      * flags can be formatted as `-foo` or `*{param}*`
-     * 
+     *
      * example of how to use:
      * ```
      * input.args = ['-u', '152'];
      * getParamFlexible(['-u', 'osu.ppy.sh/u/{param}']); // 152
-     * 
+     *
      * input.args = ['osu.ppy.sh/u/34'];
      * getParamFlexible(['-u', 'osu.ppy.sh/u/{param}']); // 34
-     * 
+     *
      *      * input.args = ['osu.ppy.sh/users/15222484/mania'];
      * getParamFlexible(['-u', 'osu.ppy.sh/users/{param}/*']); // 15222484
      * ```
@@ -672,13 +812,13 @@ export class ArgsParser {
 
             for (const pattern of flagsOrPatterns) {
                 // Case 1: CLI-style flag
-                if (!pattern.includes('{')) {
+                if (!pattern.includes("{")) {
                     if (arg === pattern) {
                         this.used.add(i);
                         const value = this.args[i + 1];
-                        if (value && !value.startsWith('-')) {
+                        if (value && !value.startsWith("-")) {
                             this.used.add(i + 1);
-                            return value.replace(/^"|"$/g, '');
+                            return value.replace(/^"|"$/g, "");
                         }
                         return null;
                     }
@@ -687,12 +827,12 @@ export class ArgsParser {
                 // Case 2: Pattern with {param} and wildcards
                 else {
                     const regex = new RegExp(
-                        '^' +
-                        pattern
-                            .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // escape regex characters
-                            .replace(/\\\*/g, '.*')                // turn \* into .*
-                            .replace(/\\{param\\}/g, '([^/#?]+)') + // capture {param}
-                        '$'
+                        "^" +
+                            pattern
+                                .replace(/[.+?^${}()|[\]\\]/g, "\\$&") // escape regex characters
+                                .replace(/\\\*/g, ".*") // turn \* into .*
+                                .replace(/\\{param\\}/g, "([^/#?]+)") + // capture {param}
+                            "$",
                     );
 
                     const match = arg.match(regex);
@@ -725,14 +865,14 @@ export class ArgsParser {
 
         let rawRegex = pattern.replace(/{(\w+)}/g, (_, name) => {
             paramNames.push(name);
-            return '<<<CAPTURE>>>';
+            return "<<<CAPTURE>>>";
         });
 
-        rawRegex = rawRegex.replace(/([.+?^$()|[\]\\])/g, '\\$1');
+        rawRegex = rawRegex.replace(/([.+?^$()|[\]\\])/g, "\\$1");
 
-        const regexPattern = rawRegex.replace(/<<<CAPTURE>>>/g, '([^/#?]+)');
+        const regexPattern = rawRegex.replace(/<<<CAPTURE>>>/g, "([^/#?]+)");
 
-        const regex = new RegExp('^' + regexPattern + '$');
+        const regex = new RegExp("^" + regexPattern + "$");
         for (let i = 0; i < this.args.length; i++) {
             if (this.used.has(i)) continue;
 
@@ -741,9 +881,11 @@ export class ArgsParser {
             if (match) {
                 this.used.add(i);
 
-                const result: helper.tooltypes.Dict[] = paramNames.map((name, index) => ({
-                    [name]: match[index + 1],
-                }));
+                const result: helper.tooltypes.Dict[] = paramNames.map(
+                    (name, index) => ({
+                        [name]: match[index + 1],
+                    }),
+                );
 
                 return this.kvToDict(result as helper.tooltypes.DictEntry[]);
             }
@@ -751,7 +893,7 @@ export class ArgsParser {
 
         return null;
     }
-    kvToDict(array: { (key: string): any; }[]) {
+    kvToDict(array: { (key: string): any }[]) {
         const dictionary: helper.tooltypes.Dict = {};
         for (const elem of array) {
             const key = Object.keys(elem)[0];
@@ -767,32 +909,35 @@ class TEMPLATE extends Command {
     };
     constructor() {
         super();
-        this.name = 'TEMPLATE';
+        this.name = "TEMPLATE";
         this.params = {
-            xyzxyz: ''
+            xyzxyz: "",
         };
     }
-    async setParamsMsg() {
-    }
+    async setParamsMsg() {}
     async setParamsInteract() {
-        const interaction = this.input.interaction as Discord.ChatInputCommandInteraction;
+        const interaction = this.input
+            .interaction as Discord.ChatInputCommandInteraction;
     }
     async setParamsBtn() {
         if (!this.input.message.embeds[0]) return;
-        const interaction = (this.input.interaction as Discord.ButtonInteraction);
+        const interaction = this.input.interaction as Discord.ButtonInteraction;
         const temp = commandTools.getButtonArgs(this.input.id);
         if (temp.error) {
             interaction.followUp({
                 content: helper.errors.paramFileMissing,
                 flags: Discord.MessageFlags.Ephemeral,
-                allowedMentions: { repliedUser: false }
+                allowedMentions: { repliedUser: false },
             });
             commandTools.disableAllButtons(this.input.message);
             return;
         }
     }
     async setParamsLink() {
-        const messagenohttp = this.input.message.content.replace('https://', '').replace('http://', '').replace('www.', '');
+        const messagenohttp = this.input.message.content
+            .replace("https://", "")
+            .replace("http://", "")
+            .replace("www.", "");
     }
     async execute() {
         await this.setParams();
@@ -803,15 +948,20 @@ class TEMPLATE extends Command {
     }
 }
 
-type ParamTypes = 'string' | 'number' | 'bool';
+type ParamTypes = "string" | "number" | "bool";
 
 // bool_setValue param overrides return type
 // otherwise, return type is T
-type ParamReturnType<T, U> =
-    U extends string ? string :
-    U extends boolean ? boolean :
-    U extends number ? number :
-    T extends "string" ? string :
-    T extends "bool" ? boolean :
-    T extends "number" ? number :
-    never;
+type ParamReturnType<T, U> = U extends string
+    ? string
+    : U extends boolean
+      ? boolean
+      : U extends number
+        ? number
+        : T extends "string"
+          ? string
+          : T extends "bool"
+            ? boolean
+            : T extends "number"
+              ? number
+              : never;

@@ -1,13 +1,12 @@
-import Discord from 'discord.js';
-import * as helper from '../../helper';
-import * as data from '../../tools/data';
-import * as osuapi from '../../tools/osuapi';
-import * as other from '../../tools/other';
-import { ArgsParser } from '../command';
-import { SingleScoreCommand } from './SingleScoreCommand';
+import Discord from "discord.js";
+import * as helper from "../../helper";
+import * as data from "../../tools/data";
+import * as osuapi from "../../tools/osuapi";
+import * as other from "../../tools/other";
+import { ArgsParser } from "../command";
+import { SingleScoreCommand } from "./SingleScoreCommand";
 
 export class ScoreParse extends SingleScoreCommand {
-
     declare protected params: {
         mode: osuapi.types_v2.GameMode;
         scoreid: number;
@@ -16,8 +15,8 @@ export class ScoreParse extends SingleScoreCommand {
     };
     constructor() {
         super();
-        this.name = 'ScoreParse';
-        this.type = 'default';
+        this.name = "ScoreParse";
+        this.type = "default";
         this.params = {
             mode: null,
             scoreid: null,
@@ -28,15 +27,15 @@ export class ScoreParse extends SingleScoreCommand {
     async setParamsMsg() {
         this.params.mode = this.input.args[1] as osuapi.types_v2.GameMode;
         this.params.scoreid = +this.input.args[0];
-        if (this.input.message.content.includes('osu.ppy.sh/scores/')) {
-            this.input.args = this.input.message.content.split(' ');
+        if (this.input.message.content.includes("osu.ppy.sh/scores/")) {
+            this.input.args = this.input.message.content.split(" ");
             const temp = this.setParamScore();
             this.params.mode = temp.mode;
             this.params.scoreid = +temp.score;
         }
     }
     async setParamsLink() {
-        this.input.args = this.input.message.content.split(' ');
+        this.input.args = this.input.message.content.split(" ");
         this.argParser = new ArgsParser(this.input.args);
         const temp = this.setParamScore();
         this.params.mode = temp.mode;
@@ -45,14 +44,14 @@ export class ScoreParse extends SingleScoreCommand {
 
     getOverrides(): void {
         if (!this.input.overrides) return;
-        this.setParamOverride('scoreid', 'id', 'number');
-        this.setParamOverride('mode');
-        this.setParamOverride('commanduser');
-        this.setParamOverride('overrideAuthor', 'ex', 'string');
+        this.setParamOverride("scoreid", "id", "number");
+        this.setParamOverride("mode");
+        this.setParamOverride("commanduser");
+        this.setParamOverride("overrideAuthor", "ex", "string");
         if (this.input.overrides?.commandAs != null) {
             this.input.type = this.input.overrides.commandAs;
         }
-        if (this.input.overrides?.type == 'nochoke') {
+        if (this.input.overrides?.type == "nochoke") {
             this.params.nochoke = true;
         }
     }
@@ -63,8 +62,14 @@ export class ScoreParse extends SingleScoreCommand {
         // do stuff
 
         if (!this.params.scoreid) {
-            const temp = data.getPreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId);
-            if (temp?.apiData?.best_id && typeof temp?.apiData?.best_id === 'number') {
+            const temp = data.getPreviousId(
+                "score",
+                this.input.message?.guildId ?? this.input.interaction?.guildId,
+            );
+            if (
+                temp?.apiData?.best_id &&
+                typeof temp?.apiData?.best_id === "number"
+            ) {
                 this.params.scoreid = temp?.apiData?.best_id;
             } else {
                 await this.sendError(helper.errors.score.ms);
@@ -73,59 +78,86 @@ export class ScoreParse extends SingleScoreCommand {
 
         await this.sendLoading();
 
-        if (data.findFile(this.params.scoreid, 'scoredata') &&
-            !('error' in data.findFile(this.params.scoreid, 'scoredata')) &&
-            this.input.buttonType != 'Refresh'
+        if (
+            data.findFile(this.params.scoreid, "scoredata") &&
+            !("error" in data.findFile(this.params.scoreid, "scoredata")) &&
+            this.input.buttonType != "Refresh"
         ) {
-            this.score = data.findFile(this.params.scoreid, 'scoredata');
+            this.score = data.findFile(this.params.scoreid, "scoredata");
         } else {
             const hasMode = this.params.mode ? { mode: this.params.mode } : {};
-            this.score = await osuapi.v2.scores.single({ id: this.params.scoreid, ...hasMode });
+            this.score = await osuapi.v2.scores.single({
+                id: this.params.scoreid,
+                ...hasMode,
+            });
         }
 
-        data.debug(this.score, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'scoreData');
+        data.debug(
+            this.score,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "scoreData",
+        );
         if (helper.errors.isErrorObject(this.score)) {
             await this.sendError(helper.errors.score.nd(this.params.scoreid));
         }
-        data.storeFile(this.score, this.params.scoreid, 'scoredata', other.modeValidator(this.score.ruleset_id));
+        data.storeFile(
+            this.score,
+            this.params.scoreid,
+            "scoredata",
+            other.modeValidator(this.score.ruleset_id),
+        );
 
-        const buttons = new Discord.ActionRowBuilder()
-            .addComponents(
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-Map-${this.name}-any-${this.input.id}-${this.score?.beatmap?.id}${this.score.mods ? '+' + this.score.mods.map(x => x.acronym).join() : ''}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.map),
-                new Discord.ButtonBuilder()
-                    .setCustomId(`${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.score.user_id}`)
-                    .setStyle(helper.buttons.type.current)
-                    .setEmoji(helper.buttons.label.extras.user),
-            );
+        const buttons = new Discord.ActionRowBuilder().addComponents(
+            new Discord.ButtonBuilder()
+                .setCustomId(
+                    `${helper.versions.releaseDate}-Map-${this.name}-any-${this.input.id}-${this.score?.beatmap?.id}${this.score.mods ? "+" + this.score.mods.map((x) => x.acronym).join() : ""}`,
+                )
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.extras.map),
+            new Discord.ButtonBuilder()
+                .setCustomId(
+                    `${helper.versions.releaseDate}-User-${this.name}-any-${this.input.id}-${this.score.user_id}`,
+                )
+                .setStyle(helper.buttons.type.current)
+                .setEmoji(helper.buttons.label.extras.user),
+        );
 
         this.ctn.components = [buttons];
 
         try {
             this.score.rank.toUpperCase();
         } catch (error) {
-            await this.sendError(helper.errors.score.wrong + ` - osu.ppy.sh/scores/${this.params.mode}/${this.params.scoreid}`);
+            await this.sendError(
+                helper.errors.score.wrong +
+                    ` - osu.ppy.sh/scores/${this.params.mode}/${this.params.scoreid}`,
+            );
         }
-        if (data.findFile(this.score.beatmap.id, 'this.map') &&
-            !('error' in data.findFile(this.score.beatmap.id, 'this.map')) &&
-            this.input.buttonType != 'Refresh') {
-            this.map = data.findFile(this.score.beatmap.id, 'this.map');
+        if (
+            data.findFile(this.score.beatmap.id, "this.map") &&
+            !("error" in data.findFile(this.score.beatmap.id, "this.map")) &&
+            this.input.buttonType != "Refresh"
+        ) {
+            this.map = data.findFile(this.score.beatmap.id, "this.map");
         } else {
-            this.map = await osuapi.v2.beatmaps.map({ id: this.score?.beatmap?.id ?? this.score?.beatmap_id });
+            this.map = await osuapi.v2.beatmaps.map({
+                id: this.score?.beatmap?.id ?? this.score?.beatmap_id,
+            });
         }
 
         if (helper.errors.isErrorObject(this.map)) {
             await this.sendError(helper.errors.map.m(this.score.beatmap.id));
         }
 
-        data.storeFile(this.map, this.score.beatmap.id, 'this.map');
+        data.storeFile(this.map, this.score.beatmap.id, "this.map");
 
         this.mapset = this.map.beatmapset;
 
         try {
-            const u = await this.getProfile(this.score.user_id + '', other.modeValidator(this.score.ruleset_id));
+            const u = await this.getProfile(
+                this.score.user_id + "",
+                other.modeValidator(this.score.ruleset_id),
+            );
             this.osudata = u;
         } catch (e) {
             return;
@@ -135,22 +167,25 @@ export class ScoreParse extends SingleScoreCommand {
         const s = await this.getStrains(this.map, this.score);
         e.setImage(`attachment://${s}`);
 
-        data.writePreviousId('score', this.input.message?.guildId ?? this.input.interaction?.guildId,
+        data.writePreviousId(
+            "score",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.score.id}`,
                 apiData: this.score,
                 mods: this.score.mods,
-            });
-        data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
+            },
+        );
+        data.writePreviousId(
+            "map",
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
             {
                 id: `${this.map.id}`,
                 apiData: null,
                 mods: this.score.mods,
-            }
+            },
         );
 
         await this.send();
     }
-
-
 }

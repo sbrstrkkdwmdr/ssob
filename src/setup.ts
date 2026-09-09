@@ -1,29 +1,34 @@
-import Sequelize from 'sequelize';
+import Sequelize from "sequelize";
 
-import * as helper from './helper';
-import * as osuapi from './tools/osuapi';
+import * as helper from "./helper";
+import * as osuapi from "./tools/osuapi";
 
 export function setup() {
-    console.log('Loading...');
+    console.log("Loading...");
 
-    console.log('Initialising sequelize...');
-    const sequelize = new Sequelize.Sequelize('database', 'username', 'password', {
-        host: 'localhost',
-        dialect: 'sqlite',
-        logging: false,
-        storage: 'database.sqlite',
-    });
+    console.log("Initialising sequelize...");
+    const sequelize = new Sequelize.Sequelize(
+        "database",
+        "username",
+        "password",
+        {
+            host: "localhost",
+            dialect: "sqlite",
+            logging: false,
+            storage: "database.sqlite",
+        },
+    );
 
-    console.log('Initialising userdata...');
-    const userdata = sequelize.define('userdata', {
+    console.log("Initialising userdata...");
+    const userdata = sequelize.define("userdata", {
         userid: {
             type: Sequelize.STRING,
-            unique: true
+            unique: true,
         },
         osuname: Sequelize.TEXT,
         mode: {
             type: Sequelize.STRING,
-            defaultValue: 'osu',
+            defaultValue: "osu",
         },
         osuacc: Sequelize.FLOAT,
         osupp: Sequelize.INTEGER,
@@ -39,27 +44,27 @@ export function setup() {
         maniarank: Sequelize.INTEGER,
         skin: {
             type: Sequelize.STRING,
-            defaultValue: 'https://osu.ppy.sh/community/forums/topics/129191',
+            defaultValue: "https://osu.ppy.sh/community/forums/topics/129191",
         },
         timezone: {
             type: Sequelize.STRING,
-            defaultValue: 'GMT',
+            defaultValue: "GMT",
         },
         location: {
             type: Sequelize.STRING,
-        }
+        },
     });
 
-    console.log('Initialising guildSettings...');
-    const guildSettings = sequelize.define('guildSettings', {
+    console.log("Initialising guildSettings...");
+    const guildSettings = sequelize.define("guildSettings", {
         guildid: {
             type: Sequelize.TEXT,
-            unique: true
+            unique: true,
         },
         guildname: Sequelize.TEXT,
         prefix: {
             type: Sequelize.STRING,
-            defaultValue: 'sbr-',
+            defaultValue: "sbr-",
         },
         osuParseLinks: {
             type: Sequelize.BOOLEAN,
@@ -72,14 +77,14 @@ export function setup() {
         trackChannel: {
             type: Sequelize.STRING,
             defaultValue: null,
-        }
+        },
     });
 
-    console.log('Initialising trackDb...');
-    const trackDb = sequelize.define('trackUsers', {
+    console.log("Initialising trackDb...");
+    const trackDb = sequelize.define("trackUsers", {
         osuid: {
             type: Sequelize.STRING,
-            unique: true
+            unique: true,
         },
         guilds: {
             type: Sequelize.STRING,
@@ -98,11 +103,11 @@ export function setup() {
         },
     });
 
-    console.log('Initialising statsCache...');
-    const statsCache = sequelize.define('statsCache', {
+    console.log("Initialising statsCache...");
+    const statsCache = sequelize.define("statsCache", {
         osuid: {
             type: Sequelize.STRING,
-            unique: true
+            unique: true,
         },
         country: Sequelize.STRING,
 
@@ -128,7 +133,10 @@ export function setup() {
     helper.vars.trackDb = trackDb;
     helper.vars.statsCache = statsCache;
 
-    console.log('Initialising osu!api...');
-    osuapi.v2.login(helper.vars.config.osu.clientId, helper.vars.config.osu.clientSecret);
+    console.log("Initialising osu!api...");
+    osuapi.v2.login(
+        helper.vars.config.osu.clientId,
+        helper.vars.config.osu.clientSecret,
+    );
     osuapi.logCalls(true);
 }

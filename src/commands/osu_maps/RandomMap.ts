@@ -1,10 +1,17 @@
-import Discord from 'discord.js';
-import * as helper from '../../helper';
-import * as data from '../../tools/data';
-import { OsuCommand } from '../command';
-import { MapParse } from './MapParse';
+import Discord from "discord.js";
+import * as helper from "../../helper";
+import * as data from "../../tools/data";
+import { OsuCommand } from "../command";
+import { MapParse } from "./MapParse";
 
-type mapType = 'Ranked' | 'Loved' | 'Approved' | 'Qualified' | 'Pending' | 'WIP' | 'Graveyard';
+type mapType =
+    | "Ranked"
+    | "Loved"
+    | "Approved"
+    | "Qualified"
+    | "Pending"
+    | "WIP"
+    | "Graveyard";
 
 export class RandomMap extends OsuCommand {
     declare protected params: {
@@ -13,22 +20,28 @@ export class RandomMap extends OsuCommand {
     };
     constructor() {
         super();
-        this.name = 'RandomMap';
+        this.name = "RandomMap";
         this.params = {
             mapType: null,
             useRandomRanked: false,
         };
     }
     async setParamsMsg() {
-        this.params.useRandomRanked = this.setParam(this.params.useRandomRanked, ['-leaderboard', '-lb'], 'bool', {});
-        this.params.mapType = this.setParamBoolList(this.params.mapType,
-            { set: 'Ranked', flags: helper.argflags.mapRanked },
-            { set: 'Loved', flags: helper.argflags.mapLove },
-            { set: 'Approved', flags: helper.argflags.mapApprove },
-            { set: 'Qualified', flags: helper.argflags.mapQualified },
-            { set: 'Pending', flags: helper.argflags.mapPending },
-            { set: 'WIP', flags: helper.argflags.mapWip },
-            { set: 'Graveyard', flags: helper.argflags.mapGraveyard },
+        this.params.useRandomRanked = this.setParam(
+            this.params.useRandomRanked,
+            ["-leaderboard", "-lb"],
+            "bool",
+            {},
+        );
+        this.params.mapType = this.setParamBoolList(
+            this.params.mapType,
+            { set: "Ranked", flags: helper.argflags.mapRanked },
+            { set: "Loved", flags: helper.argflags.mapLove },
+            { set: "Approved", flags: helper.argflags.mapApprove },
+            { set: "Qualified", flags: helper.argflags.mapQualified },
+            { set: "Pending", flags: helper.argflags.mapPending },
+            { set: "WIP", flags: helper.argflags.mapWip },
+            { set: "Graveyard", flags: helper.argflags.mapGraveyard },
         );
     }
     async execute() {
@@ -36,10 +49,14 @@ export class RandomMap extends OsuCommand {
         this.logInput();
         // do stuff
 
-        let txt = '';
+        let txt = "";
 
         if (this.params.useRandomRanked) {
-            const arr: ('Ranked' | 'Loved' | 'Approved')[] = ['Ranked', 'Loved', 'Approved'];
+            const arr: ("Ranked" | "Loved" | "Approved")[] = [
+                "Ranked",
+                "Loved",
+                "Approved",
+            ];
             this.params.mapType = arr[Math.floor(Math.random() * arr.length)];
         }
 
@@ -50,14 +67,14 @@ export class RandomMap extends OsuCommand {
             txt = `https://osu.ppy.sh/b/${randomMap.returnId}`;
         }
         const embed = new Discord.EmbedBuilder()
-            .setTitle('Random map')
+            .setTitle("Random map")
             .setDescription(txt);
 
         if (randomMap.err == null) {
             this.input.overrides = {
                 id: randomMap.returnId,
                 commanduser: this.commanduser,
-                commandAs: this.input.type
+                commandAs: this.input.type,
             };
 
             const cmd = new MapParse();

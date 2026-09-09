@@ -1,16 +1,16 @@
-import Discord from 'discord.js';
-import * as osuclasses from 'osu-classes';
-import * as osuparsers from 'osu-parsers';
-import * as osumodcalc from 'osumodcalculator';
-import * as helper from '../../helper';
-import * as calculate from '../../tools/calculate';
-import * as data from '../../tools/data';
-import * as formatters from '../../tools/formatters';
-import { LineGraphBuilder } from '../../tools/graph';
-import * as osuapi from '../../tools/osuapi';
-import * as other from '../../tools/other';
-import { OsuCommand } from '../command';
-import { SingleScoreCommand } from './SingleScoreCommand';
+import Discord from "discord.js";
+import * as osuclasses from "osu-classes";
+import * as osuparsers from "osu-parsers";
+import * as osumodcalc from "osumodcalculator";
+import * as helper from "../../helper";
+import * as calculate from "../../tools/calculate";
+import * as data from "../../tools/data";
+import * as formatters from "../../tools/formatters";
+import { LineGraphBuilder } from "../../tools/graph";
+import * as osuapi from "../../tools/osuapi";
+import * as other from "../../tools/other";
+import { OsuCommand } from "../command";
+import { SingleScoreCommand } from "./SingleScoreCommand";
 
 export class ReplayParse extends SingleScoreCommand {
     declare protected params: {
@@ -18,9 +18,9 @@ export class ReplayParse extends SingleScoreCommand {
     };
     constructor() {
         super();
-        this.name = 'ReplayParse';
+        this.name = "ReplayParse";
         this.params = {
-            detailed: 1
+            detailed: 1,
         };
     }
 
@@ -29,8 +29,15 @@ export class ReplayParse extends SingleScoreCommand {
         this.logInput(true);
         // do stuff
         const decoder = new osuparsers.ScoreDecoder();
-        const score = await decoder.decodeFromPath(`${helper.path.files}/replays/${this.input.id}.osr`);
-        data.debug(score, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'replayData');
+        const score = await decoder.decodeFromPath(
+            `${helper.path.files}/replays/${this.input.id}.osr`,
+        );
+        data.debug(
+            score,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "replayData",
+        );
         this.setScore(score);
         try {
             this.map = await this.getMap(score?.info?.beatmapHashMD5);
@@ -39,18 +46,30 @@ export class ReplayParse extends SingleScoreCommand {
         }
 
         if (this.map?.id) {
-            typeof this.map.id == 'number' ? data.writePreviousId('map', this.input.message?.guildId ?? this.input.interaction?.guildId,
-                {
-                    id: `${this.map.id}`,
-                    apiData: null,
-                    mods: osumodcalc.mod.intToAcronym(score.info?.mods?.bitwise ?? 0).map(x => { return { acronym: x }; })
-                }
-            ) : '';
+            typeof this.map.id == "number"
+                ? data.writePreviousId(
+                      "map",
+                      this.input.message?.guildId ??
+                          this.input.interaction?.guildId,
+                      {
+                          id: `${this.map.id}`,
+                          apiData: null,
+                          mods: osumodcalc.mod
+                              .intToAcronym(score.info?.mods?.bitwise ?? 0)
+                              .map((x) => {
+                                  return { acronym: x };
+                              }),
+                      },
+                  )
+                : "";
         }
         this.mapset = this.map.beatmapset;
 
         try {
-            this.osudata = await this.getProfile(score.info.username, osumodcalc.mode.toName(score.info.rulesetId));
+            this.osudata = await this.getProfile(
+                score.info.username,
+                osumodcalc.mode.toName(score.info.rulesetId),
+            );
         } catch (e) {
             return;
         }
@@ -63,14 +82,16 @@ export class ReplayParse extends SingleScoreCommand {
         }
 
         const graph = new LineGraphBuilder({
-            x: score.replay.lifeBar.map(x => calculate.secondsToTime(x.startTime / 1000)),
-            y: [score.replay.lifeBar.map(x => Math.floor(x.health * 100))],
-            dataLabels: ['Health'],
+            x: score.replay.lifeBar.map((x) =>
+                calculate.secondsToTime(x.startTime / 1000),
+            ),
+            y: [score.replay.lifeBar.map((x) => Math.floor(x.health * 100))],
+            dataLabels: ["Health"],
             colours: [helper.colours.rainbowPastelRGB.green],
-            title: 'Health',
+            title: "Health",
             settings: {
                 fill: true,
-            }
+            },
         });
         const image = await graph.execute();
         this.ctn.files = [image.path];
@@ -85,30 +106,43 @@ export class ReplayParse extends SingleScoreCommand {
     }
 
     async renderEmbed() {
-        let hitlist = formatters.returnHits(this.score.statistics, this.score.ruleset_id).short;
+        let hitlist = formatters.returnHits(
+            this.score.statistics,
+            this.score.ruleset_id,
+        ).short;
 
         const [perfs, ppissue, fcflag] = await this.perf({
             passed: true,
             percentage: 100,
-            objectsHit: null
+            objectsHit: null,
         });
 
-        let modadjustments = '';
-        if (this.score.mods.filter(x => x?.settings?.speed_change).length > 0) {
-            modadjustments += ' (' + this.score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
+        let modadjustments = "";
+        if (
+            this.score.mods.filter((x) => x?.settings?.speed_change).length > 0
+        ) {
+            modadjustments +=
+                " (" +
+                this.score.mods.filter((x) => x?.settings?.speed_change)[0]
+                    .settings.speed_change +
+                "x)";
         }
 
-        let scorerank = (this?.score?.rank_global ? ` #${this.score.rank_global} global` : '') +
-            (this?.score?.rank_country ? ` #${this.score.rank_country} ${this.osudata.country_code.toUpperCase()} :flag_${this.osudata.country_code.toLowerCase()}:` : '')
-            ;
-        if (scorerank != '') {
-            scorerank = '| ' + scorerank;
+        let scorerank =
+            (this?.score?.rank_global
+                ? ` #${this.score.rank_global} global`
+                : "") +
+            (this?.score?.rank_country
+                ? ` #${this.score.rank_country} ${this.osudata.country_code.toUpperCase()} :flag_${this.osudata.country_code.toLowerCase()}:`
+                : "");
+        if (scorerank != "") {
+            scorerank = "| " + scorerank;
         }
 
         const embed = this.setEmbed({
             trycountstr: `try #${this.getTryCount(this.scores, this.map.id)}`,
             rsgrade: helper.emojis.grades[this.grade().rank.toUpperCase()],
-            rspassinfo: '',
+            rspassinfo: "",
             mxcombo: perfs?.[0]?.difficulty.maxCombo ?? this?.score?.max_combo,
             fcflag,
             ppissue,
@@ -116,7 +150,7 @@ export class ReplayParse extends SingleScoreCommand {
             hitlist,
             scorerank,
             perfs,
-            modadjustments
+            modadjustments,
         });
 
         this.ctn.embeds = [embed];
@@ -128,25 +162,37 @@ export class ReplayParse extends SingleScoreCommand {
      * mapid should be beatmapHash
      */
     async getMap(hash: string) {
-        if (data.findFile(hash, 'this.map') &&
-            !('error' in data.findFile(hash, 'this.map')) &&
-            this.input.buttonType != 'Refresh') {
-            this.map = data.findFile(hash, 'this.map');
+        if (
+            data.findFile(hash, "this.map") &&
+            !("error" in data.findFile(hash, "this.map")) &&
+            this.input.buttonType != "Refresh"
+        ) {
+            this.map = data.findFile(hash, "this.map");
         } else {
             this.map = await osuapi.v2.beatmaps.mapLookup({ checksum: hash });
         }
         if (helper.errors.isErrorObject(this.map)) {
             await this.sendError(helper.errors.map.m(hash));
         }
-        data.debug(this.map, this.name, this.input.message?.guildId ?? this.input.interaction?.guildId, 'this.map');
-        data.storeFile(this.map, this.map.id, 'this.map');
-        data.storeFile(this.map, hash, 'this.map');
+        data.debug(
+            this.map,
+            this.name,
+            this.input.message?.guildId ?? this.input.interaction?.guildId,
+            "this.map",
+        );
+        data.storeFile(this.map, this.map.id, "this.map");
+        data.storeFile(this.map, hash, "this.map");
         return this.map;
     }
     setScore(score: osuclasses.Score) {
         const tmods =
-            typeof score.info.rawMods == 'string' ? osumodcalc.mod.order(osumodcalc.mod.fromString(score.info.rawMods)) :
-                osumodcalc.mod.order(osumodcalc.mod.intToAcronym(score.info.rawMods));
+            typeof score.info.rawMods == "string"
+                ? osumodcalc.mod.order(
+                      osumodcalc.mod.fromString(score.info.rawMods),
+                  )
+                : osumodcalc.mod.order(
+                      osumodcalc.mod.intToAcronym(score.info.rawMods),
+                  );
         this.score = {
             accuracy: score.info.accuracy,
             classic_total_score: score.info.totalScore,
@@ -169,7 +215,10 @@ export class ReplayParse extends SingleScoreCommand {
                 small_tick_hit: 0, // count 50
                 legacy_combo_increase: 0, // max stats
             },
-            mods: tmods?.map(x => { return { acronym: x }; }) ?? [],
+            mods:
+                tmods?.map((x) => {
+                    return { acronym: x };
+                }) ?? [],
             passed: score.info.passed,
             playlist_item_id: 0,
             preserve: false,
@@ -189,7 +238,7 @@ export class ReplayParse extends SingleScoreCommand {
                 legacy_combo_increase: 0, // max stats
             },
             total_score: score.info.totalScore,
-            type: 'recent',
+            type: "recent",
             user_id: score.info.userId ?? 2,
         };
     }

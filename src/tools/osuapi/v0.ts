@@ -27,10 +27,8 @@ export function beatmapImages(mapSetId: number) {
         //shorter height ver of cover
         slimcover: `https://assets.ppy.sh/beatmaps/${mapSetId}/covers/slimcover.jpg`,
         slimcover2x: `https://assets.ppy.sh/beatmaps/${mapSetId}/covers/slimcover@2x.jpg`,
-
     };
 }
-
 
 export function userAvatar(id: string) {
     return `https://a.ppy.sh/` + id;
@@ -39,6 +37,6 @@ export function userAvatar(id: string) {
 /**
  * beatmap .osu file
  */
-export function mapFile(id:string) {
+export function mapFile(id: string) {
     return `https://osu.ppy.sh/osu/${id}`;
 }
