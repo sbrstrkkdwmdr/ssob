@@ -1,30 +1,37 @@
-import * as canvas from 'canvas';
-import * as chartjs from 'chart.js/auto';
-import Discord from 'discord.js';
-import fs from 'fs';
-import { Jimp } from 'jimp';
-import * as osuclasses from 'osu-classes';
-import * as osuparsers from 'osu-parsers';
-import * as rosu from 'rosu-pp-js';
-import * as helper from '../helper';
-import * as colourcalc from './colourcalc';
-import * as log from './log';
-import * as osuapi from './osuapi';
+import * as canvas from "canvas";
+import * as chartjs from "chart.js/auto";
+import Discord from "discord.js";
+import fs from "fs";
+import { Jimp } from "jimp";
+import * as osuclasses from "osu-classes";
+import * as osuparsers from "osu-parsers";
+import * as rosu from "rosu-pp-js";
+import * as helper from "../helper";
+import * as colourcalc from "./colourcalc";
+import * as log from "./log";
+import * as osuapi from "./osuapi";
+import { numberShorthand, separateNum } from "./calculate";
 
 export function appendUrlParamsString(url: string, params: string[]) {
     let temp = url;
     for (let i = 0; i < params.length; i++) {
-        const cur = encodeURIComponent(params[i]).replace('%3D', '=');
-        if (!cur) { break; }
-        temp.includes('?') ?
-            temp += `&${cur}` :
-            `?${cur}`;
+        const cur = encodeURIComponent(params[i]).replace("%3D", "=");
+        if (!cur) {
+            break;
+        }
+        temp.includes("?") ? (temp += `&${cur}`) : `?${cur}`;
     }
     return temp;
 }
 
-export function debug(data: any, type: string, name: string, serverId: string | number, params: string) {
-    const pars = params.replaceAll(',', '=');
+export function debug(
+    data: any,
+    type: string,
+    name: string,
+    serverId: string | number,
+    params: string,
+) {
+    const pars = params.replaceAll(",", "=");
     if (!fs.existsSync(`${helper.path.cache}/debug/${type}`)) {
         fs.mkdirSync(`${helper.path.cache}/debug/${type}`);
     }
@@ -35,71 +42,129 @@ export function debug(data: any, type: string, name: string, serverId: string | 
         if (data?.input?.config) {
             data.helper.vars.config = censorConfig();
         }
-        fs.writeFileSync(`${helper.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`, JSON.stringify(data, null, 2));
-    } catch (error) {
-    }
+        fs.writeFileSync(
+            `${helper.path.cache}/debug/${type}/${name}/${pars}_${serverId}.json`,
+            JSON.stringify(data, null, 2),
+        );
+    } catch (error) {}
     return;
 }
 
 export function modeValidator(mode: string | number) {
-    let returnf: osuapi.types_v2.GameMode = 'osu';
+    let returnf: osuapi.types_v2.GameMode = "osu";
     switch (mode) {
-        case 0: case 'osu': default: case 'o': case 'std': case 'standard':
-            returnf = 'osu';
+        case 0:
+        case "osu":
+        default:
+        case "o":
+        case "std":
+        case "standard":
+            returnf = "osu";
             break;
-        case 1: case 'taiko': case 't': case 'drums':
-            returnf = 'taiko';
+        case 1:
+        case "taiko":
+        case "t":
+        case "drums":
+            returnf = "taiko";
             break;
-        case 2: case 'fruits': case 'f': case 'c': case 'ctb': case 'catch': case 'catch the beat': case 'catchthebeat':
-            returnf = 'fruits';
+        case 2:
+        case "fruits":
+        case "f":
+        case "c":
+        case "ctb":
+        case "catch":
+        case "catch the beat":
+        case "catchthebeat":
+            returnf = "fruits";
             break;
-        case 3: case 'mania': case 'm': case 'piano': case 'key': case 'keys':
-            returnf = 'mania';
+        case 3:
+        case "mania":
+        case "m":
+        case "piano":
+        case "key":
+        case "keys":
+            returnf = "mania";
             break;
     }
     return returnf;
 }
 
 export function modeValidatorAlt(mode: string | number) {
-    let returnf: osuapi.types_v2.GameMode = 'osu';
+    let returnf: osuapi.types_v2.GameMode = "osu";
 
-    if (typeof mode == 'number') {
+    if (typeof mode == "number") {
         switch (mode) {
-            case 0: default:
-                returnf = 'osu';
+            case 0:
+            default:
+                returnf = "osu";
                 break;
             case 1:
-                returnf = 'taiko';
+                returnf = "taiko";
                 break;
             case 2:
-                returnf = 'fruits';
+                returnf = "fruits";
                 break;
             case 3:
-                returnf = 'mania';
+                returnf = "mania";
                 break;
         }
-    } else if (typeof mode == 'string') {
+    } else if (typeof mode == "string") {
         switch (mode) {
-            case 'osu': default: case 'o': case 'std': case 'standard':
-                returnf = 'osu';
+            case "osu":
+            default:
+            case "o":
+            case "std":
+            case "standard":
+                returnf = "osu";
                 break;
-            case 'taiko': case 't': case 'drums':
-                returnf = 'taiko';
+            case "taiko":
+            case "t":
+            case "drums":
+                returnf = "taiko";
                 break;
-            case 'fruits': case 'f': case 'c': case 'ctb': case 'catch': case 'catch the beat': case 'catchthebeat':
-                returnf = 'fruits';
+            case "fruits":
+            case "f":
+            case "c":
+            case "ctb":
+            case "catch":
+            case "catch the beat":
+            case "catchthebeat":
+                returnf = "fruits";
                 break;
-            case 'mania': case 'm': case 'piano': case 'key': case 'keys':
-                returnf = 'mania';
+            case "mania":
+            case "m":
+            case "piano":
+            case "key":
+            case "keys":
+                returnf = "mania";
                 break;
         }
     }
 
     const included = [
-        0, 'osu', 'o', 'std', 'standard',
-        1, 'taiko', 't', 'drums',
-        2, 'fruits', 'f', 'c', 'ctb', 'catch', 'catch the beat', 'catchthebeat',
-        3, 'mania', 'm', 'piano', 'key', 'keys'
+        0,
+        "osu",
+        "o",
+        "std",
+        "standard",
+        1,
+        "taiko",
+        "t",
+        "drums",
+        2,
+        "fruits",
+        "f",
+        "c",
+        "ctb",
+        "catch",
+        "catch the beat",
+        "catchthebeat",
+        3,
+        "mania",
+        "m",
+        "piano",
+        "key",
+        "keys",
     ];
 
     let isincluded = true;
@@ -109,49 +174,52 @@ export function modeValidatorAlt(mode: string | number) {
 
     return {
         mode: returnf,
-        isincluded
+        isincluded,
     };
 }
 
 export function removeSIPrefix(str: string) {
     const SIPrefixes = [
-        { prefix: 'Q', name: 'quetta', value: 1e27 },
-        { prefix: 'R', name: 'ronna', value: 1e27 },
-        { prefix: 'Y', name: 'yotta', value: 1e24 },
-        { prefix: 'Z', name: 'zetta', value: 1e21 },
-        { prefix: 'E', name: 'exa', value: 1e18 },
-        { prefix: 'P', name: 'peta', value: 1e15 },
-        { prefix: 'T', name: 'tera', value: 1e12 },
-        { prefix: 'G', name: 'giga', value: 1e9 },
-        { prefix: 'M', name: 'mega', value: 1e6 },
-        { prefix: 'k', name: 'kilo', value: 1e3 },
-        { prefix: 'h', name: 'hecto', value: 1e2 },
-        { prefix: 'da', name: 'deca', value: 1e1 },
-        { prefix: 'd', name: 'deci', value: 1e-1 },
-        { prefix: 'c', name: 'centi', value: 1e-2 },
-        { prefix: 'm', name: 'milli', value: 1e-3 },
-        { prefix: 'µ', name: 'micro', value: 1e-6 },
-        { prefix: 'n', name: 'nano', value: 1e-9 },
-        { prefix: 'p', name: 'pico', value: 1e-12 },
-        { prefix: 'f', name: 'femto', value: 1e-15 },
-        { prefix: 'a', name: 'atto', value: 1e-18 },
-        { prefix: 'z', name: 'zepto', value: 1e-21 },
-        { prefix: 'y', name: 'yocto', value: 1e-24 },
-        { prefix: 'r', name: 'ronto', value: 1e27 },
-        { prefix: 'q', name: 'quecto', value: 1e27 },
+        { prefix: "Q", name: "quetta", value: 1e27 },
+        { prefix: "R", name: "ronna", value: 1e27 },
+        { prefix: "Y", name: "yotta", value: 1e24 },
+        { prefix: "Z", name: "zetta", value: 1e21 },
+        { prefix: "E", name: "exa", value: 1e18 },
+        { prefix: "P", name: "peta", value: 1e15 },
+        { prefix: "T", name: "tera", value: 1e12 },
+        { prefix: "G", name: "giga", value: 1e9 },
+        { prefix: "M", name: "mega", value: 1e6 },
+        { prefix: "k", name: "kilo", value: 1e3 },
+        { prefix: "h", name: "hecto", value: 1e2 },
+        { prefix: "da", name: "deca", value: 1e1 },
+        { prefix: "d", name: "deci", value: 1e-1 },
+        { prefix: "c", name: "centi", value: 1e-2 },
+        { prefix: "m", name: "milli", value: 1e-3 },
+        { prefix: "µ", name: "micro", value: 1e-6 },
+        { prefix: "n", name: "nano", value: 1e-9 },
+        { prefix: "p", name: "pico", value: 1e-12 },
+        { prefix: "f", name: "femto", value: 1e-15 },
+        { prefix: "a", name: "atto", value: 1e-18 },
+        { prefix: "z", name: "zepto", value: 1e-21 },
+        { prefix: "y", name: "yocto", value: 1e-24 },
+        { prefix: "r", name: "ronto", value: 1e27 },
+        { prefix: "q", name: "quecto", value: 1e27 },
     ];
 
-    let removedPrefix = '';
+    let removedPrefix = "";
     let value = parseFloat(str);
     let power = 1;
-    let foundPrefix = { prefix: '', name: '', value: 1e0 };
+    let foundPrefix = { prefix: "", name: "", value: 1 };
 
     if (isNaN(value)) {
-        foundPrefix = SIPrefixes.find(p => str.startsWith(p.name) || str.startsWith(p.prefix));
+        foundPrefix = SIPrefixes.find(
+            (p) => str.startsWith(p.name) || str.startsWith(p.prefix),
+        );
         if (foundPrefix) {
             power = foundPrefix.value;
-            removedPrefix = str.startsWith(foundPrefix.name) ?
-                foundPrefix.name : foundPrefix.prefix;
+            removedPrefix = str.startsWith(foundPrefix.name)
+                ? foundPrefix.name
+                : foundPrefix.prefix;
         } else {
             value = parseFloat(str);
         }
@@ -164,7 +232,7 @@ export function removeSIPrefix(str: string) {
             long: foundPrefix?.name,
         },
         power,
-        originalValue: str.replace(removedPrefix, ''),
+        originalValue: str.replace(removedPrefix, ""),
     };
 }
 
@@ -173,7 +241,7 @@ export function removeSIPrefix(str: string) {
  */
 export function searchMatch(input: string, list: string[]) {
     const sort: {
-        factor: number,
+        factor: number;
         text: string;
     }[] = [];
     for (const word of list) {
@@ -183,8 +251,8 @@ export function searchMatch(input: string, list: string[]) {
             tempFactor += 1;
         }
         //for each letter in the word that is found in the word, add 1, dont repeat
-        const tempArr = word.split('');
-        const tempArrIn = input.split('');
+        const tempArr = word.split("");
+        const tempArrIn = input.split("");
         for (let i = 0; i < tempArr.length; i++) {
             for (let j = 0; j < tempArrIn.length; j++) {
                 if (tempArr[i] == tempArrIn[j]) {
@@ -196,17 +264,23 @@ export function searchMatch(input: string, list: string[]) {
         }
         //for each letter with same pos add 1, dont repeat
         for (let i = 0; i < input.length; i++) {
-            if (input.trim().toLowerCase().charAt(i) == word.trim().toLowerCase().charAt(i)) {
+            if (
+                input.trim().toLowerCase().charAt(i) ==
+                word.trim().toLowerCase().charAt(i)
+            ) {
                 tempFactor += 2;
             }
         }
-        if (word.trim().toLowerCase().includes(input.trim().toLowerCase()) || input.trim().toLowerCase().includes(word.trim().toLowerCase())) {
+        if (
+            word.trim().toLowerCase().includes(input.trim().toLowerCase()) ||
+            input.trim().toLowerCase().includes(word.trim().toLowerCase())
+        ) {
             tempFactor += 4;
         }
-        const tempWordArr = word.split(' ');
-        word.includes(' ') ? word.split(' ') : [word];
-        const tempWordArrIn = input.split(' ');
-        input.includes(' ') ? input.split(' ') : [input];
+        const tempWordArr = word.split(" ");
+        word.includes(" ") ? word.split(" ") : [word];
+        const tempWordArrIn = input.split(" ");
+        input.includes(" ") ? input.split(" ") : [input];
         for (const sub of tempWordArr) {
             if (tempWordArrIn.includes(sub)) {
                 tempFactor += 3;
@@ -220,7 +294,7 @@ export function searchMatch(input: string, list: string[]) {
         sort.push({ factor: tempFactor, text: word });
     }
     sort.sort((a, b) => b.factor - a.factor);
-    return sort.map(x => x.text);
+    return sort.map((x) => x.text);
 }
 
 /**
@@ -233,8 +307,8 @@ export function removeDupes(arr: any[]) {
 }
 
 /**
- * filters array by search. 
- * 
+ * filters array by search.
+ *
  * returns array with items that include the search string
  */
 export function filterSearchArray(arr: string[], search: string) {
@@ -243,16 +317,16 @@ export function filterSearchArray(arr: string[], search: string) {
 
 export function censorConfig() {
     return {
-        "token": "!!!",
-        "osu": {
-            "clientId": "!!!",
-            "clientSecret": "!!!"
+        token: "!!!",
+        osu: {
+            clientId: "!!!",
+            clientSecret: "!!!",
         },
-        "prefix": "!!!",
-        "owners": ["!!!"],
-        "tenorKey": "!!!",
-        "enableTracking": null,
-        "logs": null
+        prefix: "!!!",
+        owners: ["!!!"],
+        tenorKey: "!!!",
+        enableTracking: null,
+        logs: null,
     };
 }
 
@@ -261,7 +335,7 @@ export function formatHours(arr: string[]) {
         return "";
     }
 
-    arr = arr.map(time => time.trim()).sort();
+    arr = arr.map((time) => time.trim()).sort();
     const formattedHours = [];
     let startHour = arr[0];
     let endHour = arr[0];
@@ -270,18 +344,26 @@ export function formatHours(arr: string[]) {
         const currentHour = arr[i];
         const previousHour = arr[i - 1];
 
-        const currentTimestamp = new Date(`2000-01-01T${currentHour}:00`).getTime();
-        const previousTimestamp = new Date(`2000-01-01T${previousHour}:00`).getTime();
+        const currentTimestamp = new Date(
+            `2000-01-01T${currentHour}:00`,
+        ).getTime();
+        const previousTimestamp = new Date(
+            `2000-01-01T${previousHour}:00`,
+        ).getTime();
 
         if (currentTimestamp - previousTimestamp === 3600000) {
             endHour = currentHour;
         } else {
-            formattedHours.push(startHour === endHour ? startHour : `${startHour} - ${endHour}`);
+            formattedHours.push(
+                startHour === endHour ? startHour : `${startHour} - ${endHour}`,
+            );
             startHour = endHour = currentHour;
         }
     }
 
-    formattedHours.push(startHour === endHour ? startHour : `${startHour} - ${endHour}`);
+    formattedHours.push(
+        startHour === endHour ? startHour : `${startHour} - ${endHour}`,
+    );
 
     return formattedHours.join(", ");
 }
@@ -290,15 +372,15 @@ export function ubitflagsAsName(flags: Discord.UserFlagsBitField) {
     log.stdout(flags);
     const fl = flags.toArray();
     log.stdout(fl);
-    return 'aa';
+    return "aa";
 }
 
 export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     const temp = flags.toArray();
-    const tempMap = temp.map(x => helper.emojis.discord.flags[x]);
+    const tempMap = temp.map((x) => helper.emojis.discord.flags[x]);
     const newArr: string[] = [];
     for (let i = 0; i < temp.length; i++) {
-        let a = '';
+        let a = "";
         if (!tempMap[i] || tempMap[i].length == 0) {
             a = temp[i];
         } else {
@@ -309,16 +391,38 @@ export function userbitflagsToEmoji(flags: Discord.UserFlagsBitField) {
     return newArr;
 }
 
-export function scoreTotalHits(stats: osuapi.types_v2.ScoreStatistics, ruleset: osuapi.Ruleset) {
+export function scoreTotalHits(
+    stats: osuapi.types_v2.ScoreStatistics,
+    ruleset: osuapi.Ruleset,
+) {
     switch (ruleset) {
-        case osuapi.Ruleset.osu: default:
-            return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+        case osuapi.Ruleset.osu:
+        default:
+            return (
+                stats.great +
+                (stats.ok ?? 0) +
+                (stats.meh ?? 0) +
+                (stats.miss ?? 0)
+            );
         case osuapi.Ruleset.taiko:
             return stats.great + (stats.good ?? 0) + (stats.miss ?? 0);
         case osuapi.Ruleset.fruits:
-            return stats.great + (stats.ok ?? 0) + (stats.meh ?? 0) + stats.small_tick_hit + (stats.miss ?? 0);
+            return (
+                stats.great +
+                (stats.ok ?? 0) +
+                (stats.meh ?? 0) +
+                stats.small_tick_hit +
+                (stats.miss ?? 0)
+            );
         case osuapi.Ruleset.mania:
-            return (stats.perfect ?? 0) + stats.great + stats.good + (stats.ok ?? 0) + (stats.meh ?? 0) + (stats.miss ?? 0);
+            return (
+                (stats.perfect ?? 0) +
+                stats.great +
+                stats.good +
+                (stats.ok ?? 0) +
+                (stats.meh ?? 0) +
+                (stats.miss ?? 0)
+            );
     }
 }
 
@@ -327,57 +431,75 @@ export function scoreIsComplete(
     circles: number,
     sliders: number,
     spinners: number,
-    ruleset: osuapi.Ruleset
+    ruleset: osuapi.Ruleset,
 ) {
     let total = scoreTotalHits(stats, ruleset);
     return {
         passed: total == circles + sliders + spinners,
         objectsHit: total,
-        percentage: Math.abs(total / (circles + sliders + spinners)) * 100
+        percentage: Math.abs(total / (circles + sliders + spinners)) * 100,
     };
 }
 
-export function filterScoreQuery(scores: osuapi.types_v2.Score[], search: string) {
-    return scores.filter((score) =>
-        (
-            score.beatmapset.title.toLowerCase().replaceAll(' ', '')
-            +
-            score.beatmapset.artist.toLowerCase().replaceAll(' ', '')
-            +
-            score.beatmap.version.toLowerCase().replaceAll(' ', '')
-        ).includes(search.toLowerCase().replaceAll(' ', ''))
-        ||
-        score.beatmapset.title.toLowerCase().replaceAll(' ', '').includes(search.toLowerCase().replaceAll(' ', ''))
-        ||
-        score.beatmapset.artist.toLowerCase().replaceAll(' ', '').includes(search.toLowerCase().replaceAll(' ', ''))
-        ||
-        score.beatmap.version.toLowerCase().replaceAll(' ', '').includes(search.toLowerCase().replaceAll(' ', ''))
-        ||
-        search.toLowerCase().replaceAll(' ', '').includes(score.beatmapset.title.toLowerCase().replaceAll(' ', ''))
-        ||
-        search.toLowerCase().replaceAll(' ', '').includes(score.beatmapset.artist.toLowerCase().replaceAll(' ', ''))
-        ||
-        search.toLowerCase().replaceAll(' ', '').includes(score.beatmap.version.toLowerCase().replaceAll(' ', ''))
+export function filterScoreQuery(
+    scores: osuapi.types_v2.Score[],
+    search: string,
+) {
+    return scores.filter(
+        (score) =>
+            (
+                score.beatmapset.title.toLowerCase().replaceAll(" ", "") +
+                score.beatmapset.artist.toLowerCase().replaceAll(" ", "") +
+                score.beatmap.version.toLowerCase().replaceAll(" ", "")
+            ).includes(search.toLowerCase().replaceAll(" ", "")) ||
+            score.beatmapset.title
+                .toLowerCase()
+                .replaceAll(" ", "")
+                .includes(search.toLowerCase().replaceAll(" ", "")) ||
+            score.beatmapset.artist
+                .toLowerCase()
+                .replaceAll(" ", "")
+                .includes(search.toLowerCase().replaceAll(" ", "")) ||
+            score.beatmap.version
+                .toLowerCase()
+                .replaceAll(" ", "")
+                .includes(search.toLowerCase().replaceAll(" ", "")) ||
+            search
+                .toLowerCase()
+                .replaceAll(" ", "")
+                .includes(
+                    score.beatmapset.title.toLowerCase().replaceAll(" ", ""),
+                ) ||
+            search
+                .toLowerCase()
+                .replaceAll(" ", "")
+                .includes(
+                    score.beatmapset.artist.toLowerCase().replaceAll(" ", ""),
+                ) ||
+            search
+                .toLowerCase()
+                .replaceAll(" ", "")
+                .includes(
+                    score.beatmap.version.toLowerCase().replaceAll(" ", ""),
+                ),
     );
 }
 
-export async function getFailPoint(
-    objectsPassed: number,
-    mapPath: string,
-) {
+export async function getFailPoint(objectsPassed: number, mapPath: string) {
     let time = 1000;
     if (fs.existsSync(mapPath)) {
         try {
             const decoder = new osuparsers.BeatmapDecoder();
-            const beatmap = await decoder.decodeFromPath(mapPath, false) as any as osuclasses.Beatmap;
+            const beatmap = (await decoder.decodeFromPath(
+                mapPath,
+                false,
+            )) as any as osuclasses.Beatmap;
             if (objectsPassed == null || objectsPassed < 1) {
                 objectsPassed = 1;
             }
             const objectOfFail = beatmap.hitObjects[objectsPassed - 1];
             time = objectOfFail.startTime;
-        } catch (error) {
-
-        }
+        } catch (error) {}
     } else {
         log.stdout("Path does not exist: " + mapPath);
     }
@@ -386,15 +508,19 @@ export async function getFailPoint(
 
 // checks if code is a valid iso 3166-1 alpha-2 code
 export function validCountryCodeA2(code: string) {
-    return helper.iso._3166_1_alpha2.some(x => x == code.toUpperCase());
+    return helper.iso._3166_1_alpha2.some((x) => x == code.toUpperCase());
 }
 
 /**
- * 
- * @param defaultToNan - if the stat isnt found, return NaN instead of 0 
- * @returns 
+ *
+ * @param defaultToNan - if the stat isnt found, return NaN instead of 0
+ * @returns
  */
-export function lazerToOldStatistics(stats: osuapi.types_v2.ScoreStatistics, mode: rosu.GameMode, defaultToNan?: boolean): osuapi.types_v2.Statistics {
+export function lazerToOldStatistics(
+    stats: osuapi.types_v2.ScoreStatistics,
+    mode: rosu.GameMode,
+    defaultToNan?: boolean,
+): osuapi.types_v2.Statistics {
     let foo: osuapi.types_v2.Statistics;
     let dv = defaultToNan ? NaN : 0;
     switch (mode) {
@@ -405,7 +531,7 @@ export function lazerToOldStatistics(stats: osuapi.types_v2.ScoreStatistics, mod
                 count_50: stats?.meh ?? dv,
                 count_miss: stats?.miss ?? dv,
                 count_geki: NaN,
-                count_katu: NaN
+                count_katu: NaN,
             };
             break;
         case 1:
@@ -415,14 +541,14 @@ export function lazerToOldStatistics(stats: osuapi.types_v2.ScoreStatistics, mod
                 count_50: NaN,
                 count_miss: stats?.miss ?? dv,
                 count_geki: NaN,
-                count_katu: NaN
+                count_katu: NaN,
             };
             break;
         case 2:
             foo = {
                 count_300: stats.great, // fruits
                 count_100: stats?.ok ?? dv, // drops
-                count_50: stats?.small_tick_hit ?? dv, // droplets 
+                count_50: stats?.small_tick_hit ?? dv, // droplets
                 count_miss: stats?.miss ?? dv, //
                 count_geki: NaN,
                 count_katu: stats?.small_tick_miss ?? dv, // droplets miss
@@ -443,12 +569,21 @@ export function lazerToOldStatistics(stats: osuapi.types_v2.ScoreStatistics, mod
 }
 
 export function getTotalScore(score: osuapi.types_v2.Score): number {
-    return score.mods.map(x => x.acronym).includes('CL') ?
-        scoreIsStable(score) ?
-            score?.legacy_total_score :
-            score.classic_total_score :
-        score.total_score;
+    return score.mods.map((x) => x.acronym).includes("CL")
+        ? scoreIsStable(score)
+            ? score?.legacy_total_score
+            : score.classic_total_score
+        : score.total_score;
+}
 
+export function formatScore(score: osuapi.types_v2.Score, type = "long") {
+    let fn = separateNum;
+    if (type == "short") fn = numberShorthand;
+    const pts = getTotalScore(score);
+    if (pts != score.total_score) {
+        return fn(score.total_score) + ` (${fn(pts)} CL)`;
+    }
+    return fn(score.total_score);
 }
 
 /**
@@ -456,37 +591,41 @@ export function getTotalScore(score: osuapi.types_v2.Score): number {
  */
 export function scoreIsStable(score: osuapi.types_v2.Score): boolean {
     /**
- * check score is on stable or lazer
- * stable ->
- * mods always include classic (CL)
- * score build id is null
- * lazer ->
- * legacy total score is 0 or null
- * legacy score id is null (NOT 0)
- */
+     * check score is on stable or lazer
+     * stable ->
+     * mods always include classic (CL)
+     * score build id is null
+     * lazer ->
+     * legacy total score is 0 or null
+     * legacy score id is null (NOT 0)
+     */
 
     if (score.legacy_total_score == 0) return false;
     if (score.legacy_score_id == null) return false;
-    if (!score.mods.map(x => x.acronym).includes('CL')) return false;
+    if (!score.mods.map((x) => x.acronym).includes("CL")) return false;
     if (score.build_id) return false;
     return true;
 }
 
 export function listItems(list: string[]) {
-    let string = '';
+    let string = "";
     if (list.length > 1) {
-
         for (let i = 0; i < list.length - 2; i++) {
-            string += list[i] + ', ';
+            string += list[i] + ", ";
         }
-        string += list[list.length - 2] + ' and ' + list[list.length - 1];
+        string += list[list.length - 2] + " and " + list[list.length - 1];
     } else {
         return list[0];
     }
     return string;
 }
 
-export function objectIsEmpty(data: object, disallowNull = true, disallowNaN = true, disallowEmptyString = true): boolean {
+export function objectIsEmpty(
+    data: object,
+    disallowNull = true,
+    disallowNaN = true,
+    disallowEmptyString = true,
+): boolean {
     if (Object.keys(data).length == 0) return true;
     let temp = 0;
     for (const value of Object.values(data)) {
@@ -497,13 +636,28 @@ export function objectIsEmpty(data: object, disallowNull = true, disallowNaN = t
     return temp == Object.keys(data).length;
 }
 
-export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true, disallowEmptyString = true): boolean {
+export function dataIsEmpty(
+    value: any,
+    disallowNull = true,
+    disallowNaN = true,
+    disallowEmptyString = true,
+): boolean {
     const expressions = [
-        () => (value == undefined),
-        () => (value == null && disallowNull),
-        () => (typeof value == "number" && isNaN(value) && disallowNaN),
-        () => (typeof value == "string" && value.length == 0 && disallowEmptyString),
-        () => (typeof value == "object" && objectIsEmpty(value, disallowNull, disallowNaN, disallowEmptyString)),
+        () => value == undefined,
+        () => value == null && disallowNull,
+        () => typeof value == "number" && isNaN(value) && disallowNaN,
+        () =>
+            typeof value == "string" &&
+            value.length == 0 &&
+            disallowEmptyString,
+        () =>
+            typeof value == "object" &&
+            objectIsEmpty(
+                value,
+                disallowNull,
+                disallowNaN,
+                disallowEmptyString,
+            ),
     ];
     for (const ex of expressions) {
         if (ex()) return true;
@@ -513,11 +667,11 @@ export function dataIsEmpty(value: any, disallowNull = true, disallowNaN = true,
 
 /**
  * similar to PHPs isset() function
- * 
+ *
  * checks if a value has been set or not
  */
 export function isSet(value: any) {
-    return (value != null && value != undefined);
+    return value != null && value != undefined;
 }
 
 export function repeatArray<T extends any>(data: T, count: number): T[] {

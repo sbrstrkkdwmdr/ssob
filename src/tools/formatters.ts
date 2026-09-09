@@ -1,67 +1,63 @@
-import * as Discord from 'discord.js';
-import * as osumodcalc from 'osumodcalculator';
-import { PerformanceAttributes } from 'rosu-pp-js';
-import * as helper from '../helper';
-import * as tooltypes from '../types/tools';
-import * as calculate from './calculate';
-import * as osuapi from './osuapi';
-import * as other from './other';
-import * as performance from './performance';
+import * as Discord from "discord.js";
+import * as osumodcalc from "osumodcalculator";
+import { PerformanceAttributes } from "rosu-pp-js";
+import * as helper from "../helper";
+import * as tooltypes from "../types/tools";
+import * as calculate from "./calculate";
+import * as osuapi from "./osuapi";
+import * as other from "./other";
+import * as performance from "./performance";
 export class ScoreFormatter {
-    ranks = [
-        'XH',
-        'X',
-        'SH',
-        'S',
-        'A',
-        'B',
-        'C',
-        'D',
-        'F',
-    ];
+    ranks = ["XH", "X", "SH", "S", "A", "B", "C", "D", "F"];
     private scores: osuapi.types_v2.Score[];
     private indexed: helper.tooltypes.indexed<osuapi.types_v2.Score>[];
     public get data() {
         return this.indexed;
     }
-    private sort: 'pp' | 'score' | 'recent' | 'acc' | 'combo' | 'miss' | 'rank' | 'sr';
+    private sort:
+        "pp" | "score" | "recent" | "acc" | "combo" | "miss" | "rank" | "sr";
     private filter: {
-        mapper: string,
-        title: string,
-        artist: string,
-        version: string,
-        modsInclude: osumodcalc.types.Mod[],
-        modsExact: (osumodcalc.types.Mod | 'NONE')[],
-        modsExclude: osumodcalc.types.Mod[],
-        rank: string,
-        pp: string,
-        score: string,
-        acc: string,
-        combo: string,
-        miss: string,
-        bpm: string,
-        isnochoke: boolean,
+        mapper: string;
+        title: string;
+        artist: string;
+        version: string;
+        modsInclude: osumodcalc.types.Mod[];
+        modsExact: (osumodcalc.types.Mod | "NONE")[];
+        modsExclude: osumodcalc.types.Mod[];
+        rank: string;
+        pp: string;
+        score: string;
+        acc: string;
+        combo: string;
+        miss: string;
+        bpm: string;
+        isnochoke: boolean;
     };
     private reverse: boolean;
     private overrideMap: osuapi.types_v2.Beatmap;
     private page: number = 0;
     private showOriginalIndex: boolean = true;
-    private preset?: 'map_leaderboard' | 'single_map';
+    private preset?: "map_leaderboard" | "single_map";
 
-    constructor(
-        {
-            scores, sort, filter, reverse, page, showOriginalIndex, preset, overrideMap
-        }: {
-            scores: osuapi.types_v2.Score[],
-            sort: typeof this.sort,
-            filter: typeof this.filter,
-            reverse: boolean,
-            page: number,
-            showOriginalIndex: boolean,
-            preset?: 'map_leaderboard' | 'single_map',
-            overrideMap?: osuapi.types_v2.BeatmapExtended,
-        }
-    ) {
+    constructor({
+        scores,
+        sort,
+        filter,
+        reverse,
+        page,
+        showOriginalIndex,
+        preset,
+        overrideMap,
+    }: {
+        scores: osuapi.types_v2.Score[];
+        sort: typeof this.sort;
+        filter: typeof this.filter;
+        reverse: boolean;
+        page: number;
+        showOriginalIndex: boolean;
+        preset?: "map_leaderboard" | "single_map";
+        overrideMap?: osuapi.types_v2.BeatmapExtended;
+    }) {
         this.scores = scores;
         this.sort = sort;
         this.filter = filter;
@@ -84,17 +80,45 @@ export class ScoreFormatter {
         }
     }
     async filterScores() {
-        const dict: helper.tooltypes.Dict<(score: helper.tooltypes.indexed<osuapi.types_v2.Score>) => boolean> = {
-            mapper: (score => matchesString(score.beatmapset.user.username, this.filter.mapper) || matchesString(score.beatmapset.user_id + '', this.filter.mapper) || matchesString((this.overrideMap ?? score.beatmap).user_id + '', this.filter.mapper)),
-            title: (score => matchesString(score.beatmapset.title, this.filter.title) || matchesString(score.beatmapset.title_unicode, this.filter.title)),
-            artist: (score => matchesString(score.beatmapset.artist, this.filter.artist) || matchesString(score.beatmapset.artist_unicode, this.filter.artist)),
-            version: (score => matchesString((this.overrideMap ?? score.beatmap).version, this.filter.version)),
+        const dict: helper.tooltypes.Dict<
+            (score: helper.tooltypes.indexed<osuapi.types_v2.Score>) => boolean
+        > = {
+            mapper: (score) =>
+                matchesString(
+                    score.beatmapset.user.username,
+                    this.filter.mapper,
+                ) ||
+                matchesString(
+                    score.beatmapset.user_id + "",
+                    this.filter.mapper,
+                ) ||
+                matchesString(
+                    (this.overrideMap ?? score.beatmap).user_id + "",
+                    this.filter.mapper,
+                ),
+            title: (score) =>
+                matchesString(score.beatmapset.title, this.filter.title) ||
+                matchesString(
+                    score.beatmapset.title_unicode,
+                    this.filter.title,
+                ),
+            artist: (score) =>
+                matchesString(score.beatmapset.artist, this.filter.artist) ||
+                matchesString(
+                    score.beatmapset.artist_unicode,
+                    this.filter.artist,
+                ),
+            version: (score) =>
+                matchesString(
+                    (this.overrideMap ?? score.beatmap).version,
+                    this.filter.version,
+                ),
         };
         const argRangeDict: helper.tooltypes.Dict<string> = {
-            pp: 'pp',
-            score: 'total_score',
-            acc: 'total_accuracy',
-            combo: 'max_combo',
+            pp: "pp",
+            score: "total_score",
+            acc: "total_accuracy",
+            combo: "max_combo",
         };
         for (const key in dict) {
             if (this.filter?.[key]) {
@@ -104,18 +128,22 @@ export class ScoreFormatter {
         for (const key in argRangeDict) {
             if (this.filter?.[key]) {
                 const tempArg = argRange(this.filter[key], true);
-                this.indexed = this.indexed.filter(score => {
+                this.indexed = this.indexed.filter((score) => {
                     filterArgRange(score[argRangeDict[key]] ?? 0, tempArg);
                 });
             }
         }
         if (this.filter?.miss) {
             const tempArg = argRange(this.filter.miss, true);
-            this.indexed = this.indexed.filter(score => filterArgRange(score?.statistics?.miss ?? 0, tempArg));
+            this.indexed = this.indexed.filter((score) =>
+                filterArgRange(score?.statistics?.miss ?? 0, tempArg),
+            );
         }
         if (this.filter?.bpm) {
             const tempArg = argRange(this.filter.bpm, true);
-            this.indexed = this.indexed.filter(score => filterArgRange((this.overrideMap ?? score.beatmap).id, tempArg));
+            this.indexed = this.indexed.filter((score) =>
+                filterArgRange((this.overrideMap ?? score.beatmap).id, tempArg),
+            );
         }
         this.filterMods();
     }
@@ -130,8 +158,8 @@ export class ScoreFormatter {
         }
     }
     filterIncludeMods() {
-        this.indexed = this.indexed.filter(score => {
-            const mods = score.mods.map(x => x.acronym);
+        this.indexed = this.indexed.filter((score) => {
+            const mods = score.mods.map((x) => x.acronym);
             for (const mod of this.filter.modsInclude) {
                 if (!mods.includes(mod)) return false;
             }
@@ -139,11 +167,18 @@ export class ScoreFormatter {
         });
     }
     filterExactMods() {
-        if (this.filter?.modsExact.includes('NONE')) {
-            this.indexed = this.indexed.filter(score => score.mods.length == 0 || score.mods.map(x => x.acronym).join('') == 'CL' || score.mods.map(x => x.acronym).join('') == 'LZ');
+        if (this.filter?.modsExact.includes("NONE")) {
+            this.indexed = this.indexed.filter(
+                (score) =>
+                    score.mods.length == 0 ||
+                    score.mods.map((x) => x.acronym).join("") == "CL" ||
+                    score.mods.map((x) => x.acronym).join("") == "LZ",
+            );
         } else {
-            this.indexed = this.indexed.filter(score => {
-                const mods = score.mods.map(x => x.acronym) as osumodcalc.types.Mod[];
+            this.indexed = this.indexed.filter((score) => {
+                const mods = score.mods.map(
+                    (x) => x.acronym,
+                ) as osumodcalc.types.Mod[];
                 if (mods.length != this.filter.modsExact.length) return false;
                 for (const mod of mods) {
                     if (!this.filter.modsExact.includes(mod)) return false;
@@ -153,16 +188,25 @@ export class ScoreFormatter {
         }
     }
     filterExcludeMods() {
-        const xlModsArr = osumodcalc.mod.fix(this.filter?.modsExclude, osumodcalc.mode.toName(this.indexed?.[0]?.ruleset_id ?? 0));
-        if (this.filter?.modsExclude.includes('DT') && this.filter?.modsExclude.includes('NC')) {
-            xlModsArr.push('DT');
+        const xlModsArr = osumodcalc.mod.fix(
+            this.filter?.modsExclude,
+            osumodcalc.mode.toName(this.indexed?.[0]?.ruleset_id ?? 0),
+        );
+        if (
+            this.filter?.modsExclude.includes("DT") &&
+            this.filter?.modsExclude.includes("NC")
+        ) {
+            xlModsArr.push("DT");
         }
-        if (this.filter?.modsExclude.includes('HT') && this.filter?.modsExclude.includes('DC')) {
-            xlModsArr.push('DC');
+        if (
+            this.filter?.modsExclude.includes("HT") &&
+            this.filter?.modsExclude.includes("DC")
+        ) {
+            xlModsArr.push("DC");
         }
-        this.indexed = this.indexed.filter(score => {
+        this.indexed = this.indexed.filter((score) => {
             let x: boolean = true;
-            score.mods.forEach(mod => {
+            score.mods.forEach((mod) => {
                 if (xlModsArr.includes(mod.acronym as osumodcalc.types.Mod)) {
                     x = false;
                 }
@@ -174,30 +218,44 @@ export class ScoreFormatter {
     async sortScores() {
         await this.updateScores_modded();
         switch (this.sort) {
-            case 'pp':
+            case "pp":
                 await this.updateScores_performance();
                 this.indexed.sort((a, b) => b.pp - a.pp);
                 break;
-            case 'score':
+            case "score":
                 this.indexed.sort((a, b) => b.total_score - a.total_score);
                 break;
-            case 'recent':
-                this.indexed.sort((a, b) => (new Date(b.ended_at ?? b.started_at)).getTime() - (new Date(a.ended_at ?? a.started_at)).getTime());
+            case "recent":
+                this.indexed.sort(
+                    (a, b) =>
+                        new Date(b.ended_at ?? b.started_at).getTime() -
+                        new Date(a.ended_at ?? a.started_at).getTime(),
+                );
                 break;
-            case 'acc':
+            case "acc":
                 this.indexed.sort((a, b) => b.accuracy - a.accuracy);
                 break;
-            case 'combo':
+            case "combo":
                 this.indexed.sort((a, b) => b.max_combo - a.max_combo);
                 break;
-            case 'miss':
-                this.indexed.sort((a, b) => (a.statistics.miss ?? 0) - (b.statistics.miss ?? 0));
+            case "miss":
+                this.indexed.sort(
+                    (a, b) =>
+                        (a.statistics.miss ?? 0) - (b.statistics.miss ?? 0),
+                );
                 break;
-            case 'rank':
-                this.indexed.sort((a, b) => this.ranks.indexOf(a.rank) - this.ranks.indexOf(b.rank));
+            case "rank":
+                this.indexed.sort(
+                    (a, b) =>
+                        this.ranks.indexOf(a.rank) - this.ranks.indexOf(b.rank),
+                );
                 break;
-            case 'sr':
-                this.indexed.sort((a, b) => (b?.beatmap?.difficulty_rating ?? 0) - (a?.beatmap?.difficulty_rating ?? 0));
+            case "sr":
+                this.indexed.sort(
+                    (a, b) =>
+                        (b?.beatmap?.difficulty_rating ?? 0) -
+                        (a?.beatmap?.difficulty_rating ?? 0),
+                );
                 break;
         }
     }
@@ -205,9 +263,9 @@ export class ScoreFormatter {
         const sc = [];
         for (const score of this.indexed) {
             sc.push(
-                !score.pp || isNaN(score.pp) ?
-                    await this.calculatePerformance(score) :
-                    score
+                !score.pp || isNaN(score.pp)
+                    ? await this.calculatePerformance(score)
+                    : score,
             );
         }
         this.indexed = sc;
@@ -216,9 +274,9 @@ export class ScoreFormatter {
         const sc = [];
         for (const score of this.indexed) {
             sc.push(
-                score.mods.length > 0 ?
-                    await this.calculatePerformance(score) :
-                    score
+                score.mods.length > 0
+                    ? await this.calculatePerformance(score)
+                    : score,
             );
         }
         this.indexed = sc;
@@ -234,14 +292,17 @@ export class ScoreFormatter {
         const perf = await performance.calcScore({
             mapid: this.overrideMap?.id ?? score.beatmap_id,
             mode: score.ruleset_id,
-            mods: score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+            mods: score.mods.map((x) => x.acronym) as osumodcalc.types.Mod[],
             accuracy: useacc,
             clockRate: performance.getModSpeed(score.mods),
             stats: usestats,
             maxcombo: score.max_combo,
-            passedObjects: other.scoreTotalHits(score.statistics, score.ruleset_id),
+            passedObjects: other.scoreTotalHits(
+                score.statistics,
+                score.ruleset_id,
+            ),
             mapLastUpdated: new Date(score.ended_at),
-            isLazer: !((score?.legacy_total_score ?? 1) > 0)
+            isLazer: !((score?.legacy_total_score ?? 1) > 0),
         });
         score.pp = perf.pp;
         if (score.beatmap) {
@@ -251,31 +312,37 @@ export class ScoreFormatter {
     }
     scoreAccuracy(score: osuapi.types_v2.Score) {
         switch (osumodcalc.mode.toName(score.ruleset_id)) {
-            case 'osu': default:
+            case "osu":
+            default:
                 return osumodcalc.accuracy.standard(
                     score.statistics.great ?? 0,
                     score.statistics.ok ?? 0,
-                    score.statistics.meh ?? 0, 0).accuracy;
-            case 'taiko':
+                    score.statistics.meh ?? 0,
+                    0,
+                ).accuracy;
+            case "taiko":
                 return osumodcalc.accuracy.taiko(
                     score.statistics.great ?? 0,
                     score.statistics.good ?? 0,
-                    score.statistics.miss ?? 0).accuracy;
-            case 'fruits':
+                    score.statistics.miss ?? 0,
+                ).accuracy;
+            case "fruits":
                 return osumodcalc.accuracy.fruits(
                     score.statistics.great ?? 0,
                     score.statistics.ok ?? 0,
                     score.statistics.small_tick_hit ?? 0,
                     score.statistics.small_tick_miss ?? 0,
-                    score.statistics.miss ?? 0).accuracy;
-            case 'mania':
+                    score.statistics.miss ?? 0,
+                ).accuracy;
+            case "mania":
                 return osumodcalc.accuracy.mania(
                     score.statistics.perfect ?? 0,
                     score.statistics.great ?? 0,
                     score.statistics.good ?? 0,
                     score.statistics.ok ?? 0,
                     score.statistics.meh ?? 0,
-                    score.statistics.miss ?? 0).accuracy;
+                    score.statistics.miss ?? 0,
+                ).accuracy;
         }
         // return score.accuracy;
     }
@@ -296,48 +363,69 @@ export class ScoreFormatter {
         if (text.length == 0) {
             switch (0) {
                 case this.scores.length:
-                    text = ['**ERROR**\nNo scores found'];
+                    text = ["**ERROR**\nNo scores found"];
                     break;
                 case this.indexed.length:
-                    text = ['**ERROR**\nNo scores found matching the given filters'];
+                    text = [
+                        "**ERROR**\nNo scores found matching the given filters",
+                    ];
                     break;
             }
-            text = ['**ERROR**\nNo scores found'];
+            text = ["**ERROR**\nNo scores found"];
         }
         return {
-            text: text.join('\n\n'),
+            text: text.join("\n\n"),
             curPage: this.page,
             maxPage,
-            used: this.indexed ?? []
+            used: this.indexed ?? [],
         };
     }
-    async formatScore(score: helper.tooltypes.indexed<osuapi.types_v2.Score>, index: number): Promise<string> {
+    async formatScore(
+        score: helper.tooltypes.indexed<osuapi.types_v2.Score>,
+        index: number,
+    ): Promise<string> {
         let info = this.scoreHeader(score, index);
         const perfs = await this.scorePerformance(score);
 
-        info += '\n' + this.scoreStatsRankScoreMods(score);
-        info += '\n' + this.scoreStatsHitsComboAcc(score, perfs);
-        info += '\n' + this.scoreStatsPerformance(score, perfs);
+        info += "\n" + this.scoreStatsRankScoreMods(score);
+        info += "\n" + this.scoreStatsHitsComboAcc(score, perfs);
+        info += "\n" + this.scoreStatsPerformance(score, perfs);
 
         return info;
     }
-    scoreHeader(score: helper.tooltypes.indexed<osuapi.types_v2.Score>, index: number) {
+    scoreHeader(
+        score: helper.tooltypes.indexed<osuapi.types_v2.Score>,
+        index: number,
+    ) {
         let str = `**#${(this.showOriginalIndex ? score.originalIndex : index) + 1}`;
-        let modadjustments = '';
-        if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
-            modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
+        let modadjustments = "";
+        if (score.mods.filter((x) => x?.settings?.speed_change).length > 0) {
+            modadjustments +=
+                " (" +
+                score.mods.filter((x) => x?.settings?.speed_change)[0].settings
+                    .speed_change +
+                "x)";
         }
         switch (this.preset) {
-            case 'map_leaderboard':
+            case "map_leaderboard":
                 str += `・[${score.user.username}](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `u/${score.user_id}`})`;
                 break;
-            case 'single_map': {
-                let t = osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments;
-                if (t == '') {
-                    t = 'NM';
+            case "single_map":
+                {
+                    let t =
+                        osumodcalc.mod
+                            .order(
+                                score.mods.map(
+                                    (x) => x.acronym,
+                                ) as osumodcalc.types.Mod[],
+                            )
+                            .join("") + modadjustments;
+                    if (t == "") {
+                        t = "NM";
+                    }
+                    str += `・[${t}](https://osu.ppy.sh/scores/${score.id})`;
                 }
-                str += `・[${t}](https://osu.ppy.sh/scores/${score.id})`;
-            } break;
+                break;
             default:
                 str += `・[${score.beatmapset.title} [${(this.overrideMap ?? score.beatmap).version}]](https://osu.ppy.sh/${score.id ? `scores/${score.id}` : `b/${(this.overrideMap ?? score.beatmap).id}`})`;
                 break;
@@ -349,7 +437,7 @@ export class ScoreFormatter {
         const perfs = await performance.fullPerformance(
             this.overrideMap?.id ?? score.beatmap_id,
             score.ruleset_id,
-            score.mods.map(x => x.acronym) as osumodcalc.types.Mod[],
+            score.mods.map((x) => x.acronym) as osumodcalc.types.Mod[],
             score.accuracy,
             !((score?.legacy_total_score ?? 1) > 0),
             overrides.speed,
@@ -366,18 +454,34 @@ export class ScoreFormatter {
     }
     scoreStatsRankScoreMods(score: osuapi.types_v2.Score) {
         const rank = `${score.passed ? helper.emojis.grades[score.rank] : helper.emojis.grades.F + `(${helper.emojis.grades[this.grade(score).rank.toUpperCase()]} if pass)`}`;
-        const scoreStat = `\`${calculate.numberShorthand(other.getTotalScore(score))}\``;
+        const scoreStat = `\`${other.formatScore(score, "short")}\``;
         const str: string[] = [rank, scoreStat];
         if (score?.beatmap?.difficulty_rating) {
             const stars = `${calculate.fixLongDecimal(score?.beatmap?.difficulty_rating)}⭐`;
             str.push(stars);
         }
-        if (score.mods.length > 0 && this.preset != 'single_map') {
-            let modadjustments = '';
-            if (score.mods.filter(x => x?.settings?.speed_change).length > 0) {
-                modadjustments += ' (' + score.mods.filter(x => x?.settings?.speed_change)[0].settings.speed_change + 'x)';
+        if (score.mods.length > 0 && this.preset != "single_map") {
+            let modadjustments = "";
+            if (
+                score.mods.filter((x) => x?.settings?.speed_change).length > 0
+            ) {
+                modadjustments +=
+                    " (" +
+                    score.mods.filter((x) => x?.settings?.speed_change)[0]
+                        .settings.speed_change +
+                    "x)";
             }
-            const mods = ' **' + osumodcalc.mod.order(score.mods.map(x => x.acronym) as osumodcalc.types.Mod[]).join('') + modadjustments + '**';
+            const mods =
+                " **" +
+                osumodcalc.mod
+                    .order(
+                        score.mods.map(
+                            (x) => x.acronym,
+                        ) as osumodcalc.types.Mod[],
+                    )
+                    .join("") +
+                modadjustments +
+                "**";
             str.push(mods);
         }
         return listLine(str);
@@ -386,16 +490,41 @@ export class ScoreFormatter {
         const stats = score.statistics;
         switch (score.ruleset_id) {
             case 0:
-                return osumodcalc.accuracy.standard(stats.great, stats.ok ?? 0, stats.meh ?? 0, stats.miss ?? 0);
+                return osumodcalc.accuracy.standard(
+                    stats.great,
+                    stats.ok ?? 0,
+                    stats.meh ?? 0,
+                    stats.miss ?? 0,
+                );
             case 1:
-                return osumodcalc.accuracy.taiko(stats.great, stats.good ?? 0, stats.miss ?? 0);
+                return osumodcalc.accuracy.taiko(
+                    stats.great,
+                    stats.good ?? 0,
+                    stats.miss ?? 0,
+                );
             case 2:
-                return osumodcalc.accuracy.fruits(stats.great, stats.ok ?? 0, stats.small_tick_hit ?? 0, stats.small_tick_miss ?? 0, stats.miss ?? 0);
+                return osumodcalc.accuracy.fruits(
+                    stats.great,
+                    stats.ok ?? 0,
+                    stats.small_tick_hit ?? 0,
+                    stats.small_tick_miss ?? 0,
+                    stats.miss ?? 0,
+                );
             case 3:
-                return osumodcalc.accuracy.mania(stats.perfect ?? 0, stats.great, stats.good ?? 0, stats.ok ?? 0, stats.meh ?? 0, stats.miss ?? 0);
+                return osumodcalc.accuracy.mania(
+                    stats.perfect ?? 0,
+                    stats.great,
+                    stats.good ?? 0,
+                    stats.ok ?? 0,
+                    stats.meh ?? 0,
+                    stats.miss ?? 0,
+                );
         }
     }
-    scoreStatsHitsComboAcc(score: osuapi.types_v2.Score, perfs: PerformanceAttributes[]) {
+    scoreStatsHitsComboAcc(
+        score: osuapi.types_v2.Score,
+        perfs: PerformanceAttributes[],
+    ) {
         let str: string[] = [];
         if (this.filter?.isnochoke && score.statistics.miss > 0) {
             let rm = score.statistics.miss;
@@ -407,26 +536,29 @@ export class ScoreFormatter {
             const hits = returnHits(score.statistics, score.ruleset_id).short;
             const combo = `**${perfs[1].difficulty.maxCombo}x**`;
             const accuracy = `${calculate.fixLongDecimal(score.accuracy * 100)}% ->  **${calculate.fixLongDecimal(acc)}%**`;
-            str = [
-                removedMsg, hits, combo, accuracy
-            ];
+            str = [removedMsg, hits, combo, accuracy];
         } else {
             const hits = returnHits(score.statistics, score.ruleset_id).short;
             let combo = `${score?.max_combo}/**${perfs[1].difficulty.maxCombo}x**`;
-            if (score.max_combo == perfs[1].difficulty.maxCombo || !score.max_combo) combo = `**${score.max_combo}x**`;
+            if (
+                score.max_combo == perfs[1].difficulty.maxCombo ||
+                !score.max_combo
+            )
+                combo = `**${score.max_combo}x**`;
             const accuracy = `${calculate.fixLongDecimal(score.accuracy * 100)}%`;
-            str = [
-                hits, combo, accuracy
-            ];
+            str = [hits, combo, accuracy];
         }
         return listLine(str);
     }
-    scoreStatsPerformance(score: osuapi.types_v2.Score, perfs: PerformanceAttributes[]) {
+    scoreStatsPerformance(
+        score: osuapi.types_v2.Score,
+        perfs: PerformanceAttributes[],
+    ) {
         let str = `${calculate.fixLongDecimal(score?.pp ?? perfs[0].pp)}pp`;
         if (!score?.is_perfect_combo) {
-            str += ' (' + calculate.fixLongDecimal(perfs[1].pp) + 'pp if FC)';
+            str += " (" + calculate.fixLongDecimal(perfs[1].pp) + "pp if FC)";
         } else if (score?.accuracy < 1) {
-            str += ' (' + calculate.fixLongDecimal(perfs[2].pp) + 'pp if SS)';
+            str += " (" + calculate.fixLongDecimal(perfs[2].pp) + "pp if SS)";
         }
         return str;
     }
@@ -435,7 +567,7 @@ export class ScoreFormatter {
         await this.parseScores();
         if (this.indexed.length == 0) {
             return {
-                text: 'No scores were found (check the filter options)',
+                text: "No scores were found (check the filter options)",
                 curPage: 0,
                 maxPage: 0,
                 used: this.indexed ?? [],
@@ -450,41 +582,76 @@ export class MapSetFormatter {
     protected indexed: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[];
     protected playcounts: osuapi.types_v2.BeatmapPlaycount[];
     protected indexed_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[];
-    protected sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length';
+    protected sort:
+        | "combo"
+        | "title"
+        | "artist"
+        | "difficulty"
+        | "status"
+        | "failcount"
+        | "plays"
+        | "date"
+        | "favourites"
+        | "bpm"
+        | "cs"
+        | "ar"
+        | "od"
+        | "hp"
+        | "length";
     protected filter: {
-        mapper?: string,
-        title?: string,
-        artist?: string,
-        version?: string,
+        mapper?: string;
+        title?: string;
+        artist?: string;
+        version?: string;
     };
     protected reverse: boolean;
     protected page: number;
-    protected mode: 'set' | 'playcount';
+    protected mode: "set" | "playcount";
     public get data() {
         return this.indexed;
     }
     public get data_playcounts() {
         return this.indexed_pc;
     }
-    constructor({ mapsets, sort, filter, reverse, page }:
-        {
-            mapsets: osuapi.types_v2.BeatmapsetExtended[],
-            sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length',
-            filter: {
-                mapper?: string,
-                title?: string,
-                artist?: string,
-                version?: string,
-            },
-            reverse: boolean,
-            page: number,
-        }) {
+    constructor({
+        mapsets,
+        sort,
+        filter,
+        reverse,
+        page,
+    }: {
+        mapsets: osuapi.types_v2.BeatmapsetExtended[];
+        sort:
+            | "combo"
+            | "title"
+            | "artist"
+            | "difficulty"
+            | "status"
+            | "failcount"
+            | "plays"
+            | "date"
+            | "favourites"
+            | "bpm"
+            | "cs"
+            | "ar"
+            | "od"
+            | "hp"
+            | "length";
+        filter: {
+            mapper?: string;
+            title?: string;
+            artist?: string;
+            version?: string;
+        };
+        reverse: boolean;
+        page: number;
+    }) {
         this.mapsets = mapsets;
         this.sort = sort;
         this.filter = filter;
         this.reverse = reverse;
         this.page = page;
-        this.mode = 'set';
+        this.mode = "set";
         this.indexed = [];
         this.indexed_pc = [];
     }
@@ -501,15 +668,26 @@ export class MapSetFormatter {
         }
     }
     filterMaps() {
-        const dict: helper.tooltypes.Dict<(set: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>) => boolean> = {
-            mapper: (set => matchesString(set.user.username, this.filter.mapper) || matchesString(set.user_id + '', this.filter.mapper) || matchesString(set.user_id + '', this.filter.mapper)),
-            title: (set => matchesString(set.title, this.filter.title) || matchesString(set.title_unicode, this.filter.title)),
-            artist: (set => matchesString(set.artist, this.filter.artist) || matchesString(set.artist_unicode, this.filter.artist)),
-            version: (set => {
+        const dict: helper.tooltypes.Dict<
+            (
+                set: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>,
+            ) => boolean
+        > = {
+            mapper: (set) =>
+                matchesString(set.user.username, this.filter.mapper) ||
+                matchesString(set.user_id + "", this.filter.mapper) ||
+                matchesString(set.user_id + "", this.filter.mapper),
+            title: (set) =>
+                matchesString(set.title, this.filter.title) ||
+                matchesString(set.title_unicode, this.filter.title),
+            artist: (set) =>
+                matchesString(set.artist, this.filter.artist) ||
+                matchesString(set.artist_unicode, this.filter.artist),
+            version: (set) => {
                 for (const map of set.beatmaps) {
                     return matchesString(map.version, this.filter.version);
                 }
-            }),
+            },
         };
         for (const key in dict) {
             if (this.filter?.[key]) {
@@ -522,16 +700,22 @@ export class MapSetFormatter {
         const dict: helper.tooltypes.Dict<
             (
                 a: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>,
-                b: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>
+                b: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>,
             ) => number
         > = {
             title: (a, b) => a.title.localeCompare(b.title),
             artist: (a, b) => a.artist.localeCompare(b.artist),
             difficulty: (a, b) =>
-                b.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0].difficulty_rating -
-                a.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0].difficulty_rating,
+                b.beatmaps.sort(
+                    (a, b) => b.difficulty_rating - a.difficulty_rating,
+                )[0].difficulty_rating -
+                a.beatmaps.sort(
+                    (a, b) => b.difficulty_rating - a.difficulty_rating,
+                )[0].difficulty_rating,
             plays: (a, b) => b.play_count - a.play_count,
-            date: (a, b) => new Date(b.submitted_date).getTime() - new Date(a.submitted_date).getTime(),
+            date: (a, b) =>
+                new Date(b.submitted_date).getTime() -
+                new Date(a.submitted_date).getTime(),
             favourites: (a, b) => b.favourite_count - a.favourite_count,
             bpm: (a, b) => b.bpm - a.bpm,
             cs: (a, b) =>
@@ -547,28 +731,27 @@ export class MapSetFormatter {
                 b.beatmaps.sort((a, b) => b.drain - a.drain)[0].drain -
                 a.beatmaps.sort((a, b) => b.drain - a.drain)[0].drain,
             length: (a, b) =>
-                b.beatmaps[0].total_length -
-                a.beatmaps[0].total_length,
+                b.beatmaps[0].total_length - a.beatmaps[0].total_length,
         };
         const playcountdict: helper.tooltypes.Dict<
             (
                 a: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>,
-                b: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>
+                b: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>,
             ) => number
         > = {
-            plays_pc: (a, b) => b.count - a.count
+            plays_pc: (a, b) => b.count - a.count,
         };
         if (this.sort && dict[this.sort]) {
             this.indexed.sort(dict[this.sort]);
         }
-        if (this.sort && dict[this.sort + '_pc']) {
+        if (this.sort && dict[this.sort + "_pc"]) {
             this.indexed_pc.sort(playcountdict[this.sort]);
         }
     }
-    syncIndexed() {
-
-    }
-    formatMaps(): tooltypes.formatterInfo<osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended> {
+    syncIndexed() {}
+    formatMaps(): tooltypes.formatterInfo<
+        osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended
+    > {
         const pages = this.handlePage();
         let text: string[] = [];
         for (let i = 0; i < 5 && i < this.indexed.length - pages.offset; i++) {
@@ -580,10 +763,10 @@ export class MapSetFormatter {
             text = [this.handleEmpty()];
         }
         return {
-            text: text.join('\n\n'),
+            text: text.join("\n\n"),
             curPage: this.page,
             maxPage: pages.maxPage,
-            used: (this.playcounts ?? this.mapsets)
+            used: this.playcounts ?? this.mapsets,
         };
     }
     handlePage() {
@@ -596,71 +779,117 @@ export class MapSetFormatter {
     handleEmpty() {
         switch (0) {
             case this?.playcounts?.length:
-                return '**ERROR**\nNo maps found';
+                return "**ERROR**\nNo maps found";
                 break;
             case this?.indexed_pc?.length:
-                return '**ERROR**\nNo maps found matching the given filters';
+                return "**ERROR**\nNo maps found matching the given filters";
                 break;
         }
-        return '**ERROR**\nEmpty';
+        return "**ERROR**\nEmpty";
     }
-    formatMap(mapset: osuapi.types_v2.BeatmapsetExtended, index: number, map?: osuapi.types_v2.BeatmapExtended) {
+    formatMap(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        index: number,
+        map?: osuapi.types_v2.BeatmapExtended,
+    ) {
         let info = this.mapHeader(mapset, index);
-        const topmap = map ?? mapset.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0];
-        info += '\n' + this.mapMeta(mapset, topmap);
-        info += '\n' + this.mapCounts(mapset, topmap);
-        info += '\n' + this.mapTimes(mapset, topmap);
+        const topmap =
+            map ??
+            mapset.beatmaps.sort(
+                (a, b) => b.difficulty_rating - a.difficulty_rating,
+            )[0];
+        info += "\n" + this.mapMeta(mapset, topmap);
+        info += "\n" + this.mapCounts(mapset, topmap);
+        info += "\n" + this.mapTimes(mapset, topmap);
         return info;
     }
     mapHeader(mapset: osuapi.types_v2.BeatmapsetExtended, index: number) {
         return `**#${index + 1}・[\`${mapset.artist} - ${mapset.title}\`](https://osu.ppy.sh/s/${mapset.id})**`;
     }
-    mapMeta(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.Beatmap) {
+    mapMeta(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        map: osuapi.types_v2.Beatmap,
+    ) {
         const status = helper.emojis.rankedstatus[mapset.status];
         const gamemode = helper.emojis.gamemodes[map.mode];
         const length = calculate.secondsToTime(map.total_length);
         const bpm = `${mapset.bpm}${helper.emojis.mapobjs.bpm}`;
         return listLine(status, gamemode, length, bpm);
     }
-    mapCounts(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.BeatmapExtended) {
+    mapCounts(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        map: osuapi.types_v2.BeatmapExtended,
+    ) {
         const plays = `${calculate.separateNum(mapset.play_count)} plays`;
         const passes = `${calculate.separateNum(map.passcount ?? 0)} passes`;
         const favourites = `${calculate.separateNum(mapset.favourite_count)} favourites`;
         return listLine(plays, passes, favourites);
     }
-    mapTimes(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.Beatmap) {
+    mapTimes(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        map: osuapi.types_v2.Beatmap,
+    ) {
         const submit = `Submitted <t:${new Date(mapset.submitted_date).getTime() / 1000}:R>`;
         let last = `Last updated <t:${new Date(mapset.last_updated).getTime() / 1000}:R>`;
-        const states = ['ranked', 'approved', 'qualified', 'loved'];
+        const states = ["ranked", "approved", "qualified", "loved"];
         if (states.includes(map.status)) {
             last = `${toCapital(map.status)} <t:${Math.floor(new Date(mapset.ranked_date).getTime() / 1000)}:R>`;
         }
         return listLine(submit, last);
     }
 
-    execute(): tooltypes.formatterInfo<osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended> {
+    execute(): tooltypes.formatterInfo<
+        osuapi.types_v2.BeatmapPlaycount | osuapi.types_v2.BeatmapsetExtended
+    > {
         this.parseMaps();
         return this.formatMaps();
     }
 }
 export class MapPlayFormatter extends MapSetFormatter {
-    constructor({ mapsets, sort, filter, reverse, page }:
-        {
-            mapsets: osuapi.types_v2.BeatmapPlaycount[],
-            sort: 'combo' | 'title' | 'artist' | 'difficulty' | 'status' | 'failcount' | 'plays' | 'date' | 'favourites' | 'bpm' | 'cs' | 'ar' | 'od' | 'hp' | 'length',
-            filter: {
-                mapper?: string,
-                title?: string,
-                artist?: string,
-                version?: string,
-            },
-            reverse: boolean,
-            page: number,
-        }) {
-
-        super({ mapsets: mapsets.map(pc => pc.beatmapset as osuapi.types_v2.BeatmapsetExtended), sort, filter, reverse, page });
+    constructor({
+        mapsets,
+        sort,
+        filter,
+        reverse,
+        page,
+    }: {
+        mapsets: osuapi.types_v2.BeatmapPlaycount[];
+        sort:
+            | "combo"
+            | "title"
+            | "artist"
+            | "difficulty"
+            | "status"
+            | "failcount"
+            | "plays"
+            | "date"
+            | "favourites"
+            | "bpm"
+            | "cs"
+            | "ar"
+            | "od"
+            | "hp"
+            | "length";
+        filter: {
+            mapper?: string;
+            title?: string;
+            artist?: string;
+            version?: string;
+        };
+        reverse: boolean;
+        page: number;
+    }) {
+        super({
+            mapsets: mapsets.map(
+                (pc) => pc.beatmapset as osuapi.types_v2.BeatmapsetExtended,
+            ),
+            sort,
+            filter,
+            reverse,
+            page,
+        });
         this.playcounts = mapsets;
-        this.mode = 'playcount';
+        this.mode = "playcount";
     }
     parseMaps() {
         for (let i = 0; i < this.playcounts.length; i++) {
@@ -678,19 +907,21 @@ export class MapPlayFormatter extends MapSetFormatter {
     }
     syncIndexed() {
         if (this.indexed.length > 0 && this.indexed_pc.length > 0) {
-            const temp: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[] = [];
-            const temp_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[] = [];
-            const setIndexes = this.indexed.map(x => x.originalIndex);
-            const pcIndexes = this.indexed_pc.map(x => x.originalIndex);
+            const temp: helper.tooltypes.indexed<osuapi.types_v2.BeatmapsetExtended>[] =
+                [];
+            const temp_pc: helper.tooltypes.indexed<osuapi.types_v2.BeatmapPlaycount>[] =
+                [];
+            const setIndexes = this.indexed.map((x) => x.originalIndex);
+            const pcIndexes = this.indexed_pc.map((x) => x.originalIndex);
             for (const pc of this.indexed_pc) {
                 if (setIndexes.includes(pc.originalIndex)) {
                     temp_pc.push(pc);
-                };
+                }
             }
             for (const map of this.indexed) {
                 if (pcIndexes.includes(map.originalIndex)) {
                     temp.push(map);
-                };
+                }
             }
             this.indexed = temp;
             this.indexed_pc = temp_pc;
@@ -699,36 +930,60 @@ export class MapPlayFormatter extends MapSetFormatter {
     formatMaps() {
         const pages = this.handlePage();
         let text: string[] = [];
-        for (let i = 0; i < 5 && i < this.indexed_pc.length - pages.offset; i++) {
+        for (
+            let i = 0;
+            i < 5 && i < this.indexed_pc.length - pages.offset;
+            i++
+        ) {
             const pc = this.indexed_pc[i + pages.offset];
             if (!pc) break;
-            text.push(this.formatMap(pc.beatmapset as osuapi.types_v2.BeatmapsetExtended, i + pages.offset, pc.beatmap as osuapi.types_v2.BeatmapExtended));
+            text.push(
+                this.formatMap(
+                    pc.beatmapset as osuapi.types_v2.BeatmapsetExtended,
+                    i + pages.offset,
+                    pc.beatmap as osuapi.types_v2.BeatmapExtended,
+                ),
+            );
         }
         if (text.length == 0) {
             text = [this.handleEmpty()];
         }
         return {
-            text: text.join('\n\n'),
+            text: text.join("\n\n"),
             curPage: this.page,
             maxPage: pages.maxPage,
-            used: (this.playcounts ?? this.mapsets)
+            used: this.playcounts ?? this.mapsets,
         };
     }
-    formatMap(mapset: osuapi.types_v2.BeatmapsetExtended, index: number, map?: osuapi.types_v2.BeatmapExtended) {
+    formatMap(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        index: number,
+        map?: osuapi.types_v2.BeatmapExtended,
+    ) {
         let info = this.mapHeader(mapset, index);
-        const topmap = map ?? mapset.beatmaps.sort((a, b) => b.difficulty_rating - a.difficulty_rating)[0];
-        info += '\n' + `**${this.indexed_pc[index].count}x plays**`;
-        info += '\n' + this.mapMeta(mapset, topmap);
-        info += '\n' + this.mapCounts(mapset, topmap);
+        const topmap =
+            map ??
+            mapset.beatmaps.sort(
+                (a, b) => b.difficulty_rating - a.difficulty_rating,
+            )[0];
+        info += "\n" + `**${this.indexed_pc[index].count}x plays**`;
+        info += "\n" + this.mapMeta(mapset, topmap);
+        info += "\n" + this.mapCounts(mapset, topmap);
         return info;
     }
-    mapMeta(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.Beatmap) {
+    mapMeta(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        map: osuapi.types_v2.Beatmap,
+    ) {
         const status = helper.emojis.rankedstatus[mapset.status];
         const gamemode = helper.emojis.gamemodes[map.mode];
         const length = calculate.secondsToTime(map.total_length);
         return listLine(status, gamemode, length);
     }
-    mapCounts(mapset: osuapi.types_v2.BeatmapsetExtended, map: osuapi.types_v2.BeatmapExtended) {
+    mapCounts(
+        mapset: osuapi.types_v2.BeatmapsetExtended,
+        map: osuapi.types_v2.BeatmapExtended,
+    ) {
         const plays = `${calculate.separateNum(mapset.play_count)} plays`;
         const favourites = `${calculate.separateNum(mapset.favourite_count)} favourites`;
         return listLine(plays, favourites);
@@ -736,35 +991,32 @@ export class MapPlayFormatter extends MapSetFormatter {
 }
 
 export function listLine(...args: string[] | string[][]) {
-    if (typeof args[0] == 'string') {
-        return args.join(' | ');
+    if (typeof args[0] == "string") {
+        return args.join(" | ");
     }
-    return args[0].join(' | ');
+    return args[0].join(" | ");
 }
 
 export function userList(
     users: osuapi.types_v2.User[],
-    sort: 'pp' | 'score' | 'acc',
+    sort: "pp" | "score" | "acc",
     filter: {
         country: string;
     },
     reverse: boolean,
 ): helper.tooltypes.formatterInfo<any> {
     return {
-        text: 'string',
+        text: "string",
         curPage: 1,
         maxPage: 1,
-        used: []
+        used: [],
     };
 }
-
 
 export function matchesString(first: string, second: string) {
     first = first.toLowerCase();
     second = second.toLowerCase();
-    return first == second ||
-        first.includes(second) ||
-        second.includes(first);
+    return first == second || first.includes(second) || second.includes(first);
 }
 
 export function argRange(arg: string, forceAboveZero: boolean) {
@@ -772,22 +1024,25 @@ export function argRange(arg: string, forceAboveZero: boolean) {
     let min = NaN;
     let exact = NaN;
     let ignore = false;
-    if (arg.includes('>')) {
-        min = +(arg.replace('>', ''));
+    if (arg.includes(">")) {
+        min = +arg.replace(">", "");
     }
-    if (arg.includes('<')) {
-        max = +(arg.replace('<', ''));
+    if (arg.includes("<")) {
+        max = +arg.replace("<", "");
     }
-    if (arg.includes('..')) {
-        const arr = arg.split('..');
-        const narr = arr.map(x => +x).filter(x => !isNaN(x)).sort((a, b) => +b - +a);
+    if (arg.includes("..")) {
+        const arr = arg.split("..");
+        const narr = arr
+            .map((x) => +x)
+            .filter((x) => !isNaN(x))
+            .sort((a, b) => +b - +a);
         if (narr.length == 2) {
             max = narr[0];
             min = narr[1];
         }
     }
-    if (arg.includes('!')) {
-        exact = +(arg.replace('!', ''));
+    if (arg.includes("!")) {
+        exact = +arg.replace("!", "");
         ignore = true;
     }
     if (isNaN(max) && isNaN(min) && !exact) {
@@ -798,7 +1053,7 @@ export function argRange(arg: string, forceAboveZero: boolean) {
             max: max && max >= 0 ? max : Math.abs(max),
             min: min && min >= 0 ? min : Math.abs(min),
             exact: exact && exact >= 0 ? exact : Math.abs(exact),
-            ignore
+            ignore,
         };
     }
     return {
@@ -811,21 +1066,21 @@ export function argRange(arg: string, forceAboveZero: boolean) {
 
 export function hitList(
     mode: osuapi.types_v2.GameMode,
-    obj: osuapi.types_v2.Statistics
+    obj: osuapi.types_v2.Statistics,
 ) {
     let hitList: string;
     switch (mode) {
-        case 'osu':
+        case "osu":
         default:
             hitList = `${calculate.separateNum(obj.count_300)}/${calculate.separateNum(obj.count_100)}/${calculate.separateNum(obj.count_50)}/${calculate.separateNum(obj.count_miss)}`;
             break;
-        case 'taiko':
+        case "taiko":
             hitList = `${calculate.separateNum(obj.count_300)}/${calculate.separateNum(obj.count_100)}/${calculate.separateNum(obj.count_miss)}`;
             break;
-        case 'fruits':
+        case "fruits":
             hitList = `${calculate.separateNum(obj.count_300)}/${calculate.separateNum(obj.count_100)}/${calculate.separateNum(obj.count_50)}/${calculate.separateNum(obj.count_miss)}`;
             break;
-        case 'mania':
+        case "mania":
             hitList = `${calculate.separateNum(obj.count_geki)}/${calculate.separateNum(obj.count_300)}/${calculate.separateNum(obj.count_katu)}/${calculate.separateNum(obj.count_100)}/${calculate.separateNum(obj.count_50)}/${calculate.separateNum(obj.count_miss)}`;
             break;
     }
@@ -836,8 +1091,11 @@ export function gradeToEmoji(str: string) {
     return helper.emojis.grades[str];
 }
 
-
-export function userAuthor(osudata: osuapi.types_v2.User, embed: Discord.EmbedBuilder, replaceName?: string) {
+export function userAuthor(
+    osudata: osuapi.types_v2.User,
+    embed: Discord.EmbedBuilder,
+    replaceName?: string,
+) {
     let name = replaceName ?? osudata.username;
     if (osudata?.statistics?.global_rank) {
         name += ` | #${calculate.separateNum(osudata?.statistics?.global_rank)}`;
@@ -851,14 +1109,13 @@ export function userAuthor(osudata: osuapi.types_v2.User, embed: Discord.EmbedBu
     embed.setAuthor({
         name,
         url: `https://osu.ppy.sh/users/${osudata.id}`,
-        iconURL: `${`https://osuflags.omkserver.nl/${osudata.country_code}.png`}`
+        iconURL: `${`https://osuflags.omkserver.nl/${osudata.country_code}.png`}`,
     });
     return embed;
-
 }
 
 /**
- * 
+ *
  * @param str the string to convert
  * @returns string with the first letter capitalised
  */
@@ -866,12 +1123,12 @@ export function toCapital(str: string) {
     return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
 
-export function dateToDiscordFormat(date: Date, type: 'R' | 'F' = 'R') {
+export function dateToDiscordFormat(date: Date, type: "R" | "F" = "R") {
     return `<t:${Math.floor(date.getTime() / 1000)}:${type}>`;
 }
 export function relativeTime(timestamp: string) {
     const date = new Date(timestamp);
-    return dateToDiscordFormat(date, 'R');
+    return dateToDiscordFormat(date, "R");
 }
 
 /**
@@ -881,49 +1138,57 @@ export function relativeTime(timestamp: string) {
  */
 export function parseUnicodeStrings(
     input: {
-        title: string,
-        artist: string,
-        title_unicode: string,
-        artist_unicode: string,
+        title: string;
+        artist: string;
+        title_unicode: string;
+        artist_unicode: string;
         ignore: {
-            artist: boolean,
-            title: boolean,
+            artist: boolean;
+            title: boolean;
         };
     },
-    style?: 1 | 2
+    style?: 1 | 2,
 ) {
     let fullTitle: string;
     switch (style) {
-        case 1: default: {
-
-            if (
-                (input.title != input.title_unicode && input.artist == input.artist_unicode)
-                ||
-                (input.title == input.title_unicode && input.artist != input.artist_unicode)
-                ||
-                (input.title == input.title_unicode && input.artist == input.artist_unicode)
-                ||
-                (input.ignore.artist == true || input.ignore.title == true)
-            ) {
-                return parseUnicodeStrings(input, 2);
-            } else {
-                fullTitle =
-                    `${input.artist} - ${input.title}
+        case 1:
+        default:
+            {
+                if (
+                    (input.title != input.title_unicode &&
+                        input.artist == input.artist_unicode) ||
+                    (input.title == input.title_unicode &&
+                        input.artist != input.artist_unicode) ||
+                    (input.title == input.title_unicode &&
+                        input.artist == input.artist_unicode) ||
+                    input.ignore.artist == true ||
+                    input.ignore.title == true
+                ) {
+                    return parseUnicodeStrings(input, 2);
+                } else {
+                    fullTitle = `${input.artist} - ${input.title}
 ${input.artist_unicode} - ${input.title_unicode}`;
+                }
             }
-        }
             break;
-        case 2: {
-            const title = input.title == input.title_unicode ? input.title : `${input.title_unicode} (${input.title})`;
-            const artist = input.artist == input.artist_unicode ? input.artist : `${input.artist_unicode} (${input.artist})`;
-            if (input.ignore.artist) {
-                fullTitle = `${title}`;
-            } else if (input.ignore.title) {
-                fullTitle = `${artist}`;
-            } else {
-                fullTitle = `${artist} - ${title}`;
+        case 2:
+            {
+                const title =
+                    input.title == input.title_unicode
+                        ? input.title
+                        : `${input.title_unicode} (${input.title})`;
+                const artist =
+                    input.artist == input.artist_unicode
+                        ? input.artist
+                        : `${input.artist_unicode} (${input.artist})`;
+                if (input.ignore.artist) {
+                    fullTitle = `${title}`;
+                } else if (input.ignore.title) {
+                    fullTitle = `${artist}`;
+                } else {
+                    fullTitle = `${artist} - ${title}`;
+                }
             }
-        }
             break;
     }
 
@@ -949,12 +1214,15 @@ export function difficultyColour(difficulty: number) {
             return helper.colours.diffcolour[2];
         case difficulty >= 2:
             return helper.colours.diffcolour[1];
-        case difficulty >= 1.5: default:
+        case difficulty >= 1.5:
+        default:
             return helper.colours.diffcolour[0];
     }
 }
 
-export function nonNullStats(hits: osuapi.types_v2.ScoreStatistics): osuapi.types_v2.ScoreStatistics {
+export function nonNullStats(
+    hits: osuapi.types_v2.ScoreStatistics,
+): osuapi.types_v2.ScoreStatistics {
     return {
         perfect: hits?.perfect ?? 0,
         great: hits?.great ?? 0,
@@ -975,18 +1243,21 @@ class hitListFormatter {
         for (const key in this.ex) {
             str.push(this.ex[key]);
         }
-        return str.join('/') ?? '';
+        return str.join("/") ?? "";
     }
     public get long(): string {
-        let str = '';
+        let str = "";
         for (const key in this.ex) {
             str += `**${key}:** ${this.ex[key]}`;
         }
         return str;
-    };
-};
+    }
+}
 
-export function returnHits(hits: osuapi.types_v2.ScoreStatistics, mode: osuapi.types_v2.Ruleset) {
+export function returnHits(
+    hits: osuapi.types_v2.ScoreStatistics,
+    mode: osuapi.types_v2.Ruleset,
+) {
     const object: hitListFormatter = new hitListFormatter();
     hits = nonNullStats(hits);
     switch (mode) {
@@ -995,14 +1266,14 @@ export function returnHits(hits: osuapi.types_v2.ScoreStatistics, mode: osuapi.t
                 Great: hits.great,
                 Ok: hits.ok,
                 Meh: hits.meh,
-                Miss: hits.miss
+                Miss: hits.miss,
             };
             break;
         case osuapi.Ruleset.taiko:
             object.ex = {
                 Great: hits.great,
                 Good: hits.good,
-                Miss: hits.miss
+                Miss: hits.miss,
             };
             break;
         case osuapi.Ruleset.fruits:
@@ -1011,18 +1282,17 @@ export function returnHits(hits: osuapi.types_v2.ScoreStatistics, mode: osuapi.t
                 Drops: hits.ok,
                 Droplets: hits.small_tick_hit,
                 Miss: hits.miss,
-                'Droplets miss': hits.small_tick_miss
+                "Droplets miss": hits.small_tick_miss,
             };
             break;
         case osuapi.Ruleset.mania:
-            object.ex =
-            {
+            object.ex = {
                 Perfect: hits.perfect,
                 Great: hits.great,
                 Good: hits.good,
                 Ok: hits.ok,
                 Meh: hits.meh,
-                Miss: hits.miss
+                Miss: hits.miss,
             };
             break;
     }
@@ -1030,8 +1300,8 @@ export function returnHits(hits: osuapi.types_v2.ScoreStatistics, mode: osuapi.t
 }
 
 export function removeURLparams(url: string) {
-    if (url.includes('?')) {
-        return url.split('?')[0];
+    if (url.includes("?")) {
+        return url.split("?")[0];
     }
     return url;
 }
@@ -1039,7 +1309,9 @@ export function removeURLparams(url: string) {
 /**
  * converts a lazer score to legacy score (for compatibility reasons)
  */
-export function CurrentToLegacyScore(score: osuapi.types_v2.Score): osuapi.types_v2.ScoreLegacy {
+export function CurrentToLegacyScore(
+    score: osuapi.types_v2.Score,
+): osuapi.types_v2.ScoreLegacy {
     return {
         accuracy: score.accuracy,
         beatmap: score.beatmap,
@@ -1051,7 +1323,7 @@ export function CurrentToLegacyScore(score: osuapi.types_v2.Score): osuapi.types
         max_combo: score.max_combo,
         mode_int: score.ruleset_id,
         mode: osumodcalc.mode.toName(score.ruleset_id),
-        mods: score.mods.map(x => x.acronym),
+        mods: score.mods.map((x) => x.acronym),
         passed: score.passed,
         perfect: score.is_perfect_combo,
         pp: score.pp,
@@ -1077,70 +1349,75 @@ export function CurrentToLegacyScore(score: osuapi.types_v2.Score): osuapi.types
         user_id: score.user_id,
         current_user_attributes: score.current_user_attributes,
         user: score.user,
-        weight: score.weight
+        weight: score.weight,
     };
 }
 
-export function sortDescription(type: "pp" | "score" | "recent" | "acc" | "combo" | "miss" | "rank", reverse: boolean) {
+export function sortDescription(
+    type: "pp" | "score" | "recent" | "acc" | "combo" | "miss" | "rank",
+    reverse: boolean,
+) {
     let x: string;
     switch (type) {
-        case 'pp':
-            x = 'highest performance';
+        case "pp":
+            x = "highest performance";
             break;
-        case 'score':
-            x = 'highest score';
+        case "score":
+            x = "highest score";
             break;
-        case 'recent':
-            x = 'most recent';
+        case "recent":
+            x = "most recent";
             break;
-        case 'acc':
-            x = 'highest accuracy';
+        case "acc":
+            x = "highest accuracy";
             break;
-        case 'combo':
-            x = 'highest combo';
+        case "combo":
+            x = "highest combo";
             break;
-        case 'miss':
-            x = 'lowest miss count';
+        case "miss":
+            x = "lowest miss count";
             break;
-        case 'rank':
-            x = 'best rank';
+        case "rank":
+            x = "best rank";
             break;
     }
     if (reverse) {
         switch (type) {
-            case 'pp':
-                x = 'lowest performance';
+            case "pp":
+                x = "lowest performance";
                 break;
-            case 'score':
-                x = 'lowest score';
+            case "score":
+                x = "lowest score";
                 break;
-            case 'recent':
-                x = 'oldest';
+            case "recent":
+                x = "oldest";
                 break;
-            case 'acc':
-                x = 'lowest accuracy';
+            case "acc":
+                x = "lowest accuracy";
                 break;
-            case 'combo':
-                x = 'lowest combo';
+            case "combo":
+                x = "lowest combo";
                 break;
-            case 'miss':
-                x = 'highest miss count';
+            case "miss":
+                x = "highest miss count";
                 break;
-            case 'rank':
-                x = 'best rank';
+            case "rank":
+                x = "best rank";
                 break;
         }
     }
     return x;
 }
 
-
-const filterArgRange = (value: number, args: {
-    max: number;
-    min: number;
-    exact: number;
-    ignore: boolean;
-}) => {
+const filterArgRange = (
+    value: number,
+    args: {
+        max: number;
+        min: number;
+        exact: number;
+        ignore: boolean;
+    },
+) => {
     let keep: boolean = true;
     if (args.max) {
         keep = keep && value <= Math.round(args.max);
@@ -1161,19 +1438,19 @@ const filterArgRange = (value: number, args: {
  * split string by every x characters
  */
 export function splitStringBy(str: string, every: number) {
-    return str.replace(eval(`/(.{${every}})/g`), "$1 ").split(' ');
+    return str.replace(eval(`/(.{${every}})/g`), "$1 ").split(" ");
 }
 
 export function maxLength(str: string, length: number) {
     if (str.length > length) {
-        str = str.slice(0, length - 3) + '...';
+        str = str.slice(0, length - 3) + "...";
     }
     return str;
 }
 
 export function strictLength(str: string, length: number) {
     if (str.length > length) {
-        str = str.slice(0, length - 3) + '...';
+        str = str.slice(0, length - 3) + "...";
     }
     if (str.length < length) {
         str = str.padEnd(length);
