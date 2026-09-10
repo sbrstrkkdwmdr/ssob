@@ -216,7 +216,7 @@ export function secondsToTime(seconds: number, allowDays?: boolean) {
  * @param callback
  * @returns
  */
-export async function stringMath(eq: string, callback?) {
+export async function stringMath(eq: string, callback?: Function) {
     if (typeof eq !== "string")
         return handleCallback(
             new TypeError("The [String] argument is expected."),
@@ -227,7 +227,7 @@ export async function stringMath(eq: string, callback?) {
     const plusMin =
         /([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*([+-])\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)/;
     const parentheses = /(\d)?\s*\(([^()]*)\)\s*/;
-    let current;
+    let current: string;
     while (eq.search(/^\s*([+-]?\d*\.?\d+(?:e[+-]\d+)?)\s*$/) === -1) {
         eq = fParentheses(eq);
         if (eq === current)
@@ -239,7 +239,7 @@ export async function stringMath(eq: string, callback?) {
     }
     return handleCallback(null, +eq);
 
-    function fParentheses(eq) {
+    function fParentheses(eq: string) {
         while (eq.search(parentheses) !== -1) {
             eq = eq.replace(parentheses, function (a, b, c) {
                 c = fMulDiv(c);
@@ -252,38 +252,41 @@ export async function stringMath(eq: string, callback?) {
         return eq;
     }
 
-    function fMulDiv(eq) {
+    function fMulDiv(eq: string) {
         while (eq.search(mulDiv) !== -1) {
             eq = eq.replace(mulDiv, function (a) {
                 const sides = mulDiv.exec(a);
-                //@ts-expect-error types or smth idk
                 const result =
                     sides[2] === "*"
-                        ? sides[1] * sides[3]
-                        : sides[1] / sides[3];
-                return result >= 0 ? "+" + result : result;
+                        ? //@ts-expect-error types or smth idk
+                          sides[1] * sides[3]
+                        : //@ts-expect-error types or smth idk
+                          sides[1] / sides[3];
+                return (result >= 0 ? "+" + result : result) + "";
             });
         }
         return eq;
     }
 
-    function fPlusMin(eq) {
+    function fPlusMin(eq: string) {
         eq = eq.replace(/([+-])([+-])(\d|\.)/g, function (a, b, c, d) {
             return (b === c ? "+" : "-") + d;
         });
         while (eq.search(plusMin) !== -1) {
             eq = eq.replace(plusMin, function (a) {
                 const sides = plusMin.exec(a);
-                //@ts-expect-error types or smth idk
-                return sides[2] === "+"
-                    ? +sides[1] + +sides[3]
-                    : sides[1] - sides[3];
+                const res =
+                    sides[2] === "+"
+                        ? +sides[1] + +sides[3]
+                        : //@ts-expect-error types or smth idk
+                          sides[1] - sides[3];
+                return res + "";
             });
         }
         return eq;
     }
 
-    function handleCallback(errObject, result) {
+    function handleCallback(errObject: Error, result: string | number | null) {
         if (typeof callback !== "function") {
             if (errObject !== null) throw errObject;
         } else {
